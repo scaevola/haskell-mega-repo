@@ -7,6 +7,7 @@ module Futurice.App.Checklist.Types.Ctx (
     ctxGetCRandom,
     -- * Helpers
     ctxWithCryptoGen,
+    ctxFetchGroups
     ) where
 
 import Prelude ()
@@ -35,7 +36,7 @@ data Ctx = Ctx
     , ctxPostgres    :: Pool Postgres.Connection
     , ctxPRNGs       :: Pool (TVar CryptoGen)
     , ctxMockUser    :: !(Maybe FUM.UserName)
-    , ctxACL         :: Map FUM.UserName TaskRole
+    , ctxACL         :: TVar (Map FUM.UserName TaskRole)
     }
 
 newCtx
@@ -63,7 +64,7 @@ newCtx logger ci fumAuthToken fumBaseUrl (itGroupName, hrGroupName, supervisorGr
             fetchGroup mgr itGroupName `concurrently`
             fetchGroup mgr hrGroupName `concurrently`
             fetchGroup mgr supervisorGroupName
-        return $ toMapOf (folded . ifolded) $
+        newTVarIO $ toMapOf (folded . ifolded) $
             [ (login, TaskRoleIT) | login <- itGroup ^.. FUM.groupUsers . folded ] ++
             [ (login, TaskRoleHR) | login <- hrGroup ^.. FUM.groupUsers . folded ] ++
             [ (login, TaskRoleSupervisor) | login <- supervisorGroup ^.. FUM.groupUsers . folded ]
@@ -92,3 +93,24 @@ ctxApplyCmd now fumuser cmd ctx = do
     liftIO $ atomically $ modifyTVar' (ctxWorld ctx) (applyCommand now fumuser cmd)
     withResource (ctxPostgres ctx) $ \conn -> do
         transactCommand conn fumuser cmd
+
+ctxFetchGroups
+    :: Logger
+    -> FUM.AuthToken
+    -> FUM.BaseUrl
+    -> (FUM.GroupName, FUM.GroupName, FUM.GroupName)
+    -> IO (Map FUM.UserName TaskRole)
+ctxFetchGroups logger fumAuthToken fumBaseUrl (itGroupName, hrGroupName, supervisorGroupName) = do
+    mgr <- newManager tlsManagerSettings
+    ((itGroup, hrGroup), supervisorGroup) <-
+        fetchGroup mgr itGroupName `concurrently`
+        fetchGroup mgr hrGroupName `concurrently`
+        fetchGroup mgr supervisorGroupName
+    return $ toMapOf (folded . ifolded) $
+        [ (login, TaskRoleIT) | login <- itGroup ^.. FUM.groupUsers . folded ] ++
+        [ (login, TaskRoleHR) | login <- hrGroup ^.. FUM.groupUsers . folded ] ++
+        [ (login, TaskRoleSupervisor) | login <- supervisorGroup ^.. FUM.groupUsers . folded ]
+  where
+      fetchGroup mgr n = runLogT "FUM Fetch" logger $ do
+          logInfo "Fetching FUM Group" n
+          liftIO $ FUM.executeRequest mgr fumAuthToken fumBaseUrl (FUM.fumGroupR n)

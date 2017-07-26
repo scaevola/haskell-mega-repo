@@ -7,6 +7,7 @@
 module Futurice.App.Checklist (defaultMain) where
 
 import Prelude ()
+import Futurice.Periocron
 import Futurice.Prelude
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
 import Data.Constraint           (Dict (..))
@@ -319,8 +320,9 @@ withAuthUser'
     -> (World -> AuthUser -> LogT m a)
     -> LogT m a
 withAuthUser' def ctx fu f = do
+    acl <- liftIO $ readTVarIO $ ctxACL ctx
     let fu'      = fu <|> ctxMockUser ctx
-        authUser = fu' >>= \fu'' -> (fu'',) <$> ctxACL ctx ^. at fu''
+        authUser = fu' >>= \fu'' -> (fu'',) <$> acl ^. at fu''
     case authUser of
         Nothing -> do
             logInfo_ $ "Unauthorised user " <> textShow fu
@@ -360,4 +362,13 @@ makeCtx' Config {..} logger _cache = do
         Postgres.query_ conn "SELECT username, updated, cmddata FROM checklist2.commands ORDER BY cid;"
     let world0 = foldl' (\world (fumuser, now, cmd) -> applyCommand now fumuser cmd world) emptyWorld cmds
     atomically $ writeTVar (ctxWorld ctx) world0
-    pure (ctx, [])
+
+    let action = ctxFetchGroups
+            logger
+            cfgFumToken
+            cfgFumBaseurl
+            (cfgFumITGroup, cfgFumHRGroup, cfgFumSupervisorGroup)
+            >>= atomically . writeTVar (ctxACL ctx)
+        job = mkJob "update checklist ACL" action $ every 600
+
+    pure (ctx, [job])
