@@ -364,6 +364,8 @@ makeCtx' Config {..} logger _cache = do
     atomically $ writeTVar (ctxWorld ctx) world0
 
     let action = ctxFetchGroups
+            pure
+            (ctxManager ctx)
             logger
             cfgFumToken
             cfgFumBaseurl
