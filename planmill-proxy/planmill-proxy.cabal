@@ -48,7 +48,6 @@ library
     , containers
     , exceptions
     , futurice-servant
-    , futurice-pure-trans
     , intervals
     , monad-logger
     , periocron
