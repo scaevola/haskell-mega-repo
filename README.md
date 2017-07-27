@@ -10,7 +10,9 @@
     - If you didn't clone recursively, fetch the submodules with `git submodule update --init`
 2. Install native dependencies:
     - macOS:
-        - `brew install fftw`
+        - `brew install haskell-stack fftw pkg-config`
+        - `stack setup`
+        - `stack install alex happy`
         - https://postgresapp.com/ and `source env-postgres-osx.sh`
     - Ubuntu: `apt-get install libfftw3-dev libpq-dev`
 3. Build and run *theme-app*
