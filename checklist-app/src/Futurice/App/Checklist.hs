@@ -354,8 +354,6 @@ makeCtx' Config {..} logger _cache = do
     ctx <- newCtx
         logger
         cfgPostgresConnInfo
-        cfgFumToken cfgFumBaseurl
-        (cfgFumITGroup, cfgFumHRGroup, cfgFumSupervisorGroup)
         cfgMockUser
         emptyWorld
     cmds <- withResource (ctxPostgres ctx) $ \conn ->

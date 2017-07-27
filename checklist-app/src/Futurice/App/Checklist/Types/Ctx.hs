@@ -23,6 +23,7 @@ import Futurice.CryptoRandom
 
 import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM
+import qualified Data.Map                   as M
 
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Logic
@@ -44,13 +45,10 @@ newCtx
     :: HasValidTribes
     => Logger
     -> Postgres.ConnectInfo
-    -> FUM.AuthToken
-    -> FUM.BaseUrl
-    -> (FUM.GroupName, FUM.GroupName, FUM.GroupName)
     -> Maybe FUM.UserName
     -> World
     -> IO Ctx
-newCtx logger ci fumAuthToken fumBaseUrl (itGroupName, hrGroupName, supervisorGroupName) mockUser w = do
+newCtx logger ci mockUser w = do
     mgr <- newManager tlsManagerSettings
     Ctx logger
         <$> newTVarIO w
@@ -59,7 +57,7 @@ newCtx logger ci fumAuthToken fumBaseUrl (itGroupName, hrGroupName, supervisorGr
         <*> createPool (Postgres.connect ci) Postgres.close 1 60 5
         <*> createPool (mkCryptoGen >>= newTVarIO) (\_ -> return()) 1 3600 5
         <*> pure mockUser
-        <*> ctxFetchGroups newTVarIO mgr logger fumAuthToken fumBaseUrl (itGroupName, hrGroupName, supervisorGroupName)
+        <*> (newTVarIO M.empty)
         <*> pure mgr
 
 ctxWithCryptoGen
