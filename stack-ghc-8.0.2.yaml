@@ -43,7 +43,6 @@ packages:
 - servant-status/
 - smileys-app/
 - sms-proxy/
-- spice-stats/
 # - tdigest/tdigest/
 # - tdigest/tdigest-Chart/
 # - tdigest/tdigest-bench/
