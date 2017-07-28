@@ -38,6 +38,7 @@ dependencies:
   - lens
   - lucid
   - mtl
+  - periocron
   - postgresql-simple
   - QuickCheck
   - recursion-schemes >= 5.0.1
@@ -73,14 +74,14 @@ executables:
     source-dirs: srv
     ghc-options: -Wall -threaded -rtsopts
     dependencies:
-      - checklist-app 
+      - checklist-app
 
   checklist-import:
     main: Import.hs
     source-dirs: import
     ghc-options: -Wall -threaded -rtsopts
     dependencies:
-      - checklist-app 
+      - checklist-app
       - lifted-base
       - transformers
       - yaml

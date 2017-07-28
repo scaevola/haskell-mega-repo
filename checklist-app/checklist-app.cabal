@@ -53,6 +53,7 @@ library
     , lens
     , lucid
     , mtl
+    , periocron
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
@@ -143,6 +144,7 @@ executable checklist-app-server
     , lens
     , lucid
     , mtl
+    , periocron
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
@@ -197,6 +199,7 @@ executable checklist-import
     , lens
     , lucid
     , mtl
+    , periocron
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
@@ -255,6 +258,7 @@ test-suite unit-tests
     , lens
     , lucid
     , mtl
+    , periocron
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
