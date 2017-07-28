@@ -57,7 +57,7 @@ newCtx logger ci mockUser w = do
         <*> createPool (Postgres.connect ci) Postgres.close 1 60 5
         <*> createPool (mkCryptoGen >>= newTVarIO) (\_ -> return()) 1 3600 5
         <*> pure mockUser
-        <*> (newTVarIO M.empty)
+        <*> newTVarIO M.empty
         <*> pure mgr
 
 ctxWithCryptoGen
@@ -82,19 +82,18 @@ ctxApplyCmd now fumuser cmd ctx = do
         transactCommand conn fumuser cmd
 
 ctxFetchGroups
-    :: (Map FUM.UserName TaskRole -> IO b)
-    -> Manager
+    :: Manager
     -> Logger
     -> FUM.AuthToken
     -> FUM.BaseUrl
     -> (FUM.GroupName, FUM.GroupName, FUM.GroupName)
-    -> IO b
-ctxFetchGroups returnAs mgr logger fumAuthToken fumBaseUrl (itGroupName, hrGroupName, supervisorGroupName) = do
+    -> IO (Map FUM.UserName TaskRole)
+ctxFetchGroups mgr logger fumAuthToken fumBaseUrl (itGroupName, hrGroupName, supervisorGroupName) = do
     ((itGroup, hrGroup), supervisorGroup) <-
         fetchGroup mgr itGroupName `concurrently`
         fetchGroup mgr hrGroupName `concurrently`
         fetchGroup mgr supervisorGroupName
-    returnAs $ toMapOf (folded . ifolded) $
+    pure $ toMapOf (folded . ifolded) $
         [ (login, TaskRoleIT) | login <- itGroup ^.. FUM.groupUsers . folded ] ++
         [ (login, TaskRoleHR) | login <- hrGroup ^.. FUM.groupUsers . folded ] ++
         [ (login, TaskRoleSupervisor) | login <- supervisorGroup ^.. FUM.groupUsers . folded ]
