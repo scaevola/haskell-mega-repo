@@ -20,6 +20,11 @@
     - `stack build --fast theme-app`
     - `LOGENTRIES_TOKEN=00000000-0000-0000-0000-000000000000 stack exec -- theme-app-server`
 
+## Building docker images
+
+`stack exec -- haskell-mega-repo-tool build-docker <app-name>`, for example
+`stack exec -- haskel-mega-repo-tool checklist2`. Then follow the instructions the command outputs. Obviosly you need docker daemon installed and running.
+
 ## Maintaining
 
 ### Tracking the master
