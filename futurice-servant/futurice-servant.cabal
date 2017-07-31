@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.17.0.
+-- This file has been generated from package.yaml by hpack version 0.17.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -32,6 +32,8 @@ library
   build-depends:
       base                  >=4.7   && <4.10
     , aeson
+    , amazonka
+    , amazonka-cloudwatch
     , base-compat
     , constraints
     , dynmap-cache

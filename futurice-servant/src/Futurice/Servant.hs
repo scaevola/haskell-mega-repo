@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -104,6 +105,11 @@ import qualified Network.HTTP.Types       as H
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified System.Metrics           as Metrics
 import qualified System.Metrics.Json      as Metrics
+import qualified GHC.Stats as Stats
+
+import qualified Network.AWS                          as AWS
+import qualified Network.AWS.CloudWatch.PutMetricData as AWS
+import qualified Network.AWS.CloudWatch.Types         as AWS
 
 type FuturiceAPI api colour =
     FutuFaviconAPI colour
@@ -233,20 +239,20 @@ futuriceServerMain'
 futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
     withStderrLogger $ \logger ->
     handleAll (handler logger) $ do
-        (cfg, p, ekgP, leToken) <- runLogT "futurice-servant" logger $ do
+        (cfg, p, ekgP, leToken, awsCreds) <- runLogT "futurice-servant" logger $ do
             logInfo_ $ "Hello, " <> t <> " is alive"
             getConfigWithPorts (envpfx ^. from packed)
 
         cache          <- newDynMapCache
 
-        let main' = main cfg p ekgP cache
+        let main' = main cfg p ekgP awsCreds cache
 
         if UUID.null leToken
             then main' logger
             else withLogentriesLogger leToken $ \leLogger -> main' (logger <> leLogger)
 
   where
-    main cfg p ekgP cache logger = do
+    main cfg p ekgP awsCreds cache logger = do
         (ctx, jobs)    <- makeCtx cfg logger cache
         -- brings 'HasServer' instance into a scope
         Dict           <- pure $ makeDict ctx
@@ -260,7 +266,7 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
         -- TODO: we register for all, make configurable
         registerTDigest "pmreq" [0.5, 0.9, 0.99] store
 
-        let jobs' = mkJob "stats" (ekgJob logger store) (every $ 5 * 60)
+        let jobs' = mkJob "stats" (ekgJob awsCreds logger store) (every $ 5 * 60)
                   : jobs
         _ <- spawnPeriocron (defaultOptions logger) store jobs'
 
@@ -275,10 +281,33 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
             $ middleware ctx
             $ serve proxyApi' server'
 
-    ekgJob :: Logger -> Metrics.Store -> IO ()
-    ekgJob logger store = runLogT "ekg" logger $ do
+    ekgJob :: Maybe AWS.Credentials -> Logger -> Metrics.Store -> IO ()
+    ekgJob mawsCreds logger store = runLogT "ekg" logger $ do
         sample <- liftIO $ Metrics.sampleAll store
         logInfo "ekg sample" (Metrics.sampleToJson sample)
+
+        -- CloudWatch metrics
+        for_ mawsCreds $ \awsCreds -> do
+            env' <- AWS.newEnv awsCreds
+            let env = env'
+                    & AWS.envRegion .~ AWS.Frankfurt  -- TODO: make configurable?
+
+#if MIN_VERSION_base(4,10,0)
+            liveBytes <- Stats.gcdetails_live_bytes . Stats.gc <$> liftIO Stats.getRTSStats
+#else
+            liveBytes <- Stats.currentBytesUsed <$> liftIO Stats.getGCStats
+#endif
+            rs <- liftIO $ AWS.runResourceT $ AWS.runAWS env $ do
+                let datum = AWS.metricDatum "Live bytes"
+                        & AWS.mdValue      ?~ fromIntegral liveBytes
+                        & AWS.mdUnit       ?~ AWS.Bytes
+                        & AWS.mdDimensions .~ [AWS.dimension "Service" t]
+                let pmd = AWS.putMetricData "Haskell/RTS"
+                        & AWS.pmdMetricData .~ [datum]
+
+                AWS.send pmd
+
+            logInfo_ $ "cloudwatch response " <> textShow rs
 
     handler logger e = do
         runLogT "futurice-servant" logger $ logAttention_ $ textShow e

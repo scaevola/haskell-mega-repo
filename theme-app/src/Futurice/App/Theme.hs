@@ -25,7 +25,7 @@ static = Tagged $ staticApp $ embeddedSettings $(mkRecursiveEmbedded "images")
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
-    & serverName         .~ "Thema app"
+    & serverName         .~ "Theme app"
     & serverDescription  .~ "Futurice theme guidelines"
     & serverColour       .~ (Proxy :: Proxy 'FutuGreen)
     & serverApp themeApi .~ server
