@@ -10,7 +10,8 @@
     - If you didn't clone recursively, fetch the submodules with `git submodule update --init`
 2. Install native dependencies:
     - macOS:
-        - `brew install haskell-stack fftw pkg-config`
+        - Install [haskell stack](https://docs.haskellstack.org/en/stable/install_and_upgrade/)
+        - `brew install fftw pkg-config`
         - `stack setup`
         - `stack install alex happy`
         - https://postgresapp.com/ and `source env-postgres-osx.sh`
@@ -22,8 +23,9 @@
 
 ## Building docker images
 
-`stack exec -- haskell-mega-repo-tool build-docker <app-name>`, for example
-`stack exec -- haskel-mega-repo-tool checklist2`. Then follow the instructions the command outputs. Obviosly you need docker daemon installed and running.
+`haskell-mega-repo-tool build-docker <app-name>`, for example
+`haskel-mega-repo-tool build-docker checklist`.
+If the tool instructs you to run some docker commands, then do it and re-run the build-docker command.
 
 ## Maintaining
 
