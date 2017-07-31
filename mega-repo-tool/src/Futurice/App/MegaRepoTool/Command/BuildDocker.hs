@@ -59,7 +59,6 @@ buildCmd buildImage = T.unwords
     , "-ti"
     , "--entrypoint /app/src/build-in-docker.sh"
     , "-v $(pwd):/app/src"
-    , "-v $(pwd)/build:/app/bin"
     , "-v hmr-stack-root:/stack-root"
     , "-v hmr-stack-work:/app/src/.stack-work-docker"
     , buildImage
