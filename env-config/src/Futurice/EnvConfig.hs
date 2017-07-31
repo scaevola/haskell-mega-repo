@@ -15,13 +15,12 @@ module Futurice.EnvConfig (
     FromEnvVarList (..),
     -- * Helpers
     envConnectInfo,
+    envAwsCredentials,
     optionalAlt,
     -- * re-exports
     (<!>),
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Algebra.Lattice
        (JoinSemiLattice (..), MeetSemiLattice (..))
 import Control.Monad.Logger           (LogLevel (..))
@@ -31,7 +30,9 @@ import Data.List.Split                (splitOn)
 import Data.Semigroup.Foldable        (asum1)
 import Database.PostgreSQL.Simple     (ConnectInfo (..))
 import Database.PostgreSQL.Simple.URL (parseDatabaseUrl)
+import Futurice.Prelude
 import Network.HTTP.Client            (Request, parseUrlThrow)
+import Prelude ()
 import Servant.Client                 (BaseUrl, parseBaseUrl)
 import System.Environment             (getEnvironment)
 import System.Exit                    (exitFailure)
@@ -44,6 +45,7 @@ import qualified Data.Text          as T
 import qualified Data.UUID.Types    as UUID
 import qualified FUM
 import qualified GitHub             as GH
+import qualified Network.AWS        as AWS
 
 data EnvVarP a = EnvVar
     { _envVarName :: String
@@ -165,12 +167,16 @@ optionalEnvVar name = Just <$> envVar name <!> pure Nothing
 envVarWithDefault :: FromEnvVar a => String -> a -> ConfigParser a
 envVarWithDefault name d = envVar name <!> pure d
 
-getConfigWithPorts :: (MonadLog m, MonadIO m, Configure cfg) => String -> m (cfg, Int, Int, UUID.UUID)
-getConfigWithPorts name = getConfig' name $ (,,,)
+getConfigWithPorts
+    :: (MonadLog m, MonadIO m, Configure cfg)
+    => String
+    -> m (cfg, Int, Int, UUID.UUID, Maybe AWS.Credentials)
+getConfigWithPorts name = getConfig' name $ (,,,,)
     <$> configure
     <*> envVarWithDefault "PORT" defaultPort
     <*> envVarWithDefault "EKGPORT" defaultEkgPort
     <*> envVar "LOGENTRIES_TOKEN"
+    <*> optionalAlt envAwsCredentials
 
 envConnectInfo :: ConfigParser ConnectInfo
 envConnectInfo = f
@@ -178,6 +184,11 @@ envConnectInfo = f
     <*> envVar "POSTGRES_PASS"
   where
     f connInfo password = connInfo { connectPassword = password }
+
+envAwsCredentials :: ConfigParser AWS.Credentials
+envAwsCredentials = AWS.FromKeys
+    <$> envVar "AWS_ACCESSKEY"
+    <*> envVar "AWS_SECRETKEY"
 
 -------------------------------------------------------------------------------
 -- Defaults
@@ -234,6 +245,16 @@ instance FromEnvVar Request where
 
 instance FromEnvVar BaseUrl where
     fromEnvVar s = fromEnvVar s >>= parseBaseUrl
+
+-------------------------------------------------------------------------------
+-- AWS
+-------------------------------------------------------------------------------
+
+instance FromEnvVar AWS.AccessKey where
+    fromEnvVar = fmap AWS.AccessKey . fromEnvVar
+
+instance FromEnvVar AWS.SecretKey where
+    fromEnvVar = fmap AWS.SecretKey . fromEnvVar
 
 -------------------------------------------------------------------------------
 -- FUM
