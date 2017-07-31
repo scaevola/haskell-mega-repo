@@ -10,13 +10,22 @@
     - If you didn't clone recursively, fetch the submodules with `git submodule update --init`
 2. Install native dependencies:
     - macOS:
-        - `brew install fftw`
+        - Install [haskell stack](https://docs.haskellstack.org/en/stable/install_and_upgrade/)
+        - `brew install fftw pkg-config`
+        - `stack setup`
+        - `stack install alex happy`
         - https://postgresapp.com/ and `source env-postgres-osx.sh`
     - Ubuntu: `apt-get install libfftw3-dev libpq-dev`
 3. Build and run *theme-app*
     - theme-app is a small app without external integrations.
     - `stack build --fast theme-app`
     - `LOGENTRIES_TOKEN=00000000-0000-0000-0000-000000000000 stack exec -- theme-app-server`
+
+## Building docker images
+
+`haskell-mega-repo-tool build-docker <app-name>`, for example
+`haskel-mega-repo-tool build-docker checklist`.
+If the tool instructs you to run some docker commands, then do it and re-run the build-docker command.
 
 ## Maintaining
 

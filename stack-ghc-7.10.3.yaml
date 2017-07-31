@@ -55,13 +55,16 @@ packages:
 extra-deps:
 - active-0.2.0.12
 - aeson-1.2.1.0
-- attoparsec-iso8601-1.0.0.0
 - aeson-extra-0.4.1.0
 - aeson-pretty-0.8.2
-- bifunctors-5.4.1
-- binary-orphans-0.1.7.0
+- amazonka-1.4.5
+- amazonka-cloudwatch-1.4.5
+- amazonka-core-1.4.5
+- attoparsec-iso8601-1.0.0.0
 - base-compat-0.9.3
 - base-orphans-0.6
+- bifunctors-5.4.1
+- binary-orphans-0.1.7.0
 - hashable-1.2.6.1
 - carray-0.1.6.8
 - bitarray-0.0.1.1
@@ -85,9 +88,10 @@ extra-deps:
 - haxl-0.5.1.0
 - http-api-data-0.3.7.1
 - http-client-0.5.4
-- intervals-0.8
 - http-client-tls-0.3.3
+- http-conduit-2.2.3.2
 - insert-ordered-containers-0.2.1.0
+- intervals-0.8
 - io-streams-haproxy-1.0.0.1
 - kan-extensions-5.0.1
 - lens-4.15.1
