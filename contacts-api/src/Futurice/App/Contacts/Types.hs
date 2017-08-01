@@ -17,7 +17,6 @@ import Futurice.Prelude
 import Futurice.App.Contacts.Types.Tri
 import Futurice.Generics
 import Futurice.IsMaybe
-import Data.Maybe (listToMaybe)
 import Data.Csv (ToField (..))
 
 import qualified FUM

@@ -66,7 +66,6 @@ import Control.Lens                         (LensLike)
 import Control.Monad.Catch                  (fromException, handleAll)
 import Data.Char                            (isAlpha)
 import Data.Constraint                      (Dict (..))
-import Data.Maybe                           (maybeToList)
 import Data.Swagger                         hiding (port)
 import Data.TDigest.Metrics                 (registerTDigest)
 import Data.Text.Encoding                   (decodeLatin1)
@@ -80,7 +79,6 @@ import Futurice.Lucid.Foundation            (vendorServer)
 import Futurice.Periocron
        (Job, defaultOptions, every, mkJob, spawnPeriocron)
 import Futurice.Prelude
-import GHC.Prim                             (coerce)
 import Log.Backend.Logentries               (withLogentriesLogger)
 import Network.Wai
        (Middleware, requestHeaders, responseLBS)
