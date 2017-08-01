@@ -48,6 +48,7 @@ data PostSmiley = PostSmiley
 
 data Res = Res
     { _resStatus :: !Text
+    , _resUnused :: !()
     }
   deriving (Show)
 

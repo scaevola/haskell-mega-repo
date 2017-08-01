@@ -310,10 +310,7 @@ class ToColumns a where
 
     columnNames :: Proxy a -> NP (K Text) (Columns a)
     default columnNames
-        :: ( '[xs] ~ SOP.Code a
-           , SOP.HasDatatypeInfo a
-           , SListI xs
-           )
+        :: (SOP.IsProductType a xs, SOP.HasDatatypeInfo a, SListI xs)
         => Proxy a
         -> NP (K Text) xs
     columnNames = sopRecordFieldNames
@@ -321,7 +318,7 @@ class ToColumns a where
     toColumns :: a -> [NP I (Columns a)]
     default toColumns
         :: ( code ~ Columns a
-           , '[code] ~ SOP.Code a
+           , SOP.IsProductType a code
            , SOP.Generic a
            )
         => a -> [NP I (Columns a)]

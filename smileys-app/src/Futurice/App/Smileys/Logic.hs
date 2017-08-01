@@ -65,7 +65,7 @@ postOwnSmileys
 postOwnSmileys ctx mfum req =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername ->
         withResource (ctxPostgresPool ctx) $ \conn -> do
-            let insertQuery = fromString $ unwords $
+            let insertQuery = fromString $ unwords
                  [ "INSERT INTO smileys.trail as c (entries, username, smiley, day)"
                  , "VALUES (?, ?, ?, ?) ON CONFLICT (username, day) DO UPDATE"
                  , "SET entries = EXCLUDED.entries, smiley = EXCLUDED.smiley"
@@ -77,4 +77,7 @@ postOwnSmileys ctx mfum req =
                   , _smileysDate     = _postSmileyDate req
                   , _smileysSmiley   = _postSmileySmiley req
                   }
-            pure $ Res { _resStatus = "OK" }
+            pure Res
+                { _resStatus = "OK"
+                , _resUnused = ()
+                }
