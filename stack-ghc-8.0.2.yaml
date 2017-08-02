@@ -23,6 +23,7 @@ packages:
 - futurice-pure-trans/
 - futurice-reports/
 - futurice-servant/
+- futurice-tribes/
 - github-proxy/
 - haxl-fxtra/
 - hours-api/

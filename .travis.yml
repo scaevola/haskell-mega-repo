@@ -51,6 +51,9 @@ before_install:
 - dpkg-buildflags --get CFLAGS
 
 install:
+# "Secret data"
+- cp futurice-tribes/tribes.sample.json futurice-tribes/tribes.json
+
 # Let's build in two steps, so `stack` won't consume too much memory!
 # First we build only-dependencies of futurice-prelude
 - JOB_CURR_TIME=$(date +%s)

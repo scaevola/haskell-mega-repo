@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.17.0.
+-- This file has been generated from package.yaml by hpack version 0.17.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -93,7 +93,6 @@ library
       Futurice.App.FUM.Types.Identifier
       Futurice.App.FUM.Types.Status
       Futurice.App.FUM.Types.World
-      Futurice.Generics.Enum
       Futurice.Lomake
       Futurice.MonadTrans
   default-language: Haskell2010
