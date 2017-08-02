@@ -2,21 +2,23 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TupleSections     #-}
 module Futurice.App.Checklist (defaultMain) where
 
-import Prelude ()
-import Futurice.Periocron
-import Futurice.Prelude
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
 import Data.Constraint           (Dict (..))
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
 import Data.Reflection           (give)
 import Futurice.Lucid.Foundation (HtmlPage)
+import Futurice.Periocron
+import Futurice.Prelude
+import Futurice.Postgres (queryQQ)
 import Futurice.Servant
 import Futurice.Stricter
+import Prelude ()
 import Servant
 import Servant.Chart             (Chart)
 
@@ -357,7 +359,11 @@ makeCtx' Config {..} logger _cache = do
         cfgMockUser
         emptyWorld
     cmds <- withResource (ctxPostgres ctx) $ \conn ->
-        Postgres.query_ conn "SELECT username, updated, cmddata FROM checklist2.commands ORDER BY cid;"
+        Postgres.query_ conn [queryQQ|
+            SELECT username, updated, cmddata
+            FROM checklist2.commands
+            ORDER BY cid;
+            |]
     let world0 = foldl' (\world (fumuser, now, cmd) -> applyCommand now fumuser cmd world) emptyWorld cmds
     atomically $ writeTVar (ctxWorld ctx) world0
 

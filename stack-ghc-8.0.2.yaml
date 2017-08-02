@@ -66,6 +66,7 @@ extra-deps:
 - Only-0.1
 - QuickCheck-2.10.0.1
 - quickcheck-instances-0.3.16
+- simple-sql-parser-0.4.2
 - text-short-0.1
 - these-0.7.4
 flags:
