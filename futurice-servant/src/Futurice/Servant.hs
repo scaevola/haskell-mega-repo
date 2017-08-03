@@ -74,7 +74,9 @@ import Futurice.Cache
        (CachePolicy (..), DynMapCache, cachedIO, genCachedIO)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
-import Futurice.EnvConfig                   (Configure, getConfigWithPorts)
+import Futurice.EnvConfig
+       (Configure, configure, envAwsCredentials, envVar, envVarWithDefault,
+       getConfig', optionalAlt)
 import Futurice.Lucid.Foundation            (vendorServer)
 import Futurice.Periocron
        (Job, defaultOptions, every, mkJob, spawnPeriocron)
@@ -238,7 +240,7 @@ futuriceServerMain'
 futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
     withStderrLogger $ \logger ->
     handleAll (handler logger) $ do
-        (cfg, p, ekgP, leToken, awsCreds) <- runLogT "futurice-servant" logger $ do
+        Cfg cfg p ekgP leToken _ awsCreds <- runLogT "futurice-servant" logger $ do
             logInfo_ $ "Hello, " <> t <> " is alive"
             getConfigWithPorts (envpfx ^. from packed)
 
@@ -382,3 +384,38 @@ instance HasLink api => HasLink (SSOUser :> api) where
 
 instance HasSwagger api => HasSwagger (SSOUser :> api) where
     toSwagger _ = toSwagger (Proxy :: Proxy api)
+
+-------------------------------------------------------------------------------
+-- Config
+-------------------------------------------------------------------------------
+
+data Cfg cfg = Cfg
+    { _cfgInner            :: !cfg
+    , _cfgPort             :: !Int
+    , _cfgEkgPort          :: !Int
+    , _cfgLogentriesToken  :: !UUID.UUID -- ^ to be removed
+    , _cfgCloudWatchSuffix :: !(Maybe Text)
+    , _cfgCloudWatchCreds  :: !(Maybe AWS.Credentials)
+    }
+
+getConfigWithPorts
+    :: (MonadLog m, MonadIO m, Configure cfg)
+    => String
+    -> m (Cfg cfg)
+getConfigWithPorts n = getConfig' n $ Cfg
+    <$> configure
+    <*> envVarWithDefault "PORT" defaultPort
+    <*> envVarWithDefault "EKGPORT" defaultEkgPort
+    <*> envVar "LOGENTRIES_TOKEN"
+    <*> optionalAlt (envVar "CLOUDWATCH_SUFFIX")
+    <*> optionalAlt (envAwsCredentials "CLOUDWATCH_")
+
+-------------------------------------------------------------------------------
+-- Defaults
+-------------------------------------------------------------------------------
+
+defaultPort :: Int
+defaultPort = 8000
+
+defaultEkgPort :: Int
+defaultEkgPort = 9000
