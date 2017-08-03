@@ -449,7 +449,6 @@ data ValidationMessage
     | IbanInvalid
     | LoginInvalid Text
     | EmploymentTypeMissing
-    -- | ExternalEndDateMissing
     | FixedTermEndDateMissing
   deriving (Eq, Ord, Show, Typeable, Generic)
 
@@ -506,7 +505,6 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , costCenterValidate
         , ibanValidate
         , loginValidate
-        -- , extEndDateMissing
         , fixedEndDateMissing
         , attributeMissing "email" EmailMissing
         , attributeMissing "employment_type" EmploymentTypeMissing
@@ -586,13 +584,6 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             case match loginRegexp login of
                 Nothing -> tell [LoginInvalid login]
                 Just _  -> pure ()
-
-        -- extEndDateMissing :: WriterT [ValidationMessage] Parser()
-        -- extEndDateMissing = do
-        --     eType <- lift (parseAttribute obj "employment_type")
-        --     case employmentTypeFromText eType of
-        --         Just External -> checkEndDate ExternalEndDateMissing
-        --         _             -> pure ()
 
         fixedEndDateMissing :: WriterT [ValidationMessage] Parser ()
         fixedEndDateMissing = do
