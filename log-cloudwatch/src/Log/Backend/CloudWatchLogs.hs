@@ -11,10 +11,13 @@
 --
 module Log.Backend.CloudWatchLogs (withCloudWatchLogger) where
 
+import Control.Concurrent     (threadDelay)
 import Control.Concurrent.STM
        (TVar, atomically, newTVarIO, readTVarIO, writeTVar)
-import Control.Lens           (filtered, folded, view, (&), (?~), (^.), _Just)
+import Control.Lens
+       (filtered, firstOf, folded, view, (&), (?~), (^.), _Just)
 import Control.Monad.IO.Class (liftIO)
+import Data.Foldable          (for_)
 import Data.List.Compat       (sortOn)
 import Data.List.NonEmpty     (NonEmpty (..))
 import Data.Text              (Text)
@@ -40,37 +43,33 @@ withCloudWatchLogger
     -> IO r
 withCloudWatchLogger env group stream act = do
     -- TODO: Token handling is ugly as ...
-    tokenTVar <- newTVarIO ""
+    token <- getSequenceToken env group stream >>= maybe invalidToken pure
+    tokenTVar <- newTVarIO token
     logger <- Log.mkBulkLogger "cloudwatch" (write tokenTVar) (pure ())
     Log.withLogger logger act
   where
+    invalidToken = fail $ "Invalid group + stream? " ++ show (group, stream)
+
     write :: TVar Text -> [Log.LogMessage] -> IO ()
     write _         []     = pure ()
     write tokenTVar (m:ms) = handle retry $ AWS.runResourceT $ AWS.runAWS env $ do
-        token' <- liftIO $ readTVarIO tokenTVar
-        token <- case token' of
-            _ | token' /= mempty -> return token'
-              | otherwise -> do
-                -- if token is empty...
-                -- we rely on the fact mempty @Text == "", that's ugly
-                let dls = AWS.describeLogStreams group
-                res <- AWS.send dls
-                return $ res ^. AWS.dlsrsLogStreams
-                    . folded
-                    . filtered (\s -> s ^. AWS.lsLogStreamName == Just stream)
-                    . AWS.lsUploadSequenceToken
-                    . _Just
-
-        let ple = AWS.putLogEvents group stream (s $ mkEvent <$>  m :| ms)
+        token <- liftIO $ readTVarIO tokenTVar
+        let ple = AWS.putLogEvents group stream (sortNE $ mkEvent <$>  m :| ms)
               & AWS.pleSequenceToken ?~ token
         res <- AWS.send ple
-        liftIO $ atomically $
-            writeTVar tokenTVar (res ^. AWS.plersNextSequenceToken . _Just)
-
+        -- write next token
+        for_ (res ^. AWS.plersNextSequenceToken) $
+            liftIO . atomically . writeTVar tokenTVar
       where
         retry :: SomeException -> IO ()
         retry ex = do
-            hPutStrLn stderr $ "CloudWatch: unexpecter error: " ++ show ex
+            hPutStrLn stderr $ "CloudWatch: unexpected error: " ++ show ex
+            -- wait 10 sec
+            threadDelay $ 10 * 1000000
+            -- and try to get new token
+            newToken <- getSequenceToken env group stream
+            for_ newToken $ atomically . writeTVar tokenTVar
+            write tokenTVar (m:ms)
 
     mkEvent :: Log.LogMessage -> AWS.InputLogEvent
     mkEvent lm = AWS.inputLogEvent stamp msg
@@ -79,6 +78,23 @@ withCloudWatchLogger env group stream act = do
         stamp = truncate $ max 0 $ (1000 *) $ utcTimeToPOSIXSeconds $ Log.lmTime lm
         msg = Log.showLogMessage Nothing lm
 
-    s (x :| xs) = case sortOn (view AWS.ileTimestamp) (x : xs) of
+    sortNE (x :| xs) = case sortOn (view AWS.ileTimestamp) (x : xs) of
         (y : ys) -> y :| ys
         []       -> error "unexpected"
+
+getSequenceToken :: AWS.Env -> Text -> Text -> IO (Maybe Text)
+getSequenceToken env group stream = AWS.runResourceT $ AWS.runAWS env $
+    getSequenceToken' group stream
+
+getSequenceToken' :: AWS.MonadAWS m => Text -> Text -> m (Maybe Text)
+getSequenceToken' group stream = do
+    let dls = AWS.describeLogStreams group
+    res <- AWS.send dls
+    return $ firstOf sequenceTokens res
+  where
+    sequenceTokens
+        = AWS.dlsrsLogStreams
+        . folded
+        . filtered (\s -> s ^. AWS.lsLogStreamName == Just stream)
+        . AWS.lsUploadSequenceToken
+        . _Just
