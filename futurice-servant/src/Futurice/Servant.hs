@@ -82,7 +82,7 @@ import Futurice.Lucid.Foundation            (vendorServer)
 import Futurice.Periocron
        (Job, defaultOptions, every, mkJob, spawnPeriocron)
 import Futurice.Prelude
-import Log.Backend.Logentries               (withLogentriesLogger)
+import Log.Backend.CloudWatchLogs           (withCloudWatchLogger)
 import Network.Wai
        (Middleware, requestHeaders, responseLBS)
 import Network.Wai.Metrics                  (metrics, registerWaiMetrics)
@@ -100,7 +100,6 @@ import System.Remote.Monitoring             (forkServer, serverMetricStore)
 
 import qualified Data.Aeson               as Aeson
 import qualified Data.Text                as T
-import qualified Data.UUID.Types          as UUID
 import qualified FUM
 import qualified Futurice.DynMap          as DynMap
 import qualified GHC.Stats                as Stats
@@ -246,16 +245,23 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
             getConfigWithPorts (envpfx ^. from packed)
 
         cache       <- newDynMapCache
-        let leToken = _cfgLogentriesToken cfg
 
-        let main' = main cfg cache
+        let service = t <> maybe "" (" " <>) (_cfgCloudWatchSuffix cfg)
 
-        if UUID.null leToken
-            then main' logger
-            else withLogentriesLogger leToken $ \leLogger -> main' (logger <> leLogger)
+        menv <- for (_cfgCloudWatchCreds cfg) $ \awsCreds -> do
+            env' <- AWS.newEnv awsCreds
+            return $ env'
+                & AWS.envRegion .~ AWS.Frankfurt  -- TODO: make configurable?
+
+        let main' = main cfg menv service cache
+
+        case menv of
+            Nothing -> main' logger
+            Just env ->
+                withCloudWatchLogger env "Haskell" service $ \leLogger -> main' (logger <> leLogger)
 
   where
-    main (Cfg cfg p ekgP _ awsSfx mawsCreds) cache logger = do
+    main (Cfg cfg p ekgP _ _) menv service cache logger = do
         (ctx, jobs)    <- makeCtx cfg logger cache
         -- brings 'HasServer' instance into a scope
         Dict           <- pure $ makeDict ctx
@@ -269,7 +275,6 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
         -- TODO: we register for all, make configurable
         registerTDigest "pmreq" [0.5, 0.9, 0.99] store
 
-
         statsEnabled <-
 #if MIN_VERSION_base(4,10,0)
             Stats.getRTSStatsEnabled
@@ -279,8 +284,8 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
         mutgcTVar <- newTVarIO (MutGC 0 0)
         let mcloudwatchJob = do
                 guard statsEnabled
-                awsCreds <- mawsCreds
-                pure (cloudwatchJob mutgcTVar logger awsSfx awsCreds)
+                env <- menv
+                pure (cloudwatchJob mutgcTVar logger env service)
 
         let jobs' = mkJob "stats" (ekgJob logger store) (every $ 5 * 60)
                   : maybeToList (mkJob "cloudwatch" <$> mcloudwatchJob <*> pure (every 60))
@@ -298,8 +303,8 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
             $ middleware ctx
             $ serve proxyApi' server'
 
-    cloudwatchJob :: TVar MutGC -> Logger -> Maybe Text -> AWS.Credentials -> IO ()
-    cloudwatchJob mutgcTVar logger awsSfx awsCreds = runLogT "cloudwatch" logger $ do
+    cloudwatchJob :: TVar MutGC -> Logger -> AWS.Env -> Text -> IO ()
+    cloudwatchJob mutgcTVar logger env service = runLogT "cloudwatch" logger $ do
 #if MIN_VERSION_base(4,10,0)
         liveBytes <- Stats.gcdetails_live_bytes . Stats.gc <$> liftIO Stats.getRTSStats
 #else
@@ -323,10 +328,6 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
                 | otherwise = 0
 
         -- TODO: create outside the job?
-        env' <- AWS.newEnv awsCreds
-        let env = env'
-                & AWS.envRegion .~ AWS.Frankfurt  -- TODO: make configurable?
-        let service = t <> maybe "" (" " <>) awsSfx
 
         rs <- liftIO $ AWS.runResourceT $ AWS.runAWS env $ do
 
@@ -429,7 +430,6 @@ data Cfg cfg = Cfg
     { _cfgInner            :: !cfg
     , _cfgPort             :: !Int
     , _cfgEkgPort          :: !Int
-    , _cfgLogentriesToken  :: !UUID.UUID -- ^ to be removed
     , _cfgCloudWatchSuffix :: !(Maybe Text)
     , _cfgCloudWatchCreds  :: !(Maybe AWS.Credentials)
     }
@@ -443,7 +443,6 @@ getConfigWithPorts n = getConfig' n $ Cfg
     <$> configure
     <*> envVarWithDefault "PORT" defaultPort
     <*> envVarWithDefault "EKGPORT" defaultEkgPort
-    <*> envVar "LOGENTRIES_TOKEN"
     <*> optionalAlt (envVar "CLOUDWATCH_SUFFIX")
     <*> optionalAlt (envAwsCredentials "CLOUDWATCH_")
 
