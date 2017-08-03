@@ -33,10 +33,11 @@ import Futurice.Tribe
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
-import Personio.Types.EmployeeEmploymentType (EmploymentType (..))
-import Personio.Types.EmployeeStatus         (Status (..))
 import Personio.Types.EmployeeContractType
        (ContractType (..), contractTypeFromText)
+import Personio.Types.EmployeeEmploymentType
+       (EmploymentType (..), employmentTypeFromText)
+import Personio.Types.EmployeeStatus         (Status (..))
 
 import qualified Chat.Flowdock.REST            as FD
 import qualified Data.HashMap.Strict           as HM
@@ -450,6 +451,7 @@ data ValidationMessage
     | LoginInvalid Text
     | EmploymentTypeMissing
     | FixedTermEndDateMissing
+    | PermanentExternal
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -506,6 +508,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , ibanValidate
         , loginValidate
         , fixedEndDateMissing
+        , externalContractValidate
         , attributeMissing "email" EmailMissing
         , attributeMissing "employment_type" EmploymentTypeMissing
         , attributeObjectMissing "department" TribeMissing
@@ -600,6 +603,18 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                     String d -> checkAttributeName d err
                     _        -> pure ()
 
+        externalContractValidate :: WriterT [ValidationMessage] Parser ()
+        externalContractValidate = do
+            cType <- lift (parseDynamicAttribute obj "Contract type")
+            eType <- lift (parseAttribute obj "employment_type")
+            case f cType eType of
+                (Just PermanentAllIn, Just External) -> tell [PermanentExternal]
+                (Just Permanent, Just External)      -> tell [PermanentExternal]
+                _                                    -> pure ()
+          where
+            f :: Text -> Text -> (Maybe ContractType, Maybe EmploymentType)
+            f conT eTypeT = (contractTypeFromText conT
+                            , employmentTypeFromText eTypeT)
 
 -- | Validate IBAN.
 --

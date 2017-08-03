@@ -37,6 +37,9 @@ instance FromJSON ContractType where
         maybe (fail $ "invalid Contract type" <> t ^. unpacked) pure
         $ t ^? _ContractType
 
+_ContractType :: Prism' Text ContractType
+_ContractType = prism' contractTypeToText contractTypeFromText
+
 contractTypeFromText :: Text -> Maybe ContractType
 contractTypeFromText t = Map.lookup (T.toLower t) m
   where
