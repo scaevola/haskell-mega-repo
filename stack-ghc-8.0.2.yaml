@@ -27,7 +27,7 @@ packages:
 - github-proxy/
 - haxl-fxtra/
 - hours-api/
-- log-logentries
+- log-cloudwatch/
 - mega-repo-tool/
 - monad-http/
 - optparse-sop/

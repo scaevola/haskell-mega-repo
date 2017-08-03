@@ -25,7 +25,7 @@ packages:
 - github-proxy/
 - haxl-fxtra/
 - hours-api/
-- log-logentries
+- log-cloudwatch/
 - mega-repo-tool/
 - monad-http/
 - optparse-sop/
@@ -60,6 +60,7 @@ extra-deps:
 - aeson-pretty-0.8.2
 - amazonka-1.4.5
 - amazonka-cloudwatch-1.4.5
+- amazonka-cloudwatch-logs-1.4.5
 - amazonka-core-1.4.5
 - attoparsec-iso8601-1.0.0.0
 - base-compat-0.9.3

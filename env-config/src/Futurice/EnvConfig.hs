@@ -5,7 +5,6 @@
 module Futurice.EnvConfig (
     Configure (..),
     getConfig,
-    getConfigWithPorts,
     getConfig',
     envVar,
     optionalEnvVar,
@@ -167,17 +166,6 @@ optionalEnvVar name = Just <$> envVar name <!> pure Nothing
 envVarWithDefault :: FromEnvVar a => String -> a -> ConfigParser a
 envVarWithDefault name d = envVar name <!> pure d
 
-getConfigWithPorts
-    :: (MonadLog m, MonadIO m, Configure cfg)
-    => String
-    -> m (cfg, Int, Int, UUID.UUID, Maybe AWS.Credentials)
-getConfigWithPorts name = getConfig' name $ (,,,,)
-    <$> configure
-    <*> envVarWithDefault "PORT" defaultPort
-    <*> envVarWithDefault "EKGPORT" defaultEkgPort
-    <*> envVar "LOGENTRIES_TOKEN"
-    <*> optionalAlt envAwsCredentials
-
 envConnectInfo :: ConfigParser ConnectInfo
 envConnectInfo = f
     <$> envVar "POSTGRES_URL"
@@ -185,20 +173,10 @@ envConnectInfo = f
   where
     f connInfo password = connInfo { connectPassword = password }
 
-envAwsCredentials :: ConfigParser AWS.Credentials
-envAwsCredentials = AWS.FromKeys
-    <$> envVar "AWS_ACCESSKEY"
-    <*> envVar "AWS_SECRETKEY"
-
--------------------------------------------------------------------------------
--- Defaults
--------------------------------------------------------------------------------
-
-defaultPort :: Int
-defaultPort = 8000
-
-defaultEkgPort :: Int
-defaultEkgPort = 9000
+envAwsCredentials :: String -> ConfigParser AWS.Credentials
+envAwsCredentials pfx = AWS.FromKeys
+    <$> envVar (pfx ++ "ACCESSKEY")
+    <*> envVar (pfx ++ "SECRETKEY")
 
 -------------------------------------------------------------------------------
 -- Instances

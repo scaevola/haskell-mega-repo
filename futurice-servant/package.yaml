@@ -27,6 +27,7 @@ library:
     - aeson
     - amazonka
     - amazonka-cloudwatch
+    - amazonka-cloudwatch-logs
     - base-compat
     - constraints
     - dynmap-cache
@@ -43,7 +44,7 @@ library:
     - gitrev >=1.2.0
     - http-types
     - lens
-    - log-logentries
+    - log-cloudwatch
     - periocron
     - servant ==0.11.*
     - servant-cassava
