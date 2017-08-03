@@ -11,3 +11,9 @@ CREATE TABLE smileys.trail (
 -- primary key creates an index,
 -- but let's have this way around too.
 CREATE INDEX ON smileys.trail (day, username);
+
+ALTER TABLE smileys.trail
+  ADD COLUMN created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT current_timestamp;
+
+-- Future is a lie!
+-- UPDATE smileys.trail SET created = LEAST(day, current_timestamp);
