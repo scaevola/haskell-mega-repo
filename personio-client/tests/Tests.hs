@@ -10,6 +10,7 @@ import Prelude ()
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
+import Data.Aeson.Lens (key, _String)
 
 import Personio
 import Personio.Types.EmployeeEmploymentType
@@ -48,7 +49,7 @@ examples :: TestTree
 examples = testGroup "HUnit"
     [ testCase "parsePersonioEmployee" $ do
         e <- either fail pure $
-            parseEither parsePersonioEmployee correctEmployeeValue 
+            parseEither parsePersonioEmployee correctEmployeeValue
         "Teemu" @=? e ^. employeeFirst
         "Teekkari" @=? e ^. employeeLast
         Just $(mkDay "2017-05-29") @=? e ^. employeeHireDate
@@ -72,10 +73,12 @@ examples = testGroup "HUnit"
 
 validations :: TestTree
 validations = testGroup "Validations"
-    [ testValidation
+    [ testValidationV
         "GitHub"
-        $(makeRelativeToProject "fixtures/employee-i-github.json" >>= embedFile)
-        $ GithubInvalid "http://github.com/gitMastur"
+        (GithubInvalid "http://github.com/gitMastur")
+        $ correctEmployeeValue
+            & key "attributes" . key "dynamic_72913" . key "value" . _String
+                .~ "http://github.com/gitMastur"
     , testValidation
         "email"
         $(makeRelativeToProject "fixtures/employee-m-email.json" >>= embedFile)
@@ -118,9 +121,14 @@ validations = testGroup "Validations"
         ExternalEndDateMissing
     ]
   where
+    -- TODO: remove me
     testValidation name source warning = testCase name $ do
         contents <- decodeStrict source
         ev <- either fail pure $ parseEither validatePersonioEmployee contents
+        assertBool (show ev) $ warning `elem` ev ^. evMessages
+
+    testValidationV name warning val = testCase name $ do
+        ev <- either fail pure $ parseEither validatePersonioEmployee val
         assertBool (show ev) $ warning `elem` ev ^. evMessages
 
 -------------------------------------------------------------------------------
