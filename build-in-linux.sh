@@ -32,7 +32,7 @@ else
 fi
 
 # --allow-different-user is needed as we build as root inside docker
-stack --no-terminal --work-dir $WORK_DIR update
+# stack --no-terminal --work-dir $WORK_DIR update
 stack --no-terminal --work-dir $WORK_DIR build -j3 --pedantic --allow-different-user --only-snapshot
 stack --no-terminal --work-dir $WORK_DIR build -j3 --pedantic --allow-different-user
 

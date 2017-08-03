@@ -15,9 +15,8 @@ import Control.Concurrent     (threadDelay)
 import Control.Concurrent.STM
        (TVar, atomically, newTVarIO, readTVarIO, writeTVar)
 import Control.Lens
-       (filtered, firstOf, folded, view, (&), (?~), (^.), _Just)
+       (filtered, firstOf, folded, view, (&), (.~), (^.), _Just)
 import Control.Monad.IO.Class (liftIO)
-import Data.Foldable          (for_)
 import Data.List.Compat       (sortOn)
 import Data.List.NonEmpty     (NonEmpty (..))
 import Data.Text              (Text)
@@ -43,23 +42,20 @@ withCloudWatchLogger
     -> IO r
 withCloudWatchLogger env group stream act = do
     -- TODO: Token handling is ugly as ...
-    token <- getSequenceToken env group stream >>= maybe invalidToken pure
+    token <- getSequenceToken env group stream
     tokenTVar <- newTVarIO token
     logger <- Log.mkBulkLogger "cloudwatch" (write tokenTVar) (pure ())
     Log.withLogger logger act
   where
-    invalidToken = fail $ "Invalid group + stream? " ++ show (group, stream)
-
-    write :: TVar Text -> [Log.LogMessage] -> IO ()
+    write :: TVar (Maybe Text) -> [Log.LogMessage] -> IO ()
     write _         []     = pure ()
     write tokenTVar (m:ms) = handle retry $ AWS.runResourceT $ AWS.runAWS env $ do
         token <- liftIO $ readTVarIO tokenTVar
         let ple = AWS.putLogEvents group stream (sortNE $ mkEvent <$>  m :| ms)
-              & AWS.pleSequenceToken ?~ token
+              & AWS.pleSequenceToken .~ token
         res <- AWS.send ple
         -- write next token
-        for_ (res ^. AWS.plersNextSequenceToken) $
-            liftIO . atomically . writeTVar tokenTVar
+        liftIO . atomically . writeTVar tokenTVar $ res ^. AWS.plersNextSequenceToken
       where
         retry :: SomeException -> IO ()
         retry ex = do
@@ -68,7 +64,7 @@ withCloudWatchLogger env group stream act = do
             threadDelay $ 10 * 1000000
             -- and try to get new token
             newToken <- getSequenceToken env group stream
-            for_ newToken $ atomically . writeTVar tokenTVar
+            atomically . writeTVar tokenTVar $ newToken
             write tokenTVar (m:ms)
 
     mkEvent :: Log.LogMessage -> AWS.InputLogEvent
