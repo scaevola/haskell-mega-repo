@@ -27,6 +27,7 @@ dependencies:
   - containers
   - futurice-prelude
   - lucid
+  - QuickCheck
   - swagger2
   - template-haskell
   - text

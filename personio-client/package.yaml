@@ -22,11 +22,12 @@ dependencies:
   - containers
   - env-config
   - futurice-prelude
+  - futurice-tribes
   - http-api-data
-  - lens
-  - mtl
   - http-client
+  - lens
   - monad-http
+  - mtl
   - regex-applicative
   - regex-applicative-text
   - swagger2
@@ -43,7 +44,8 @@ tests:
     source-dirs: tests/
     dependencies:
       - file-embed
+      - lens-aeson
       - personio-client
       - tasty
-      - tasty-quickcheck
       - tasty-hunit
+      - tasty-quickcheck

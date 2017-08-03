@@ -3,8 +3,9 @@
 {-# LANGUAGE TemplateHaskell   #-}
 import Data.Aeson.Compat
 import Data.Aeson.Types      (parseEither)
-import Data.FileEmbed
 import Futurice.Prelude
+import Futurice.Tribe        (mkTribe)
+import Futurice.Office (Office (..))
 import Prelude ()
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -39,11 +40,15 @@ employeeAesonRoundtrip e = lhs === rhs
 -- Examples
 -------------------------------------------------------------------------------
 
+correctEmployeeValue :: Value
+correctEmployeeValue =
+    $(makeRelativeToProject "fixtures/employee.json" >>= embedFromJSON (Proxy :: Proxy Value))
+
 examples :: TestTree
 examples = testGroup "HUnit"
     [ testCase "parsePersonioEmployee" $ do
-        contents <- contentsM
-        e <- either fail pure $ parseEither parsePersonioEmployee contents
+        e <- either fail pure $
+            parseEither parsePersonioEmployee correctEmployeeValue 
         "Teemu" @=? e ^. employeeFirst
         "Teekkari" @=? e ^. employeeLast
         Just $(mkDay "2017-05-29") @=? e ^. employeeHireDate
@@ -52,16 +57,14 @@ examples = testGroup "HUnit"
         "teemu.teekkari@example.com" @=? e ^. employeeEmail
         "+123 5678910" @=? e ^. employeePhone
         Just (EmployeeId 1337) @=? e ^. employeeSupervisorId
-        Just "A Tribe" @=? e ^. employeeTribe
-        Just "Helsinki" @=? e ^. employeeOffice
+        Just $(mkTribe "Tammerforce") @=? e ^. employeeTribe
+        Just OffTampere @=? e ^. employeeOffice
         Just "gitMastur" @=? e ^. employeeGithub
         Active @=? e ^. employeeStatus
         Just 0 @=? e ^. employeeHRNumber
         Internal @=? e ^. employeeEmploymentType
     , validations
     ]
-  where
-    contentsM = decodeStrict $(makeRelativeToProject "fixtures/employee.json" >>= embedFile)
 
 -------------------------------------------------------------------------------
 -- Validations
