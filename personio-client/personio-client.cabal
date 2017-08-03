@@ -57,6 +57,7 @@ library
       Personio.Eval
       Personio.Request
       Personio.Types
+      Personio.Types.EmployeeContractType
       Personio.Types.EmployeeEmploymentType
       Personio.Types.EmployeeStatus
   default-language: Haskell2010

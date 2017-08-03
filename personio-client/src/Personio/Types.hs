@@ -33,9 +33,10 @@ import Futurice.Tribe
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
-import Personio.Types.EmployeeEmploymentType
-       (EmploymentType (..), employmentTypeFromText)
+import Personio.Types.EmployeeEmploymentType (EmploymentType (..))
 import Personio.Types.EmployeeStatus         (Status (..))
+import Personio.Types.EmployeeContractType
+       (ContractType (..), contractTypeFromText)
 
 import qualified Chat.Flowdock.REST            as FD
 import qualified Data.HashMap.Strict           as HM
@@ -448,7 +449,8 @@ data ValidationMessage
     | IbanInvalid
     | LoginInvalid Text
     | EmploymentTypeMissing
-    | ExternalEndDateMissing
+    -- | ExternalEndDateMissing
+    | FixedTermEndDateMissing
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -504,7 +506,8 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , costCenterValidate
         , ibanValidate
         , loginValidate
-        , extEndDateMissing
+        -- , extEndDateMissing
+        , fixedEndDateMissing
         , attributeMissing "email" EmailMissing
         , attributeMissing "employment_type" EmploymentTypeMissing
         , attributeObjectMissing "department" TribeMissing
@@ -584,19 +587,28 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                 Nothing -> tell [LoginInvalid login]
                 Just _  -> pure ()
 
-        extEndDateMissing :: WriterT [ValidationMessage] Parser()
-        extEndDateMissing = do
-            eType <- lift (parseAttribute obj "employment_type")
-            case employmentTypeFromText eType of
-                Just External -> checkEndDate
-                _             -> pure ()
+        -- extEndDateMissing :: WriterT [ValidationMessage] Parser()
+        -- extEndDateMissing = do
+        --     eType <- lift (parseAttribute obj "employment_type")
+        --     case employmentTypeFromText eType of
+        --         Just External -> checkEndDate ExternalEndDateMissing
+        --         _             -> pure ()
+
+        fixedEndDateMissing :: WriterT [ValidationMessage] Parser ()
+        fixedEndDateMissing = do
+            cType <- lift (parseDynamicAttribute obj "Contract type")
+            case contractTypeFromText cType of
+                Just FixedTerm -> checkEndDate FixedTermEndDateMissing
+                Just _         -> pure ()
+                Nothing        -> lift (typeMismatch "Contract type" (String cType))
           where
-            checkEndDate = do
-              eDate <- lift (parseAttribute obj "contract_end_date")
-              case eDate of
-                  Null     -> tell [ExternalEndDateMissing]
-                  String d -> checkAttributeName d ExternalEndDateMissing
-                  _        -> pure ()
+              checkEndDate err = do
+                eDate <- lift (parseAttribute obj "contract_end_date")
+                case eDate of
+                    Null     -> tell [err]
+                    String d -> checkAttributeName d err
+                    _        -> pure ()
+
 
 -- | Validate IBAN.
 --
