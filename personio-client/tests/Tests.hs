@@ -3,12 +3,14 @@
 {-# LANGUAGE TemplateHaskell   #-}
 import Data.Aeson.Compat
 import Data.Aeson.Types      (parseEither)
-import Data.FileEmbed
 import Futurice.Prelude
+import Futurice.Tribe        (mkTribe)
+import Futurice.Office (Office (..))
 import Prelude ()
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
+import Data.Aeson.Lens (key, _String)
 
 import Personio
 import Personio.Types.EmployeeEmploymentType
@@ -39,11 +41,15 @@ employeeAesonRoundtrip e = lhs === rhs
 -- Examples
 -------------------------------------------------------------------------------
 
+correctEmployeeValue :: Value
+correctEmployeeValue =
+    $(makeRelativeToProject "fixtures/employee.json" >>= embedFromJSON (Proxy :: Proxy Value))
+
 examples :: TestTree
 examples = testGroup "HUnit"
     [ testCase "parsePersonioEmployee" $ do
-        contents <- contentsM
-        e <- either fail pure $ parseEither parsePersonioEmployee contents
+        e <- either fail pure $
+            parseEither parsePersonioEmployee correctEmployeeValue
         "Teemu" @=? e ^. employeeFirst
         "Teekkari" @=? e ^. employeeLast
         Just $(mkDay "2017-05-29") @=? e ^. employeeHireDate
@@ -52,16 +58,14 @@ examples = testGroup "HUnit"
         "teemu.teekkari@example.com" @=? e ^. employeeEmail
         "+123 5678910" @=? e ^. employeePhone
         Just (EmployeeId 1337) @=? e ^. employeeSupervisorId
-        Just "A Tribe" @=? e ^. employeeTribe
-        Just "Helsinki" @=? e ^. employeeOffice
+        Just $(mkTribe "Tammerforce") @=? e ^. employeeTribe
+        Just OffTampere @=? e ^. employeeOffice
         Just "gitMastur" @=? e ^. employeeGithub
         Active @=? e ^. employeeStatus
         Just 0 @=? e ^. employeeHRNumber
         Internal @=? e ^. employeeEmploymentType
     , validations
     ]
-  where
-    contentsM = decodeStrict $(makeRelativeToProject "fixtures/employee.json" >>= embedFile)
 
 -------------------------------------------------------------------------------
 -- Validations
@@ -69,10 +73,12 @@ examples = testGroup "HUnit"
 
 validations :: TestTree
 validations = testGroup "Validations"
-    [ testValidation
+    [ testValidationV
         "GitHub"
-        $(makeRelativeToProject "fixtures/employee-i-github.json" >>= embedFile)
-        $ GithubInvalid "http://github.com/gitMastur"
+        (GithubInvalid "http://github.com/gitMastur")
+        $ correctEmployeeValue
+            & key "attributes" . key "dynamic_72913" . key "value" . _String
+                .~ "http://github.com/gitMastur"
     , testValidation
         "email"
         $(makeRelativeToProject "fixtures/employee-m-email.json" >>= embedFile)
@@ -115,9 +121,14 @@ validations = testGroup "Validations"
         ExternalEndDateMissing
     ]
   where
+    -- TODO: remove me
     testValidation name source warning = testCase name $ do
         contents <- decodeStrict source
         ev <- either fail pure $ parseEither validatePersonioEmployee contents
+        assertBool (show ev) $ warning `elem` ev ^. evMessages
+
+    testValidationV name warning val = testCase name $ do
+        ev <- either fail pure $ parseEither validatePersonioEmployee val
         assertBool (show ev) $ warning `elem` ev ^. evMessages
 
 -------------------------------------------------------------------------------

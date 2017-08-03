@@ -17,7 +17,7 @@ data TribeInfo = TribeInfo
 instance FromJSON TribeInfo where
     parseJSON = withObject "TribeInfo" $ \obj -> TribeInfo
         <$> obj .: "name"
-        <*> obj .: "offices"
+        <*> obj .:? "offices" .!= []
         <*> obj .:? "aliases" .!= []
 
 -- TODO: remove when we drop support for GHC-7.10

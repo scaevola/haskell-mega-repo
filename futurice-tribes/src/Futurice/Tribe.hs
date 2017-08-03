@@ -2,6 +2,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.Tribe (
     Tribe,
+    mkTribe,
     tribeToText,
     tribeFromText,
     _Tribe,
@@ -9,20 +10,28 @@ module Futurice.Tribe (
     ) where
 
 import Futurice.Generics
-import Lucid (ToHtml (..))
 import Futurice.Office
 import Futurice.Prelude
 import Futurice.Tribe.Internal
+import Language.Haskell.TH     (ExpQ)
+import Lucid                   (ToHtml (..))
 import Prelude ()
 
-import qualified Data.Aeson.Compat    as Aeson
-import qualified Data.Map             as Map
-import qualified Data.Swagger         as Swagger
-import qualified Data.Text            as T
-import qualified Data.Vector          as V
+import qualified Data.Aeson.Compat as Aeson
+import qualified Data.Map          as Map
+import qualified Data.Swagger      as Swagger
+import qualified Data.Text         as T
+import qualified Data.Vector       as V
+import qualified Test.QuickCheck   as QC
 
 -- | Tribe.
 newtype Tribe = Tribe Int
+  deriving (Eq, Ord)
+
+deriveLift ''Tribe
+
+instance Show Tribe where
+    showsPrec d t = showsPrec d (tribeToText t)
 
 -------------------------------------------------------------------------------
 -- Magic
@@ -44,6 +53,18 @@ tribeLookup
     $ toList tribeInfos
   where
     f (i, ti) = [ (T.toLower k, (i, ti)) | k <- tiName ti : tiAliases ti ]
+
+-------------------------------------------------------------------------------
+-- Template Haskell
+-------------------------------------------------------------------------------
+
+-- | create tribe compile time.
+--
+-- /Note:/ use only in tests, do not hardcode tribes!
+mkTribe :: String -> ExpQ
+mkTribe n
+    | Just t <- tribeFromText (n ^. packed) = [| t |]
+    | otherwise = fail $ "Invalid tribe name: " ++ n
 
 -------------------------------------------------------------------------------
 -- Functions
@@ -79,6 +100,9 @@ _Tribe = prism' tribeToText tribeFromText
 
 instance NFData Tribe where
     rnf (Tribe i) = rnf i
+
+instance Arbitrary Tribe where
+    arbitrary = QC.elements [ Tribe i | i <- [0 .. V.length tribeInfos - 1] ]
 
 instance ToHtml Tribe where
     toHtmlRaw = toHtml

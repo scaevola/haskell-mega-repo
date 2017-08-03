@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.17.0.
+-- This file has been generated from package.yaml by hpack version 0.17.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -36,11 +36,12 @@ library
     , containers
     , env-config
     , futurice-prelude
+    , futurice-tribes
     , http-api-data
-    , lens
-    , mtl
     , http-client
+    , lens
     , monad-http
+    , mtl
     , regex-applicative
     , regex-applicative-text
     , swagger2
@@ -71,11 +72,12 @@ test-suite unit-tests
     , containers
     , env-config
     , futurice-prelude
+    , futurice-tribes
     , http-api-data
-    , lens
-    , mtl
     , http-client
+    , lens
     , monad-http
+    , mtl
     , regex-applicative
     , regex-applicative-text
     , swagger2
@@ -83,8 +85,9 @@ test-suite unit-tests
     , time
     , unordered-containers
     , file-embed
+    , lens-aeson
     , personio-client
     , tasty
-    , tasty-quickcheck
     , tasty-hunit
+    , tasty-quickcheck
   default-language: Haskell2010

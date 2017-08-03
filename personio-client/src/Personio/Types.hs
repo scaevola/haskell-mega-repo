@@ -21,6 +21,8 @@ import Data.List                   (foldl')
 import Data.Maybe                  (isJust)
 import Data.Time                   (zonedTimeToLocalTime)
 import Futurice.Aeson
+import Futurice.Office
+import Futurice.Tribe
 import Futurice.EnvConfig
 import Futurice.Generics
 import Futurice.IdMap              (HasKey (..))
@@ -91,8 +93,8 @@ data Employee = Employee
     , _employeePhone          :: !Text
     , _employeeSupervisorId   :: !(Maybe EmployeeId)
     , _employeeLogin          :: !(Maybe Text) -- TODO 4 or 5 lowercase letters `isLower` not good,
-    , _employeeTribe          :: !(Maybe Text)
-    , _employeeOffice         :: !(Maybe Text)
+    , _employeeTribe          :: !(Maybe Tribe)
+    , _employeeOffice         :: !(Maybe Office)
     , _employeeCostCenter     :: !(Maybe Text) -- exactly 1
     , _employeeGithub         :: !(Maybe Text)
     , _employeeStatus         :: !Status
@@ -201,9 +203,9 @@ instance FromJSON SupervisorId where
         parseObject :: HashMap Text Attribute -> Parser SupervisorId
         parseObject obj = SupervisorId <$> parseAttribute obj "id"
 
-newtype NamedAttribute = NamedAttribute { getName :: Maybe Text }
+newtype NamedAttribute a = NamedAttribute { getName :: Maybe a }
 
-instance FromJSON NamedAttribute where
+instance FromJSON a => FromJSON (NamedAttribute a) where
     parseJSON v = case v of
         (Null)     -> pure (NamedAttribute Nothing)
         (Array xs) -> case toList xs of
