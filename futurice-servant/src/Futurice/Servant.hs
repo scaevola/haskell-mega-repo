@@ -61,7 +61,8 @@ module Futurice.Servant (
     Job,
     ) where
 
-import Control.Concurrent.STM               (atomically)
+import Control.Concurrent.STM
+       (TVar, atomically, newTVarIO, swapTVar)
 import Control.Lens                         (LensLike)
 import Control.Monad.Catch                  (fromException, handleAll)
 import Data.Char                            (isAlpha)
@@ -119,8 +120,8 @@ type FuturiceAPI api colour =
     :<|> "vendor" :> Raw
     :<|> StatusAPI
 
-stats :: DynMapCache -> StatusInfoIO
-stats dmap = gcStatusInfo <> dynmapStats
+cacheStats :: DynMapCache -> StatusInfoIO
+cacheStats dmap = gcStatusInfo <> dynmapStats
   where
     dynmapStats :: StatusInfoIO
     dynmapStats = SIIO $ group "cache" . metric "size" <$> dynmapSize
@@ -156,7 +157,7 @@ futuriceServer t d cache papi server
     :<|> server
     :<|> swaggerSchemaUIServer (swaggerDoc t d papi)
     :<|> vendorServer
-    :<|> serveStatus (stats cache)
+    :<|> serveStatus (cacheStats cache)
 
 -------------------------------------------------------------------------------
 -- main boilerplate
@@ -240,20 +241,21 @@ futuriceServerMain'
 futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
     withStderrLogger $ \logger ->
     handleAll (handler logger) $ do
-        Cfg cfg p ekgP leToken _ awsCreds <- runLogT "futurice-servant" logger $ do
+        cfg <- runLogT "futurice-servant" logger $ do
             logInfo_ $ "Hello, " <> t <> " is alive"
             getConfigWithPorts (envpfx ^. from packed)
 
-        cache          <- newDynMapCache
+        cache       <- newDynMapCache
+        let leToken = _cfgLogentriesToken cfg
 
-        let main' = main cfg p ekgP awsCreds cache
+        let main' = main cfg cache
 
         if UUID.null leToken
             then main' logger
             else withLogentriesLogger leToken $ \leLogger -> main' (logger <> leLogger)
 
   where
-    main cfg p ekgP mawsCreds cache logger = do
+    main (Cfg cfg p ekgP _ awsSfx mawsCreds) cache logger = do
         (ctx, jobs)    <- makeCtx cfg logger cache
         -- brings 'HasServer' instance into a scope
         Dict           <- pure $ makeDict ctx
@@ -274,10 +276,11 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
 #else
             Stats.getGCStatsEnabled
 #endif
+        mutgcTVar <- newTVarIO (MutGC 0 0)
         let mcloudwatchJob = do
                 guard statsEnabled
                 awsCreds <- mawsCreds
-                pure (cloudwatchJob logger awsCreds)
+                pure (cloudwatchJob mutgcTVar logger awsSfx awsCreds)
 
         let jobs' = mkJob "stats" (ekgJob logger store) (every $ 5 * 60)
                   : maybeToList (mkJob "cloudwatch" <$> mcloudwatchJob <*> pure (every 60))
@@ -295,25 +298,52 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
             $ middleware ctx
             $ serve proxyApi' server'
 
-    cloudwatchJob :: Logger -> AWS.Credentials -> IO ()
-    cloudwatchJob logger awsCreds = runLogT "cloudwatch" logger $ do
+    cloudwatchJob :: TVar MutGC -> Logger -> Maybe Text -> AWS.Credentials -> IO ()
+    cloudwatchJob mutgcTVar logger awsSfx awsCreds = runLogT "cloudwatch" logger $ do
 #if MIN_VERSION_base(4,10,0)
         liveBytes <- Stats.gcdetails_live_bytes . Stats.gc <$> liftIO Stats.getRTSStats
 #else
-        liveBytes <- Stats.currentBytesUsed <$> liftIO Stats.getGCStats
+        stats <- liftIO Stats.getGCStats
+
+        let liveBytes = Stats.currentBytesUsed stats
+
+        let currGc = Stats.gcCpuSeconds stats
+        let currMut = Stats.mutatorCpuSeconds stats
 #endif
 
+        MutGC prevGc prevMut <- liftIO $ atomically $
+            swapTVar mutgcTVar (MutGC currGc currMut)
+
+        let gcSec = currGc - prevGc
+        let mutSec = currMut - prevMut
+        let productivity' = mutSec / (mutSec + gcSec)
+        -- filter out invalid (e.g NaN) values
+        let productivity
+                | 0 <= productivity' &&  productivity' <= 100 = productivity'
+                | otherwise = 0
+
+        -- TODO: create outside the job?
         env' <- AWS.newEnv awsCreds
         let env = env'
                 & AWS.envRegion .~ AWS.Frankfurt  -- TODO: make configurable?
+        let service = t <> maybe "" (" " <>) awsSfx
 
         rs <- liftIO $ AWS.runResourceT $ AWS.runAWS env $ do
+
+            -- Residency
             let datum = AWS.metricDatum "Live bytes"
                     & AWS.mdValue      ?~ fromIntegral liveBytes
                     & AWS.mdUnit       ?~ AWS.Bytes
-                    & AWS.mdDimensions .~ [AWS.dimension "Service" t]
+                    & AWS.mdDimensions .~ [AWS.dimension "Service" service]
+            -- Productivity
+            let datum2 = AWS.metricDatum "Productivity"
+                    & AWS.mdValue ?~ productivity
+                    & AWS.mdUnit       ?~ AWS.Percent
+                    & AWS.mdDimensions .~ [AWS.dimension "Service" service]
+
+            -- Put.
             let pmd = AWS.putMetricData "Haskell/RTS"
-                    & AWS.pmdMetricData .~ [datum]
+                    & AWS.pmdMetricData .~ [datum, datum2]
 
             AWS.send pmd
 
@@ -357,6 +387,12 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
     proxyApi' = Proxy
 
 -------------------------------------------------------------------------------
+-- MutGC
+-------------------------------------------------------------------------------
+
+data MutGC = MutGC !Double !Double
+
+-------------------------------------------------------------------------------
 -- Other stuff
 -------------------------------------------------------------------------------
 
@@ -397,6 +433,7 @@ data Cfg cfg = Cfg
     , _cfgCloudWatchSuffix :: !(Maybe Text)
     , _cfgCloudWatchCreds  :: !(Maybe AWS.Credentials)
     }
+  deriving Show
 
 getConfigWithPorts
     :: (MonadLog m, MonadIO m, Configure cfg)

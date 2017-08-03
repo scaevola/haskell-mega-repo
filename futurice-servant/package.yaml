@@ -27,6 +27,7 @@ library:
     - aeson
     - amazonka
     - amazonka-cloudwatch
+    - amazonka-cloudwatch-logs
     - base-compat
     - constraints
     - dynmap-cache
