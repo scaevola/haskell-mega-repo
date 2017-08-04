@@ -401,7 +401,7 @@ sumSopToJSON
 
 -- | This instance has to be written by hand, as we wan't to be
 -- more lenient, or&and verify that the generic code above works
-instance (HasValidTribes, FromJSONField1 f) => FromJSON (Command f)
+instance (FromJSONField1 f) => FromJSON (Command f)
   where
     parseJSON = withObject "Command" $ \obj -> do
         cmd <- obj .: "cmd" :: Aeson.Parser Text
@@ -457,7 +457,7 @@ instance ToSchema (Command p) where
 instance ToJSON (Command f) => Postgres.ToField (Command f) where
     toField = Postgres.toField . Aeson.encode
 
-instance (HasValidTribes, FromJSONField1 f) => Postgres.FromField (Command f) where
+instance (FromJSONField1 f) => Postgres.FromField (Command f) where
     fromField f mdata = do
         bs <- Postgres.fromField f mdata
         case Aeson.eitherDecode bs of

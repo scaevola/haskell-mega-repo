@@ -2,11 +2,10 @@ module Futurice.App.Checklist.Config (
     Config(..),
     ) where
 
-import Prelude ()
-import Futurice.Prelude
-import Database.PostgreSQL.Simple         (ConnectInfo)
-import Futurice.App.Checklist.Types.Tribe (ValidTribes)
+import Database.PostgreSQL.Simple (ConnectInfo)
 import Futurice.EnvConfig
+import Futurice.Prelude
+import Prelude ()
 
 import qualified FUM
 
@@ -20,8 +19,6 @@ data Config = Config
     , cfgFumITGroup         :: !FUM.GroupName
     , cfgFumHRGroup         :: !FUM.GroupName
     , cfgFumSupervisorGroup :: !FUM.GroupName
-    -- Valid tribes
-    , cfgValidTribes        :: !ValidTribes
     }
     deriving (Show)
 
@@ -34,4 +31,3 @@ instance Configure Config where
         <*> envVar "FUM_IT_GROUP"
         <*> envVar "FUM_HR_GROUP"
         <*> envVar "FUM_SUPERVISOR_GROUP"
-        <*> envVar "TRIBES"

@@ -27,8 +27,7 @@ import qualified FUM
 --
 -- * 'Employee' is in the 'World'.
 employeePage
-    :: HasValidTribes
-    => World
+    :: World
     -> AuthUser
     -> Employee
     -> HtmlPage "employee"
@@ -96,7 +95,7 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
         row_ $ large_ 12 $ label_ $ do
             "Tribe"
             select_ [ futuId_ "employee-tribe", type_ "text" ] $ do
-                forOf_ foldedValidTribes validTribes $ \tribe ->
+                for_ [ minBound .. maxBound ] $ \tribe ->
                     optionSelected_ (tribe == employee ^. employeeTribe)
                         [ value_ $ toQueryParam tribe ]
                         $ toHtml tribe

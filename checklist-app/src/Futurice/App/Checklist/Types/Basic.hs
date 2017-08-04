@@ -15,6 +15,7 @@ import Futurice.Generics
 import Futurice.Graph     (IsNode (..))
 import Futurice.IdMap     (HasKey (..))
 import Futurice.Office
+import Futurice.Tribe
 import Futurice.Prelude
 import Prelude ()
 
@@ -22,7 +23,6 @@ import Futurice.App.Checklist.Types.ContractType
 import Futurice.App.Checklist.Types.Identifier
 import Futurice.App.Checklist.Types.TaskAppliance
 import Futurice.App.Checklist.Types.TaskRole
-import Futurice.App.Checklist.Types.Tribe
 
 import qualified Data.Text       as T
 import qualified FUM

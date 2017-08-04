@@ -16,8 +16,7 @@ import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
 createEmployeePage
-    :: HasValidTribes
-    => World
+    :: World
     -> AuthUser    -- ^ logged in user
     -> Maybe Employee
     -> HtmlPage "create-employee"
@@ -84,9 +83,9 @@ createEmployeePage world authUser memployee = checklistPage_ ("Create employee")
             "Tribe"
             select_ [ futuId_ "employee-tribe", type_ "text" ] $ do
                 optionSelected_ False [ value_ "" ] "-"
-                forOf_ foldedValidTribes validTribes $ \tribe ->
+                for_ [ minBound .. maxBound ] $ \tribe ->
                     optionSelected_ False
-                        [ value_ $ toQueryParam tribe ]
+                        [ value_ $ tribeToText tribe ]
                         $ toHtml tribe
         row_ $ large_ 12 $ label_ $ do
             "Info"
