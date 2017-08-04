@@ -78,11 +78,11 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
                     [ value_ $ x ^. re _ContractType ]
                     $ toHtml $ x ^. re _ContractType
         row_ $ large_ 12 $ label_ $ do
-            "Location"
+            "Office"
             select_ [ futuId_ "employee-location" ] $ for_ [ minBound .. maxBound ] $ \x ->
-                optionSelected_ (x == employee ^. employeeLocation)
-                    [ value_ $ x ^. re _Location ]
-                    $ toHtml $ x ^. re _Location
+                optionSelected_ (x == employee ^. employeeOffice)
+                    [ value_ $ x ^. re _Office ]
+                    $ toHtml $ x ^. re _Office
         row_ $ large_ 12 $ label_ $ do
             "Confirmed"
             br_ []

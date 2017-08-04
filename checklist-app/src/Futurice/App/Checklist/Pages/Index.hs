@@ -17,7 +17,7 @@ indexPage
     :: World       -- ^ the world
     -> Day         -- ^ today
     -> AuthUser    -- ^ logged in user
-    -> Maybe Location
+    -> Maybe Office
     -> Maybe Checklist
     -> Maybe Task
     -> Bool  -- ^ done
@@ -25,7 +25,7 @@ indexPage
     -> HtmlPage "indexpage"
 indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showDone showOld =
     let employees0 = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
-        employees1 = maybe id (\l -> filter (has $ employeeLocation . only l)) mloc $ employees0
+        employees1 = maybe id (\l -> filter (has $ employeeOffice . only l)) mloc $ employees0
         employees2 = maybe id (\cl -> filter (has $ employeeChecklist . only (cl ^. identifier))) mlist $ employees1
         employees3 = maybe id (filter . taskPredicate) mtask employees2
         employees' = employees3
@@ -49,7 +49,7 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showDone showO
     in checklistPage_ "Employees" authUser $ do
         -- Title
         header "Active employees"
-            [ (^. re _Location) <$> mloc
+            [ (^. re _Office) <$> mloc
             , (^. nameText) <$> mlist
             , (^. nameText) <$> mtask
             ]
@@ -57,13 +57,13 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showDone showO
         -- List filtering controls
         row_ $ form_ [ futuId_ "selector", action_ "/", method_ "get" ] $ do
             largemed_ 3 $ label_ $ do
-                "Location"
+                "Office"
                 select_ [ name_ "location"] $ do
                     option_ [ value_ "" ] $ "Show all"
                     for_ [ minBound .. maxBound ] $ \loc ->
                         optionSelected_ (Just loc == mloc)
-                            [ value_ $ loc ^. re _Location ]
-                            $ toHtml $ locationToText loc
+                            [ value_ $ loc ^. re _Office ]
+                            $ toHtml $ officeToText loc
             largemed_ 3 $ label_ $ do
                 "Checklist"
                 select_ [ name_ "checklist"] $ do
@@ -106,7 +106,7 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showDone showO
         row_ $ large_ 12 $ table_ $ do
             thead_ $ tr_ $ do
                 th_ [title_ "Status"]                      "S"
-                th_ [title_ "Location"]                    "Loc"
+                th_ [title_ "Office"]                      "Off"
                 th_ [title_ "Name" ]                       "Name"
                 th_ [title_ "Tribe" ]                      "Tribe"
                 th_ [title_ "Office" ]                     "Office"
@@ -136,10 +136,10 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showDone showO
                            | otherwise                           -> "eta-future"
                 tr_ [ class_ $ etaClass $ employee ^. employeeStartingDay ] $ do
                     td_ $ contractTypeHtml $ employee ^. employeeContractType
-                    td_ $ locationHtml mlist $ employee ^. employeeLocation
+                    td_ $ locationHtml mlist $ employee ^. employeeOffice
                     td_ $ employeeLink employee
                     td_ $ toHtml $ employee ^. employeeTribe
-                    td_ $ toHtml $ employee ^. employeeLocation
+                    td_ $ locationHtml mlist $ employee ^. employeeOffice
                     mcase mtask
                         (td_ $ checklistNameHtml world mloc (employee ^. employeeChecklist) showDone)
                         $ \task -> do

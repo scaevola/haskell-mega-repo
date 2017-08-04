@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.17.0.
+-- This file has been generated from package.yaml by hpack version 0.17.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -38,14 +38,15 @@ library
     , constraints
     , containers
     , crypto-api
+    , DRBG
     , deepseq
     , distributive
-    , DRBG
     , env-config
     , fum-client
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
+    , futurice-tribes
     , generics-sop
     , generics-sop-lens
     , http-api-data
@@ -102,7 +103,6 @@ library
       Futurice.App.Checklist.Types.Counter
       Futurice.App.Checklist.Types.Ctx
       Futurice.App.Checklist.Types.Identifier
-      Futurice.App.Checklist.Types.Location
       Futurice.App.Checklist.Types.TaskAppliance
       Futurice.App.Checklist.Types.TaskComment
       Futurice.App.Checklist.Types.TaskItem
@@ -129,14 +129,15 @@ executable checklist-app-server
     , constraints
     , containers
     , crypto-api
+    , DRBG
     , deepseq
     , distributive
-    , DRBG
     , env-config
     , fum-client
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
+    , futurice-tribes
     , generics-sop
     , generics-sop-lens
     , http-api-data
@@ -184,14 +185,15 @@ executable checklist-import
     , constraints
     , containers
     , crypto-api
+    , DRBG
     , deepseq
     , distributive
-    , DRBG
     , env-config
     , fum-client
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
+    , futurice-tribes
     , generics-sop
     , generics-sop-lens
     , http-api-data
@@ -243,14 +245,15 @@ test-suite unit-tests
     , constraints
     , containers
     , crypto-api
+    , DRBG
     , deepseq
     , distributive
-    , DRBG
     , env-config
     , fum-client
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
+    , futurice-tribes
     , generics-sop
     , generics-sop-lens
     , http-api-data

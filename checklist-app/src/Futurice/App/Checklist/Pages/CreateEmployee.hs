@@ -58,14 +58,14 @@ createEmployeePage world authUser memployee = checklistPage_ ("Create employee")
                         [ value_ $ x ^. re _ContractType ]
                         $ toHtml $ x ^. re _ContractType
         row_ $ large_ 12 $ label_ $ do
-            "Location"
-            let v = view employeeLocation <$> memployee
+            "Office"
+            let v = view employeeOffice <$> memployee
             select_ [ futuId_ "employee-location" ] $ do
                 optionSelected_ (v == Nothing) [ value_ "" ] "-"
                 for_ [ minBound .. maxBound ] $ \x ->
                     optionSelected_ (v == Just x)
-                        [ value_ $ x ^. re _Location ]
-                        $ toHtml $ x ^. re _Location
+                        [ value_ $ x ^. re _Office ]
+                        $ toHtml $ x ^. re _Office
         row_ $ large_ 12 $ label_ $ do
             "Confirmed"
             br_ []

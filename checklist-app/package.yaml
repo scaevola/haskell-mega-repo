@@ -23,14 +23,15 @@ dependencies:
   - constraints
   - containers
   - crypto-api
+  - DRBG
   - deepseq
   - distributive
-  - DRBG
   - env-config
   - fum-client
   - futurice-foundation
   - futurice-prelude
   - futurice-servant
+  - futurice-tribes
   - generics-sop
   - generics-sop-lens
   - http-api-data

@@ -9,17 +9,17 @@
 -- | Basic types
 module Futurice.App.Checklist.Types.Basic where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens       (Getter, to)
 import Futurice.Arbitrary (arbitraryAdjective, arbitraryNoun, arbitraryVerb)
 import Futurice.Generics
 import Futurice.Graph     (IsNode (..))
 import Futurice.IdMap     (HasKey (..))
+import Futurice.Office
+import Futurice.Prelude
+import Prelude ()
 
 import Futurice.App.Checklist.Types.ContractType
 import Futurice.App.Checklist.Types.Identifier
-import Futurice.App.Checklist.Types.Location
 import Futurice.App.Checklist.Types.TaskAppliance
 import Futurice.App.Checklist.Types.TaskRole
 import Futurice.App.Checklist.Types.Tribe
@@ -46,7 +46,7 @@ data Employee = Employee
     , _employeeFirstName    :: !Text
     , _employeeLastName     :: !Text
     , _employeeContractType :: !ContractType
-    , _employeeLocation     :: !Location
+    , _employeeOffice     :: !Office
     , _employeeConfirmed    :: !Bool
       -- ^ /Note:/ This is non-work email!
     , _employeeStartingDay  :: !Day
@@ -116,7 +116,7 @@ makeLenses ''Checklist
 
 employeeTaskApplies :: Employee -> TaskAppliance -> Bool
 employeeTaskApplies e ta = taskApplianceToPredicate ta
-    (e ^. employeeContractType, e ^. employeeLocation)
+    (e ^. employeeContractType, e ^. employeeOffice)
 
 -------------------------------------------------------------------------------
 -- HasIdentifier instances

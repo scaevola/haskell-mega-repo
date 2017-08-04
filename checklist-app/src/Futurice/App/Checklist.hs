@@ -75,7 +75,7 @@ server ctx = indexPageImpl ctx
 indexPageImpl
     :: Ctx
     -> Maybe FUM.UserName
-    -> Maybe Location
+    -> Maybe Office
     -> Maybe (Identifier Checklist)
     -> Maybe (Identifier Task)
     -> Bool
