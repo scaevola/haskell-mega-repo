@@ -109,7 +109,6 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showDone showO
                 th_ [title_ "Office"]                      "Off"
                 th_ [title_ "Name" ]                       "Name"
                 th_ [title_ "Tribe" ]                      "Tribe"
-                th_ [title_ "Office" ]                     "Office"
                 mcase mtask
                     (th_ [title_ "Checklist"]              "List")
                     $ \task -> do
@@ -138,8 +137,16 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showDone showO
                     td_ $ contractTypeHtml $ employee ^. employeeContractType
                     td_ $ locationHtml mlist $ employee ^. employeeOffice
                     td_ $ employeeLink employee
-                    td_ $ toHtml $ employee ^. employeeTribe
-                    td_ $ locationHtml mlist $ employee ^. employeeOffice
+                    td_ $ case tribeOffices (employee ^. employeeTribe) of
+                        [off] | off == employee ^. employeeOffice ->
+                            toHtml $ employee ^. employeeTribe
+                        -- none, multiple offices,
+                        -- or employee and tribe's (single) office are different
+                        _ -> do
+                            toHtml $ employee ^. employeeTribe
+                            " ("
+                            locationHtml mlist $ employee ^. employeeOffice
+                            ")"
                     mcase mtask
                         (td_ $ checklistNameHtml world mloc (employee ^. employeeChecklist) showDone)
                         $ \task -> do
