@@ -79,12 +79,13 @@ indexPageImpl
     -> Maybe (Identifier Checklist)
     -> Maybe (Identifier Task)
     -> Bool
+    -> Bool
     -> Handler (HtmlPage "indexpage")
-indexPageImpl ctx fu loc cid tid showAll = withAuthUser ctx fu impl
+indexPageImpl ctx fu loc cid tid showDone showOld = withAuthUser ctx fu impl
   where
     impl world userInfo = do
         today <- currentDay
-        pure $ indexPage world today userInfo loc checklist task showAll
+        pure $ indexPage world today userInfo loc checklist task showDone showOld
       where
         checklist = do
             cid' <- cid

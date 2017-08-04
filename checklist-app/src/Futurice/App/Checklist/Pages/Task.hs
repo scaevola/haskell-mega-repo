@@ -37,7 +37,7 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
             [ class_ "button"
             , data_ "futu-link-button" $ toUrlPiece
             $ safeLink checklistApi indexPageEndpoint
-                  Nothing Nothing (task ^? identifier) defaultShowAll
+                  Nothing Nothing (task ^? identifier) defaultShowAll False
             ]
             "Goto employees listing"
 

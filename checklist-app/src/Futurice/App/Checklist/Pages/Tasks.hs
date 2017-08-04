@@ -78,7 +78,7 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
                 td_ $ forOf_ (taskPrereqs . folded . to (\tid' -> world ^. worldTasks . at tid') . _Just) task $ \prereqTask -> do
                     taskLink prereqTask
                     br_ []
-                td_ $ a_ [ indexPageHref Nothing mlist (Just tid) defaultShowAll ] $
+                td_ $ a_ [ indexPageHref Nothing mlist (Just tid) defaultShowAll False ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
                         Counter i j -> do
                             toHtml (show i)

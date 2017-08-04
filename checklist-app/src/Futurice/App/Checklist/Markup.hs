@@ -82,7 +82,7 @@ navigation (fu, viewerRole) = do
                 "Checklist"
                 sup_ "2"
             li_ $ a_ [ id_ "futu-reload-indicator", href_ "#", style_ "display: none", title_ "You made changes, refresh page to show" ]  "1"
-            li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) (Nothing :: Maybe Task) defaultShowAll ] "Employees"
+            li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) (Nothing :: Maybe Task) defaultShowAll False ] "Employees"
             li_ $ a_ [ checklistsPageHref ] "Checklists"
             li_ $ a_ [ tasksPageHref Nothing (Nothing :: Maybe Checklist) ] "Tasks"
             li_ $ a_ [ createChecklistPageHref ] "Create List"
@@ -143,12 +143,12 @@ linkToText l = "/" <> toUrlPiece l
 
 indexPageHref
     :: (HasIdentifier c Checklist, HasIdentifier t Task)
-    => Maybe Location -> Maybe c -> Maybe t -> Bool -> Attribute
-indexPageHref mloc mlist mtask showAll =
+    => Maybe Location -> Maybe c -> Maybe t -> Bool -> Bool -> Attribute
+indexPageHref mloc mlist mtask showDone showOld =
     href_ $ linkToText $ safeLink checklistApi indexPageEndpoint mloc
         (mlist ^? _Just . identifier)
         (mtask ^? _Just . identifier)
-        showAll
+        showDone showOld
 
 tasksPageHref
     :: (HasIdentifier c Checklist)
@@ -226,7 +226,7 @@ locationHtml
     => Maybe c -> Location -> HtmlT m ()
 locationHtml mlist l = a_ [ href, title_ locName ] $ locSlug
   where
-    href = indexPageHref (Just l) mlist (Nothing :: Maybe Task) False
+    href = indexPageHref (Just l) mlist (Nothing :: Maybe Task) False False
 
     locSlug = case l of
         LocHelsinki  -> "Hel"
@@ -265,7 +265,7 @@ contractTypeHtml ContractTypeSummerWorker = span_ [title_ "Summer worker"] "Sum"
 -- | TODO: better error
 checklistNameHtml :: Monad m => World -> Maybe Location -> Identifier Checklist -> Bool -> HtmlT m ()
 checklistNameHtml world mloc i notDone =
-    a_ [ indexPageHref mloc (Just i) (Nothing :: Maybe Task) notDone ] $
+    a_ [ indexPageHref mloc (Just i) (Nothing :: Maybe Task) notDone False ] $
         world ^. worldLists . at i . non (error "Inconsisten world") . nameHtml
 
 -------------------------------------------------------------------------------

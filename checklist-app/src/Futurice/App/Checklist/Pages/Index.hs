@@ -20,9 +20,10 @@ indexPage
     -> Maybe Location
     -> Maybe Checklist
     -> Maybe Task
-    -> Bool
+    -> Bool  -- ^ done
+    -> Bool  -- ^ old
     -> HtmlPage "indexpage"
-indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
+indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showDone showOld =
     let employees0 = sortOn (view employeeStartingDay) $ world ^.. worldEmployees . folded
         employees1 = maybe id (\l -> filter (has $ employeeLocation . only l)) mloc $ employees0
         employees2 = maybe id (\cl -> filter (has $ employeeChecklist . only (cl ^. identifier))) mlist $ employees1
@@ -37,11 +38,13 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
 
         -- Single item traversal which we use as a filter in taskPredicate
         taskItemPredicate :: Traversal' AnnTaskItem ()
-        taskItemPredicate | showAll   = united
+        taskItemPredicate | showDone   = united
                           | otherwise = _AnnTaskItemTodo . united
 
         taskInChecklist _task Nothing   = True
         taskInChecklist task (Just cl) = has (checklistTasks . ix (task ^. identifier)) cl
+
+        cutoffDate = addDays (-60) today
 
     in checklistPage_ "Employees" authUser $ do
         -- Title
@@ -81,9 +84,13 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                                     " "
                                     countEmployeesWithTask world task employees2
 
-            largemed_ 1 $ label_ $ do
-                "all"
-                div_ $ checkbox_ showAll [ name_ "show-all", value_ "true", title_ "Show also people with task already done" ]
+            largemed_ 1 $ do
+                label_ $ do
+                    checkbox_ showDone [ name_ "show-done", value_ "true", title_ "Show also people with task already done" ]
+                    " done"
+                label_ $ do
+                    checkbox_ showOld [ name_ "show-old", value_ "true", title_ "Show also people with due date over two month ago" ]
+                    " old"
 
             largemed_ 1 $ label_ $ do
                 toHtmlRaw ("&nbsp;" :: Text)
@@ -102,6 +109,7 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                 th_ [title_ "Location"]                    "Loc"
                 th_ [title_ "Name" ]                       "Name"
                 th_ [title_ "Tribe" ]                      "Tribe"
+                th_ [title_ "Office" ]                     "Office"
                 mcase mtask
                     (th_ [title_ "Checklist"]              "List")
                     $ \task -> do
@@ -113,7 +121,8 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                 th_ [title_ "Days till start"]             "ETA"
                 viewerItemsHeader viewerRole
                 th_ [title_ "Task items todo/done"]        "Tasks"
-            tbody_ $ for_ employees' $ \employee -> do
+            tbody_ $ for_ employees' $ \employee -> when (showOld || cutoffDate < employee ^. employeeStartingDay) $ do
+
                 let eid = employee ^. identifier
                 let firstFutureDay = employees' ^? folded . employeeStartingDay . filtered (> today)
                 let startingDay = employee ^. employeeStartingDay
@@ -130,8 +139,9 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showAll =
                     td_ $ locationHtml mlist $ employee ^. employeeLocation
                     td_ $ employeeLink employee
                     td_ $ toHtml $ employee ^. employeeTribe
+                    td_ $ toHtml $ employee ^. employeeLocation
                     mcase mtask
-                        (td_ $ checklistNameHtml world mloc (employee ^. employeeChecklist) showAll)
+                        (td_ $ checklistNameHtml world mloc (employee ^. employeeChecklist) showDone)
                         $ \task -> do
                             td_ $ taskCheckbox_ world employee task
                             when (task ^. taskComment) $ td_ $ taskCommentInput_ world employee task

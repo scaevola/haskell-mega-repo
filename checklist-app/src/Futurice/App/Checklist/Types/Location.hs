@@ -4,9 +4,10 @@
 {-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.Checklist.Types.Location where
 
-import Data.Aeson.Compat (Value (String), withText)
-import Data.Swagger      (SwaggerType (SwaggerString), enum_, type_)
+import Data.Aeson.Compat         (Value (String), withText)
+import Data.Swagger              (SwaggerType (SwaggerString), enum_, type_)
 import Futurice.Generics
+import Futurice.Lucid.Foundation (ToHtml (..))
 import Futurice.Prelude
 import Prelude ()
 
@@ -49,6 +50,10 @@ locationFromText t = Map.lookup (T.toLower t) m
 
 _Location :: Prism' Text Location
 _Location = prism' locationToText locationFromText
+
+instance ToHtml Location where
+    toHtmlRaw = toHtml
+    toHtml = toHtml . locationToText
 
 instance ToParamSchema Location where
     toParamSchema _ = mempty

@@ -51,7 +51,8 @@ type IndexPageEndpoint =
     QueryParam "location" Location :>
     QueryParam "checklist" (Identifier Checklist) :>
     QueryParam "task" (Identifier Task) :>
-    QueryFlag "show-all" :>
+    QueryFlag "show-done" :>
+    QueryFlag "show-old" :>
     Get '[HTML] (HtmlPage "indexpage")
 
 type TasksPageEndpoint =
