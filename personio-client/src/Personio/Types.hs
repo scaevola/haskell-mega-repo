@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeFamilies        #-}
 module Personio.Types (
     module Personio.Types,
-    module Personio.Types.EmployeeStatus,
+    module Personio.Types.Status,
     ) where
 
 -- Uncomment to get attribute hashmap
@@ -33,9 +33,11 @@ import Futurice.Tribe
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
-import Personio.Types.EmployeeEmploymentType
+import Personio.Types.ContractType
+       (ContractType (..), contractTypeFromText)
+import Personio.Types.EmploymentType
        (EmploymentType (..), employmentTypeFromText)
-import Personio.Types.EmployeeStatus         (Status (..))
+import Personio.Types.Status       (Status (..))
 
 import qualified Chat.Flowdock.REST            as FD
 import qualified Data.HashMap.Strict           as HM
@@ -448,7 +450,8 @@ data ValidationMessage
     | IbanInvalid
     | LoginInvalid Text
     | EmploymentTypeMissing
-    | ExternalEndDateMissing
+    | FixedTermEndDateMissing
+    | PermanentExternal
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -504,9 +507,10 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , costCenterValidate
         , ibanValidate
         , loginValidate
-        , extEndDateMissing
+        , fixedEndDateValidate
+        , externalContractValidate
+        , employmentTypeValidate
         , attributeMissing "email" EmailMissing
-        , attributeMissing "employment_type" EmploymentTypeMissing
         , attributeObjectMissing "department" TribeMissing
         , attributeObjectMissing "office" OfficeMissing
         , dynamicAttributeMissing "Work phone" PhoneMissing
@@ -584,19 +588,40 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                 Nothing -> tell [LoginInvalid login]
                 Just _  -> pure ()
 
-        extEndDateMissing :: WriterT [ValidationMessage] Parser()
-        extEndDateMissing = do
-            eType <- lift (parseAttribute obj "employment_type")
-            case employmentTypeFromText eType of
-                Just External -> checkEndDate
-                _             -> pure ()
+        fixedEndDateValidate :: WriterT [ValidationMessage] Parser ()
+        fixedEndDateValidate = do
+            cType <- lift (parseDynamicAttribute obj "Contract type")
+            case contractTypeFromText cType of
+                Just FixedTerm -> checkEndDate FixedTermEndDateMissing
+                Just _         -> pure ()
+                Nothing        -> lift (typeMismatch "Contract type" (String cType))
           where
-            checkEndDate = do
-              eDate <- lift (parseAttribute obj "contract_end_date")
-              case eDate of
-                  Null     -> tell [ExternalEndDateMissing]
-                  String d -> checkAttributeName d ExternalEndDateMissing
-                  _        -> pure ()
+              checkEndDate err = do
+                eDate <- lift (parseAttribute obj "contract_end_date")
+                case eDate of
+                    Null     -> tell [err]
+                    String d -> checkAttributeName d err
+                    _        -> pure ()
+
+        externalContractValidate :: WriterT [ValidationMessage] Parser ()
+        externalContractValidate = do
+            cType <- lift (parseDynamicAttribute obj "Contract type")
+            eType <- lift (parseAttribute obj "employment_type")
+            case f cType eType of
+                (Just PermanentAllIn, Just External) -> tell [PermanentExternal]
+                (Just Permanent, Just External)      -> tell [PermanentExternal]
+                _                                    -> pure ()
+          where
+            f :: Text -> Text -> (Maybe ContractType, Maybe EmploymentType)
+            f conT eTypeT = (contractTypeFromText conT
+                            , employmentTypeFromText eTypeT)
+
+        employmentTypeValidate :: WriterT [ValidationMessage] Parser ()
+        employmentTypeValidate = do
+            eType <- lift (parseAttribute obj "employment_type") 
+            case employmentTypeFromText eType of
+                Nothing -> tell [EmploymentTypeMissing]
+                Just _  -> pure ()
 
 -- | Validate IBAN.
 --

@@ -284,6 +284,10 @@
     "dynamic_72934": {
       "label": "Health insurance",
       "value": "AOK Nordost in Berlin"
+    },
+    "dynamic_72935": {
+        "label": "Contract type",
+        "value": "permanent"
     }
   }
 }

@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
-module Personio.Types.EmployeeEmploymentType (
+module Personio.Types.EmploymentType (
     EmploymentType (..),
     employmentTypeToText,
     employmentTypeFromText,
