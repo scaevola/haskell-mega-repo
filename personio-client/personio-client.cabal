@@ -35,11 +35,14 @@ library
     , constraints
     , containers
     , env-config
+    , flowdock-rest
     , futurice-prelude
     , futurice-tribes
+    , github
     , http-api-data
     , http-client
     , lens
+    , lucid
     , monad-http
     , mtl
     , regex-applicative
@@ -71,11 +74,14 @@ test-suite unit-tests
     , constraints
     , containers
     , env-config
+    , flowdock-rest
     , futurice-prelude
     , futurice-tribes
+    , github
     , http-api-data
     , http-client
     , lens
+    , lucid
     , monad-http
     , mtl
     , regex-applicative

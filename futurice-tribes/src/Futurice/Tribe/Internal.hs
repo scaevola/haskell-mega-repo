@@ -11,6 +11,7 @@ data TribeInfo = TribeInfo
     { tiName    :: !Text
     , tiOffices :: [Office]
     , tiAliases :: [Text]
+    , tiDefault :: !Bool
     }
   deriving (Eq, Show)
 
@@ -19,6 +20,7 @@ instance FromJSON TribeInfo where
         <$> obj .: "name"
         <*> obj .:? "offices" .!= []
         <*> obj .:? "aliases" .!= []
+        <*> obj .:? "default" .!= False
 
 -- TODO: remove when we drop support for GHC-7.10
 deriveLift ''TribeInfo

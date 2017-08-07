@@ -6,18 +6,18 @@
 {-# LANGUAGE TypeFamilies          #-}
 module Personio.Types.EmployeeStatus (
     Status(..),
+    statusToText,
+    statusFromText,
+    _Status,
     ) where
 
-import Data.Aeson.Compat (Value (String), withText)
-import Data.Swagger      (NamedSchema (..))
 import Futurice.Generics
+import Futurice.Generics.Enum
 import Futurice.Prelude
+import Lucid                  (ToHtml (..))
 import Prelude ()
 
-import qualified Data.Map  as Map
-import qualified Data.Text as T
-
--- |Employee contractual status with initial state being Onboarding
+-- | Employee contractual status with initial state being Onboarding
 -- Personio changes status to Inactive on reaching Employee.endDate
 data Status
     = Active
@@ -28,6 +28,28 @@ data Status
 
 makePrisms ''Status
 deriveGeneric ''Status
+deriveLift ''Status
+
+ei :: EnumInstances Status
+ei = sopEnumInstances $
+    K "Active" :*
+    K "Inactive" :*
+    K "Onboarding" :*
+    K "Leave" :*
+    Nil
+
+-------------------------------------------------------------------------------
+-- Boilerplate
+-------------------------------------------------------------------------------
+
+statusToText :: Status -> Text
+statusToText = enumToText ei
+
+statusFromText :: Text -> Maybe Status
+statusFromText = enumFromText ei
+
+_Status :: Prism' Text Status
+_Status = enumPrism ei
 
 instance NFData Status
 
@@ -35,26 +57,25 @@ instance Arbitrary Status where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-statusToText :: Status -> Text
-statusToText Active = "active"
-statusToText Inactive = "inactive"
-statusToText Onboarding = "onboarding"
-statusToText Leave = "leave"
+instance ToHtml Status where
+    toHtmlRaw = toHtml
+    toHtml = toHtml . enumToText ei
 
-instance ToSchema (Status) where
-    declareNamedSchema _ = pure $ NamedSchema (Just "Status") mempty
+instance ToParamSchema Status where
+    toParamSchema = enumToParamSchema ei
 
-statusFromText :: Text -> Maybe Status
-statusFromText t = Map.lookup (T.toLower t) m
-  where
-    m = Map.fromList $ map (\x -> (T.toLower $ statusToText x, x)) [minBound .. maxBound]
-
-_Status :: Prism' Text Status
-_Status = prism' statusToText statusFromText
+instance ToSchema Status where
+    declareNamedSchema = enumDeclareNamedSchema ei
 
 instance ToJSON Status where
-    toJSON = String . statusToText
+    toJSON = enumToJSON ei
 
 instance FromJSON Status where
-    parseJSON = withText "Status" $ \t ->
-        maybe (fail $ "invalid Status " <> t ^. unpacked) pure $ t ^? _Status
+    parseJSON = enumParseJSON ei
+
+instance FromHttpApiData Status where
+    parseUrlPiece = enumParseUrlPiece ei
+
+instance ToHttpApiData Status where
+    toUrlPiece = enumToUrlPiece ei
+

@@ -1,5 +1,6 @@
 [
     { "name": "Waziri", "offices": [] },
     { "name": "Zulu", "offices": [] },
-    { "name": "Tammerforce", "offices": ["Tampere"], "aliases": ["Tampere"] }
+    { "name": "Tammerforce", "offices": ["Tampere"], "aliases": ["Tampere"] },
+    { "name": "No tribe", "default": true }
 ]

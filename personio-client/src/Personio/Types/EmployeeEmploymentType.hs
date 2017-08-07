@@ -1,19 +1,19 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeFamilies          #-}
-module Personio.Types.EmployeeEmploymentType
-    (EmploymentType (..), employmentTypeFromText
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TypeFamilies      #-}
+module Personio.Types.EmployeeEmploymentType (
+    EmploymentType (..),
+    employmentTypeToText,
+    employmentTypeFromText,
+    _EmploymentType,
     ) where
 
-import Data.Aeson.Compat (Value (String), withText)
-import Data.Swagger (NamedSchema (..))
 import Futurice.Generics
+import Futurice.Generics.Enum
 import Futurice.Prelude
-
-import qualified Data.Map as Map
-import qualified Data.Text as T
+import Lucid                  (ToHtml (..))
 
 data EmploymentType
     = Internal
@@ -22,6 +22,26 @@ data EmploymentType
 
 makePrisms ''EmploymentType
 deriveGeneric ''EmploymentType
+deriveLift ''EmploymentType
+
+ei :: EnumInstances EmploymentType
+ei = sopEnumInstances $
+    K "internal" :*
+    K "external" :*
+    Nil
+
+-------------------------------------------------------------------------------
+-- Boilerplate
+-------------------------------------------------------------------------------
+
+employmentTypeToText :: EmploymentType -> Text
+employmentTypeToText = enumToText ei
+
+employmentTypeFromText :: Text -> Maybe EmploymentType
+employmentTypeFromText = enumFromText ei
+
+_EmploymentType :: Prism' Text EmploymentType
+_EmploymentType = enumPrism ei
 
 instance NFData EmploymentType
 
@@ -29,27 +49,25 @@ instance Arbitrary EmploymentType where
     arbitrary = sopArbitrary
     shrink    = sopShrink
 
-employmentTypeToText :: EmploymentType -> Text
-employmentTypeToText Internal = "internal"
-employmentTypeToText External = "external"
+instance ToHtml EmploymentType where
+    toHtmlRaw = toHtml
+    toHtml = toHtml . enumToText ei
+
+instance ToParamSchema EmploymentType where
+    toParamSchema = enumToParamSchema ei
 
 instance ToSchema EmploymentType where
-    declareNamedSchema _ = pure $ NamedSchema (Just "Employment type") mempty
-
-employmentTypeFromText :: Text -> Maybe EmploymentType
-employmentTypeFromText t = Map.lookup (T.toLower t) m
-  where
-    m = Map.fromList $
-        map (\x -> (T.toLower $ employmentTypeToText x, x))
-        [minBound .. maxBound]
-
-_EmploymentType :: Prism' Text EmploymentType
-_EmploymentType = prism' employmentTypeToText employmentTypeFromText
+    declareNamedSchema = enumDeclareNamedSchema ei
 
 instance ToJSON EmploymentType where
-    toJSON = String . employmentTypeToText
+    toJSON = enumToJSON ei
 
 instance FromJSON EmploymentType where
-    parseJSON = withText "Employment type" $ \t ->
-        maybe (fail $ "invalid Employment type " <> t ^. unpacked) pure
-        $ t ^? _EmploymentType
+    parseJSON = enumParseJSON ei
+
+instance FromHttpApiData EmploymentType where
+    parseUrlPiece = enumParseUrlPiece ei
+
+instance ToHttpApiData EmploymentType where
+    toUrlPiece = enumToUrlPiece ei
+
