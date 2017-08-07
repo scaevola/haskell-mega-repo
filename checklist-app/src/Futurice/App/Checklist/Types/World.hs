@@ -29,6 +29,7 @@ import Futurice.Prelude
 import Control.DeepSeq  (force)
 import Control.Lens     (Getter, contains, filtered, ifiltered, to, (<&>))
 import Data.Functor.Rep (Representable (..))
+import Futurice.Office
 import Futurice.Graph   (Graph)
 import Futurice.IdMap   (IdMap)
 
@@ -39,7 +40,6 @@ import qualified Futurice.IdMap as IdMap
 import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.Counter
 import Futurice.App.Checklist.Types.Identifier
-import Futurice.App.Checklist.Types.Location
 import Futurice.App.Checklist.Types.TaskItem
 import Futurice.App.Checklist.Types.TaskRole
 
@@ -52,7 +52,7 @@ import qualified Test.QuickCheck as QC
 import qualified FUM
 
 -- | Primitive ACL. Given possible username, return the actual username, role and location.
-type AuthCheck = Maybe FUM.UserName -> Maybe (FUM.UserName, TaskRole, Location)
+type AuthCheck = Maybe FUM.UserName -> Maybe (FUM.UserName, TaskRole, Office)
 
 type ArchivedEmployee = (Employee, TodoCounter)
 type Archive = Map (Identifier Employee) ArchivedEmployee

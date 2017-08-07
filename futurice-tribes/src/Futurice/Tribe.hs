@@ -33,6 +33,16 @@ deriveLift ''Tribe
 instance Show Tribe where
     showsPrec d t = showsPrec d (tribeToText t)
 
+instance Enum Tribe where
+    fromEnum (Tribe i) = i
+    toEnum i
+        | 0 <= i && i < V.length tribeInfos = Tribe i
+        | otherwise = error "toEnum @Tribe out of bounds"
+
+instance Bounded Tribe where
+    minBound = Tribe 0 -- assume there is at least one tribe!
+    maxBound = Tribe (V.length tribeInfos - 1)
+
 -------------------------------------------------------------------------------
 -- Magic
 -------------------------------------------------------------------------------

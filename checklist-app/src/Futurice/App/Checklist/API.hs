@@ -14,7 +14,7 @@ import Servant.HTML.Lucid        (HTML)
 import Futurice.App.Checklist.Ack     (Ack)
 import Futurice.App.Checklist.Command (Command)
 import Futurice.App.Checklist.Types
-       (Checklist, Employee, Identifier, Location, Task, TaskRole)
+       (Checklist, Employee, Identifier, Office, Task, TaskRole)
 
 type ChecklistAPI = IndexPageEndpoint
     -- Collections
@@ -48,10 +48,11 @@ checklistApi = Proxy
 
 type IndexPageEndpoint =
     SSOUser :>
-    QueryParam "location" Location :>
+    QueryParam "location" Office :>
     QueryParam "checklist" (Identifier Checklist) :>
     QueryParam "task" (Identifier Task) :>
-    QueryFlag "show-all" :>
+    QueryFlag "show-done" :>
+    QueryFlag "show-old" :>
     Get '[HTML] (HtmlPage "indexpage")
 
 type TasksPageEndpoint =

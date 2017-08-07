@@ -10,10 +10,8 @@ import Prelude ()
 import Futurice.Periocron
 import Futurice.Prelude
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
-import Data.Constraint           (Dict (..))
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
-import Data.Reflection           (give)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Servant
 import Futurice.Stricter
@@ -75,16 +73,17 @@ server ctx = indexPageImpl ctx
 indexPageImpl
     :: Ctx
     -> Maybe FUM.UserName
-    -> Maybe Location
+    -> Maybe Office
     -> Maybe (Identifier Checklist)
     -> Maybe (Identifier Task)
     -> Bool
+    -> Bool
     -> Handler (HtmlPage "indexpage")
-indexPageImpl ctx fu loc cid tid showAll = withAuthUser ctx fu impl
+indexPageImpl ctx fu loc cid tid showDone showOld = withAuthUser ctx fu impl
   where
     impl world userInfo = do
         today <- currentDay
-        pure $ indexPage world today userInfo loc checklist task showAll
+        pure $ indexPage world today userInfo loc checklist task showDone showOld
       where
         checklist = do
             cid' <- cid
@@ -132,8 +131,7 @@ createEmployeePageImpl
     -> Handler (HtmlPage "create-employee")
 createEmployeePageImpl ctx fu meid = withAuthUser ctx fu impl
   where
-    impl world userInfo = pure $ case ctxValidTribes ctx of
-        Dict -> createEmployeePage world userInfo memployee
+    impl world userInfo = pure $ createEmployeePage world userInfo memployee
       where
         memployee = meid >>= \eid -> world ^? worldEmployees . ix eid
 
@@ -181,8 +179,7 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
   where
     impl world userInfo = pure $ case world ^? worldEmployees . ix eid of
         Nothing       -> notFoundPage
-        Just employee -> case ctxValidTribes ctx of
-            Dict -> employeePage world userInfo employee
+        Just employee -> employeePage world userInfo employee
 
 archivePageImpl
     :: Ctx
@@ -280,9 +277,8 @@ fetchEmployeeCommands
     => Ctx
     -> Employee
     -> m [(Command Identity, FUM.UserName, UTCTime)]
-fetchEmployeeCommands ctx e = case ctxValidTribes ctx of
-    Dict -> withResource (ctxPostgres ctx) $ \conn ->
-        liftBase $ Postgres.query conn query (e ^. identifier, e ^. employeeChecklist)
+fetchEmployeeCommands ctx e = withResource (ctxPostgres ctx) $ \conn ->
+    liftBase $ Postgres.query conn query (e ^. identifier, e ^. employeeChecklist)
   where
     query = fromString $ unwords
         [ "SELECT cmddata, username, updated FROM checklist2.commands"
@@ -336,21 +332,15 @@ withAuthUser' def ctx fu f = do
 -------------------------------------------------------------------------------
 
 defaultMain :: IO ()
-defaultMain = futuriceServerMain' makeDict makeCtx $ emptyServerConfig
+defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverName             .~ "Checklist"
     & serverDescription      .~ "Super TODO"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF4 'AC3))
     & serverApp checklistApi .~ server
     & serverEnvPfx           .~ "CHECKLISTAPP"
 
-makeDict :: Ctx -> Dict (HasServer ChecklistAPI '[])
-makeDict ctx = case ctxValidTribes ctx of Dict -> Dict
-
 makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-makeCtx cfg lgr cache = give (cfgValidTribes cfg) (makeCtx' cfg lgr cache)
-
-makeCtx' :: HasValidTribes => Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-makeCtx' Config {..} logger _cache = do
+makeCtx Config {..} logger _cache = do
     ctx <- newCtx
         logger
         cfgPostgresConnInfo

@@ -82,7 +82,7 @@ navigation (fu, viewerRole) = do
                 "Checklist"
                 sup_ "2"
             li_ $ a_ [ id_ "futu-reload-indicator", href_ "#", style_ "display: none", title_ "You made changes, refresh page to show" ]  "1"
-            li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) (Nothing :: Maybe Task) defaultShowAll ] "Employees"
+            li_ $ a_ [ indexPageHref Nothing (Nothing :: Maybe Checklist) (Nothing :: Maybe Task) defaultShowAll False ] "Employees"
             li_ $ a_ [ checklistsPageHref ] "Checklists"
             li_ $ a_ [ tasksPageHref Nothing (Nothing :: Maybe Checklist) ] "Tasks"
             li_ $ a_ [ createChecklistPageHref ] "Create List"
@@ -143,12 +143,12 @@ linkToText l = "/" <> toUrlPiece l
 
 indexPageHref
     :: (HasIdentifier c Checklist, HasIdentifier t Task)
-    => Maybe Location -> Maybe c -> Maybe t -> Bool -> Attribute
-indexPageHref mloc mlist mtask showAll =
+    => Maybe Office -> Maybe c -> Maybe t -> Bool -> Bool -> Attribute
+indexPageHref mloc mlist mtask showDone showOld =
     href_ $ linkToText $ safeLink checklistApi indexPageEndpoint mloc
         (mlist ^? _Just . identifier)
         (mtask ^? _Just . identifier)
-        showAll
+        showDone showOld
 
 tasksPageHref
     :: (HasIdentifier c Checklist)
@@ -223,27 +223,27 @@ taskLink task = a_ [ taskPageHref task ] $ task ^. nameHtml
 
 locationHtml
     :: (Monad m, HasIdentifier c Checklist)
-    => Maybe c -> Location -> HtmlT m ()
+    => Maybe c -> Office -> HtmlT m ()
 locationHtml mlist l = a_ [ href, title_ locName ] $ locSlug
   where
-    href = indexPageHref (Just l) mlist (Nothing :: Maybe Task) False
+    href = indexPageHref (Just l) mlist (Nothing :: Maybe Task) False False
 
     locSlug = case l of
-        LocHelsinki  -> "Hel"
-        LocTampere   -> "Tre"
-        LocBerlin    -> "Ber"
-        LocLondon    -> "Lon"
-        LocStockholm -> "Sto"
-        LocMunich    -> "Mun"
-        LocOther     -> "Oth"
+        OffHelsinki  -> "Hel"
+        OffTampere   -> "Tre"
+        OffBerlin    -> "Ber"
+        OffLondon    -> "Lon"
+        OffStockholm -> "Sto"
+        OffMunich    -> "Mun"
+        OffOther     -> "Oth"
     locName = case l of
-        LocHelsinki  -> "Helsnki"
-        LocTampere   -> "Tampere"
-        LocBerlin    -> "Berlin"
-        LocLondon    -> "London"
-        LocStockholm -> "Stockholm"
-        LocMunich    -> "Munich"
-        LocOther     -> "Other"
+        OffHelsinki  -> "Helsnki"
+        OffTampere   -> "Tampere"
+        OffBerlin    -> "Berlin"
+        OffLondon    -> "London"
+        OffStockholm -> "Stockholm"
+        OffMunich    -> "Munich"
+        OffOther     -> "Other"
 
 roleHtml
     :: (Monad m, HasIdentifier c Checklist)
@@ -263,9 +263,9 @@ contractTypeHtml ContractTypePartTimer    = span_ [title_ "Part timer"]    "Part
 contractTypeHtml ContractTypeSummerWorker = span_ [title_ "Summer worker"] "Sum"
 
 -- | TODO: better error
-checklistNameHtml :: Monad m => World -> Maybe Location -> Identifier Checklist -> Bool -> HtmlT m ()
+checklistNameHtml :: Monad m => World -> Maybe Office -> Identifier Checklist -> Bool -> HtmlT m ()
 checklistNameHtml world mloc i notDone =
-    a_ [ indexPageHref mloc (Just i) (Nothing :: Maybe Task) notDone ] $
+    a_ [ indexPageHref mloc (Just i) (Nothing :: Maybe Task) notDone False ] $
         world ^. worldLists . at i . non (error "Inconsisten world") . nameHtml
 
 -------------------------------------------------------------------------------

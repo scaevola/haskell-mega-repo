@@ -16,7 +16,6 @@ module Futurice.App.Checklist.Types (
     -- ** Employee / employee
     Employee(..),
     ContractType(..),
-    Location(..),
     -- ** Tasks
     Task(..),
     TaskRole(..),
@@ -26,7 +25,6 @@ module Futurice.App.Checklist.Types (
     AnnTaskItem (..),
     TaskAppliance(..),
     TaskComment(..),
-    Tribe,
     -- ** Wrappers
     Identifier(..),
     identifierToText,
@@ -36,25 +34,15 @@ module Futurice.App.Checklist.Types (
     HasName (..),
     -- * Functions
     employeeTaskApplies,
-    -- * Tribe
-    ValidTribes,
-    validTribes,
-    HasValidTribes,
-    foldedValidTribes,
     -- * Lenses
     -- ** Employee
-    employeeFirstName, employeeLastName, employeeContractType, employeeLocation, employeeConfirmed,
+    employeeFirstName, employeeLastName, employeeContractType, employeeOffice, employeeConfirmed,
     employeePhone, employeeContactEmail, employeeStartingDay, employeeSupervisor, employeeTribe,
     employeeInfo, employeeFUMLogin, employeeHRNumber, employeeChecklist,
     -- ** ContractType
     _ContractType,
     _ContractTypePermanent, _ContractTypeExternal, _ContractTypeFixedTerm,
     _ContractTypePartTimer, _ContractTypeSummerWorker,
-    -- ** Location
-    _Location,
-    _LocHelsinki, _LocTampere, _LocBerlin, _LocLondon,
-    _LocStockholm, _LocMunich, _LocOther,
-    locationToText, locationFromText,
     -- ** Task
     taskName, taskInfo, taskPrereqs, taskRole, taskComment,
     -- ** CheckResult
@@ -93,22 +81,25 @@ module Futurice.App.Checklist.Types (
     Counter (..),
     TodoCounter (..),
     toTodoCounter,
+    -- * Re-exports
+    module Futurice.Office,
+    module Futurice.Tribe,
     ) where
 
 import Prelude ()
 import Futurice.Prelude
+import Futurice.Office
+import Futurice.Tribe
 
 import Futurice.App.Checklist.Types.Basic
 import Futurice.App.Checklist.Types.ContractType
 import Futurice.App.Checklist.Types.Counter
 import Futurice.App.Checklist.Types.Identifier
-import Futurice.App.Checklist.Types.Location
 import Futurice.App.Checklist.Types.TaskItem
 import Futurice.App.Checklist.Types.World
 import Futurice.App.Checklist.Types.TaskAppliance
 import Futurice.App.Checklist.Types.TaskComment
 import Futurice.App.Checklist.Types.TaskRole
-import Futurice.App.Checklist.Types.Tribe
 
 import qualified FUM (UserName)
 

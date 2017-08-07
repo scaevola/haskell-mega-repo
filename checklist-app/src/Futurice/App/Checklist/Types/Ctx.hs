@@ -15,7 +15,6 @@ import Futurice.Prelude
 import Control.Concurrent.Async (concurrently)
 import Control.Concurrent.STM
        (TVar, atomically, modifyTVar', newTVarIO, readTVar, writeTVar)
-import Data.Constraint          (Dict (..))
 import Data.Pool                (Pool, createPool, withResource)
 import Futurice.CryptoRandom
        (CRandT, CRandom, CryptoGen, CryptoGenError, getCRandom, mkCryptoGen,
@@ -33,7 +32,6 @@ data Ctx = Ctx
     { ctxLogger      :: !Logger
     , ctxWorld       :: TVar World
     , ctxOrigWorld   :: World
-    , ctxValidTribes :: Dict HasValidTribes
     , ctxPostgres    :: Pool Postgres.Connection
     , ctxPRNGs       :: Pool (TVar CryptoGen)
     , ctxMockUser    :: !(Maybe FUM.UserName)
@@ -42,8 +40,7 @@ data Ctx = Ctx
     }
 
 newCtx
-    :: HasValidTribes
-    => Logger
+    :: Logger
     -> Postgres.ConnectInfo
     -> Maybe FUM.UserName
     -> World
@@ -53,7 +50,6 @@ newCtx logger ci mockUser w = do
     Ctx logger
         <$> newTVarIO w
         <*> pure w
-        <*> pure Dict
         <*> createPool (Postgres.connect ci) Postgres.close 1 60 5
         <*> createPool (mkCryptoGen >>= newTVarIO) (\_ -> return()) 1 3600 5
         <*> pure mockUser

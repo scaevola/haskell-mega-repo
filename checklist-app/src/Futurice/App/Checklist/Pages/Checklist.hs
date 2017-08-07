@@ -87,7 +87,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
                     for_ (checklist ^? checklistTasks . ix prereqTid) $ \_ -> do
                         taskLink prereqTask
                         br_ []
-                td_ $ a_ [ indexPageHref Nothing mlist (Just tid) False ] $
+                td_ $ a_ [ indexPageHref Nothing mlist (Just tid) False False ] $
                     case foldMapOf (worldTaskItems' . ix tid . folded) countUsers world of
                         Counter i j ->
                             toHtml (show i) *> "/" *> toHtml (show j)
@@ -109,7 +109,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
     row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do
             th_ [title_ "Status"]                      "S"
-            th_ [title_ "Location"]                    "Loc"
+            th_ [title_ "Office"]                    "Loc"
             th_ [title_ "Name" ]                       "Name"
             th_ [title_ "Due date"]                    "Due date"
             th_ [title_ "Confirmed - contract signed"] "Confirmed"
@@ -117,7 +117,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
         tbody_ $ for_ employees $ \employee -> tr_ $ do
             let startingDay = employee ^. employeeStartingDay
             td_ $ contractTypeHtml $ employee ^. employeeContractType
-            td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeLocation
+            td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeOffice
             td_ $ employeeLink employee
             td_ $ toHtml $ show startingDay
             td_ $ bool (pure ()) (toHtmlRaw ("&#8868;" :: Text)) $ employee ^. employeeConfirmed

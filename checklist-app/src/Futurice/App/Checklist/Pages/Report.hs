@@ -57,7 +57,7 @@ reportPage world authUser mcid fday tday = checklistPage_ "Employees" authUser $
     row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do
             th_ [title_ "Status"]                      "S"
-            th_ [title_ "Location"]                    "Loc"
+            th_ [title_ "Office"]                      "Off"
             th_ [title_ "Name" ]                       "Name"
             th_ [title_ "Checklist"]                   "List"
             th_ [title_ "Due date"]                    "Due date"
@@ -66,7 +66,7 @@ reportPage world authUser mcid fday tday = checklistPage_ "Employees" authUser $
             th_ [title_ "Confirmed - contract signed"] "Confirmed"
         tbody_ $ for_ employees $ \employee -> tr_ $ do
             td_ $ contractTypeHtml $ employee ^. employeeContractType
-            td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeLocation
+            td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeOffice
             td_ $ employee ^. nameHtml
             td_ $ checklistNameHtml world Nothing (employee ^. employeeChecklist) False
             td_ $ toHtml $ show $ employee ^. employeeStartingDay

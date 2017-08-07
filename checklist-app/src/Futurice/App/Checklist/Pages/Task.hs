@@ -37,7 +37,7 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
             [ class_ "button"
             , data_ "futu-link-button" $ toUrlPiece
             $ safeLink checklistApi indexPageEndpoint
-                  Nothing Nothing (task ^? identifier) defaultShowAll
+                  Nothing Nothing (task ^? identifier) defaultShowAll False
             ]
             "Goto employees listing"
 
@@ -82,7 +82,7 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
     row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do
             th_ [title_ "Status"]                      "S"
-            th_ [title_ "Location"]                    "Loc"
+            th_ [title_ "Office"]                    "Loc"
             th_ [title_ "Name" ]                       "Name"
             th_ [title_ "Checklist"]                   "List"
             th_ [title_ "Check"]                       "Check"
@@ -93,7 +93,7 @@ taskPage world today authUser task = checklistPage_ (view nameText task <> " - t
         tbody_ $ for_ employees $ \employee -> tr_ $ do
             let startingDay = employee ^. employeeStartingDay
             td_ $ contractTypeHtml $ employee ^. employeeContractType
-            td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeLocation
+            td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeOffice
             td_ $ employeeLink employee
             -- TODO: checklist link
             td_ $ checklistNameHtml world Nothing (employee ^. employeeChecklist) defaultShowAll

@@ -4,8 +4,6 @@
 {-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.Checklist.Types.TaskAppliance where
 
-import Prelude ()
-import Futurice.Prelude
 import Algebra.Lattice
        (BoundedJoinSemiLattice (..), BoundedLattice,
        BoundedMeetSemiLattice (..), JoinSemiLattice (..), Lattice,
@@ -16,24 +14,26 @@ import Data.Functor.Foldable     (cata, embed)
 import Data.Functor.Foldable.TH
 import Futurice.Generics
 import Futurice.Lucid.Foundation (HtmlT, ToHtml (..), class_, em_, span_)
+import Futurice.Office
+import Futurice.Prelude
+import Prelude ()
 import Text.Trifecta
 
 import qualified Data.Text                    as T
 import qualified Text.PrettyPrint.ANSI.Leijen as PP
 
 import Futurice.App.Checklist.Types.ContractType
-import Futurice.App.Checklist.Types.Location
 
 -- | Task appliance, e.g. this task is /"only for Helsinki and permanent employees"/.
 --
--- /TODO;/ define my. maybe depend on 'Contract' and 'Location'.
+-- /TODO;/ define my. maybe depend on 'Contract' and 'Office'.
 data TaskAppliance
     = TAAll
     | TANot TaskAppliance
     | TAAnd TaskAppliance TaskAppliance
     | TAOr TaskAppliance TaskAppliance
     | TAContractType ContractType
-    | TALocation Location
+    | TALocation Office
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 -------------------------------------------------------------------------------
@@ -97,7 +97,7 @@ normaliseTaskAppliance = cata alg
 -- Predicate
 -------------------------------------------------------------------------------
 
-taskApplianceToPredicate :: TaskAppliance -> (ContractType, Location) -> Bool
+taskApplianceToPredicate :: TaskAppliance -> (ContractType, Office) -> Bool
 taskApplianceToPredicate = cata alg
   where
     alg TAAllF               = const True
@@ -138,16 +138,16 @@ parseTaskAppliance = p . T.toLower . T.strip
     contractP = choice $
         (\ct -> ct <$ textSymbol (T.toLower $ contractTypeToText ct)) <$> [minBound .. maxBound]
 
-    locationP :: Parser Location
+    locationP :: Parser Office
     locationP = choice $
-        (\l -> l <$ textSymbol (T.toLower $ locationToText l)) <$> [minBound .. maxBound]
+        (\l -> l <$ textSymbol (T.toLower $ officeToText l)) <$> [minBound .. maxBound]
 
 prettyTaskAppliance :: TaskAppliance -> Text
 prettyTaskAppliance = go 0
   where
     go :: Int -> TaskAppliance -> Text
     go _ (TAContractType ct) = contractTypeToText ct
-    go _ (TALocation l)      = locationToText l
+    go _ (TALocation l)      = officeToText l
     go _ TAAll               = "all"
     go _ (TANot ta)          = "not " <> go 2 ta
     go d (TAAnd x y)         = pars (d >= 2) $ go 2 x <> " and " <> go 1 y
@@ -162,7 +162,7 @@ instance ToHtml TaskAppliance where
       where
         go :: Monad m => Int -> TaskAppliance -> HtmlT m ()
         go _ (TAContractType ct) = span_ [ class_ "contract" ] $ toHtml $ contractTypeToText ct
-        go _ (TALocation l)      = span_ [ class_ "location" ] $ toHtml $ locationToText l
+        go _ (TALocation l)      = span_ [ class_ "location" ] $ toHtml $ officeToText l
         go _ TAAll               = em_ "all"
         go _ (TANot ta)          = em_ "not " <> go 2 ta
         go d (TAAnd x y)         = pars (d >= 2) $ go 2 x <> " " <> em_ "and" <> " " <> go 1 y
