@@ -44,10 +44,6 @@ employeeAesonRoundtrip e = lhs === rhs
 correctEmployeeValue :: Value
 correctEmployeeValue =
     $(makeRelativeToProject "fixtures/employee.json" >>= embedFromJSON (Proxy :: Proxy Value))
-        & key "attributes" 
-            . key "department" . key "value" . key "attributes" . key "name" . _String .~ "Tammerforce"
-        & key "attributes"
-            . key "office"     . key "value" . key "attributes" . key "name" . _String .~ "Tampere"
 
 examples :: TestTree
 examples = testGroup "HUnit"

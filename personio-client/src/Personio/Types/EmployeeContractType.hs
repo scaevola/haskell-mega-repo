@@ -3,16 +3,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
-module Personio.Types.EmployeeContractType
-    (ContractType (..), contractTypeFromText
+module Personio.Types.EmployeeContractType ( 
+    ContractType (..), 
+    contractTypeToText, 
+    contractTypeFromText, 
+    _ContractType
     ) where
 
-import Data.Aeson.Compat (Value (String), withText)
 import Futurice.Generics
+import Futurice.Generics.Enum
 import Futurice.Prelude
-
-import qualified Data.Map as Map
-import qualified Data.Text as T
 
 data ContractType
     = PermanentAllIn
@@ -22,6 +22,7 @@ data ContractType
 
 makePrisms ''ContractType
 deriveGeneric ''ContractType
+deriveLift ''ContractType
 
 instance NFData ContractType
 
@@ -30,24 +31,27 @@ instance Arbitrary ContractType where
     shrink    = sopShrink
 
 instance ToJSON ContractType where
-    toJSON = String . contractTypeToText
+    toJSON = enumToJSON ei
 
 instance FromJSON ContractType where
-    parseJSON = withText "Contract type" $ \t ->
-        maybe (fail $ "invalid Contract type" <> t ^. unpacked) pure
-        $ t ^? _ContractType
+    parseJSON = enumParseJSON ei 
+
+ei :: EnumInstances ContractType
+ei = sopEnumInstances $ 
+    K "permanent all-in" :*
+    K "permanent"        :*
+    K "fixed term"       :*
+    Nil
+
+-------------------------------------------------------------------------------
+-- Boilerplate
+-------------------------------------------------------------------------------
 
 _ContractType :: Prism' Text ContractType
-_ContractType = prism' contractTypeToText contractTypeFromText
+_ContractType = enumPrism ei
 
 contractTypeFromText :: Text -> Maybe ContractType
-contractTypeFromText t = Map.lookup (T.toLower t) m
-  where
-    m = Map.fromList $
-        map (\x -> (T.toLower $ contractTypeToText x, x))
-        [minBound .. maxBound]
+contractTypeFromText = enumFromText ei
 
 contractTypeToText :: ContractType -> Text
-contractTypeToText PermanentAllIn = "Permanent all-in"
-contractTypeToText Permanent      = "Permanent"
-contractTypeToText FixedTerm      = "Fixed term"
+contractTypeToText = enumToText ei
