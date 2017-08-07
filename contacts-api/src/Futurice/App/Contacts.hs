@@ -59,7 +59,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                 , integrCfgFlowdockToken            = I cfgFdAuth
                 , integrCfgFlowdockOrgName          = I cfgFdOrg
                 -- Personio
-                , integrCfgPersonioProxyBaseRequest = Proxy
+                , integrCfgPersonioProxyBaseRequest = I cfgPersonioBaseReq
                 }
 
         -- Contacts action
