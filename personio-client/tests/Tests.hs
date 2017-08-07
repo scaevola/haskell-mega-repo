@@ -71,63 +71,81 @@ examples = testGroup "HUnit"
 -- Validations
 -------------------------------------------------------------------------------
 
+-- | 
+-- @
+-- attributeValue :: Text -> Traversal' Value Value
+-- @
+attributeValue :: Applicative f => Text -> (Value -> f Value) -> Value -> f Value
+attributeValue k = key "attributes" . key k . key "value"
+
 validations :: TestTree
 validations = testGroup "Validations"
-    [ testValidationV
+    [ testValidation
         "GitHub"
         (GithubInvalid "http://github.com/gitMastur")
         $ correctEmployeeValue
-            & key "attributes" . key "dynamic_72913" . key "value" . _String
+            & attributeValue "dynamic_72913" . _String
                 .~ "http://github.com/gitMastur"
     , testValidation
         "email"
-        $(makeRelativeToProject "fixtures/employee-m-email.json" >>= embedFile)
         EmailMissing
+        $ correctEmployeeValue
+            & attributeValue "email" .~  Array mempty
     , testValidation
         "tribe"
-        $(makeRelativeToProject "fixtures/employee-m-tribe.json" >>= embedFile)
         TribeMissing
+        $ correctEmployeeValue
+            & attributeValue "department" .~  Array mempty
     , testValidation
         "cost center"
-        $(makeRelativeToProject "fixtures/employee.json" >>= embedFile)
         CostCenterMissing
+        $ correctEmployeeValue -- TODO!
     , testValidation
         "office"
-        $(makeRelativeToProject "fixtures/employee-m-office.json" >>= embedFile)
         OfficeMissing
+        $ correctEmployeeValue
+            & attributeValue "office" .~  Array mempty
     , testValidation
         "phone"
-        $(makeRelativeToProject "fixtures/employee-m-phone.json" >>= embedFile)
         PhoneMissing
+        $ correctEmployeeValue
+            & attributeValue "dynamic_27163" . _String .~  ""
     , testValidation
         "role"
-        $(makeRelativeToProject "fixtures/employee-m-role.json" >>= embedFile)
         RoleMissing
+        $ correctEmployeeValue
+            & attributeValue "dynamic_72910" . _String .~  ""
     , testValidation
         "IBAN"
-        $(makeRelativeToProject "fixtures/employee-i-iban.json" >>= embedFile)
         IbanInvalid
+        $ correctEmployeeValue
+            & attributeValue "dynamic_72976" . _String .~  "GB82 WEST 1234 568 7654 32"
     , testValidation
         "login name"
-        $(makeRelativeToProject "fixtures/employee-i-login.json" >>= embedFile)
-        $ LoginInvalid "erAt"
+        (LoginInvalid "CAPS")
+        $ correctEmployeeValue
+            & attributeValue "dynamic_72982" . _String .~  "CAPS"
     , testValidation
-        "employment_type"
-        $(makeRelativeToProject "fixtures/employee-m-etype.json" >>= embedFile)
+        "employment_type missing"
         EmploymentTypeMissing
+        $ correctEmployeeValue
+            & attributeValue "employment_type" . _String .~  ""
+{-
+    , testValidation
+        "employment_type invalid"
+        EmploymentTypeMissing
+        $ correctEmployeeValue
+            & attributeValue "employment_type" . _String .~  "wrong"
+-}
     , testValidation
         "external contract_end_date"
-        $(makeRelativeToProject "fixtures/employee-m-endd.json" >>= embedFile)
         ExternalEndDateMissing
+        $ correctEmployeeValue
+            & attributeValue "employment_type" . _String .~  "external"
+            & attributeValue "contract_end_date" .~ Null
     ]
   where
-    -- TODO: remove me
-    testValidation name source warning = testCase name $ do
-        contents <- decodeStrict source
-        ev <- either fail pure $ parseEither validatePersonioEmployee contents
-        assertBool (show ev) $ warning `elem` ev ^. evMessages
-
-    testValidationV name warning val = testCase name $ do
+    testValidation name warning val = testCase name $ do
         ev <- either fail pure $ parseEither validatePersonioEmployee val
         assertBool (show ev) $ warning `elem` ev ^. evMessages
 
