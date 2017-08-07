@@ -110,7 +110,18 @@ matrix:
         - happy-1.19.5
         - ghc-8.0.2
         - libgmp-dev
-
+  - env: GHCVER=8.2.1 STACK_YAML=stack-ghc-8.2.1.yaml # PEDANTIC=YES
+    compiler: ghc-8.2.1
+    addons:
+      apt:
+        sources:
+        - hvr-ghc
+        packages:
+        - libfftw3-dev
+        - alex-3.1.7
+        - happy-1.19.5
+        - ghc-8.2.1
+        - libgmp-dev
 # Build only master (and PRs to master)
 branches:
   only:

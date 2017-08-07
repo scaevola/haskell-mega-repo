@@ -50,7 +50,7 @@ library
     , generics-sop
     , generics-sop-lens
     , http-api-data
-    , lattices
+    , lattices >=1.6
     , lens
     , lucid
     , mtl
@@ -140,7 +140,7 @@ executable checklist-app-server
     , generics-sop
     , generics-sop-lens
     , http-api-data
-    , lattices
+    , lattices >=1.6
     , lens
     , lucid
     , mtl
@@ -196,7 +196,7 @@ executable checklist-import
     , generics-sop
     , generics-sop-lens
     , http-api-data
-    , lattices
+    , lattices >=1.6
     , lens
     , lucid
     , mtl
@@ -256,7 +256,7 @@ test-suite unit-tests
     , generics-sop
     , generics-sop-lens
     , http-api-data
-    , lattices
+    , lattices >=1.6
     , lens
     , lucid
     , mtl

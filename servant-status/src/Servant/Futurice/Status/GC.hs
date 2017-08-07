@@ -1,19 +1,24 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 module Servant.Futurice.Status.GC (
-    gcStatsToStatusInfo,
     gcStatusInfo,
     ) where
 
-import Prelude        ()
-import Prelude.Compat
-
-import Data.Semigroup (sconcat)
-import GHC.Stats
-import System.Mem     (performMinorGC)
-
 import Servant.Futurice.Status.Types
+
+#if MIN_VERSION_base(4,10,0)
+gcStatusInfo :: StatusInfoIO
+gcStatusInfo = SIIO $ pure mempty
+
+#else
+
+import Prelude ()
+import Prelude.Compat
+import GHC.Stats
+import Data.Semigroup (sconcat)
+import System.Mem     (performMinorGC)
 
 gcStatsToStatusInfo :: GCStats -> StatusInfo
 gcStatsToStatusInfo GCStats{..} = group "gc" $ sconcat
@@ -45,3 +50,4 @@ gcStatsToStatusInfo GCStats{..} = group "gc" $ sconcat
 
 gcStatusInfo :: StatusInfoIO
 gcStatusInfo = SIIO $ gcStatsToStatusInfo <$> (performMinorGC >> getGCStats)
+#endif

@@ -310,9 +310,8 @@ class ToColumns a where
 
     columnNames :: Proxy a -> NP (K Text) (Columns a)
     default columnNames
-        :: (SOP.IsProductType a xs, SOP.HasDatatypeInfo a, SListI xs)
-        => Proxy a
-        -> NP (K Text) xs
+        :: (SOP.IsProductType a xs, SOP.HasDatatypeInfo a, SListI xs, xs ~ Columns a)
+        => Proxy a -> NP (K Text) (Columns a)
     columnNames = sopRecordFieldNames
 
     toColumns :: a -> [NP I (Columns a)]
