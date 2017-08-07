@@ -507,10 +507,10 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , costCenterValidate
         , ibanValidate
         , loginValidate
-        , fixedEndDateMissing
+        , fixedEndDateValidate
         , externalContractValidate
+        , employmentTypeValidate
         , attributeMissing "email" EmailMissing
-        , attributeMissing "employment_type" EmploymentTypeMissing
         , attributeObjectMissing "department" TribeMissing
         , attributeObjectMissing "office" OfficeMissing
         , dynamicAttributeMissing "Work phone" PhoneMissing
@@ -588,8 +588,8 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                 Nothing -> tell [LoginInvalid login]
                 Just _  -> pure ()
 
-        fixedEndDateMissing :: WriterT [ValidationMessage] Parser ()
-        fixedEndDateMissing = do
+        fixedEndDateValidate :: WriterT [ValidationMessage] Parser ()
+        fixedEndDateValidate = do
             cType <- lift (parseDynamicAttribute obj "Contract type")
             case contractTypeFromText cType of
                 Just FixedTerm -> checkEndDate FixedTermEndDateMissing
@@ -615,6 +615,13 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             f :: Text -> Text -> (Maybe ContractType, Maybe EmploymentType)
             f conT eTypeT = (contractTypeFromText conT
                             , employmentTypeFromText eTypeT)
+
+        employmentTypeValidate :: WriterT [ValidationMessage] Parser ()
+        employmentTypeValidate = do
+            eType <- lift (parseAttribute obj "employment_type") 
+            case employmentTypeFromText eType of
+                Nothing -> tell [EmploymentTypeMissing]
+                Just _  -> pure ()
 
 -- | Validate IBAN.
 --

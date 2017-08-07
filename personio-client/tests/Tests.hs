@@ -135,19 +135,23 @@ validations = testGroup "Validations"
         EmploymentTypeMissing
         $ correctEmployeeValue
             & attributeValue "employment_type" . _String .~  ""
-{-
     , testValidation
         "employment_type invalid"
         EmploymentTypeMissing
         $ correctEmployeeValue
             & attributeValue "employment_type" . _String .~  "wrong"
--}
     , testValidation
-        "external contract_end_date"
-        ExternalEndDateMissing
+        "fixed-term contract_end_date"
+        FixedTermEndDateMissing
         $ correctEmployeeValue
-            & attributeValue "employment_type" . _String .~  "external"
+            & attributeValue "dynamic_72935" . _String .~  "fixed term"
             & attributeValue "contract_end_date" .~ Null
+    , testValidation
+        "permanent external"
+        PermanentExternal
+        $ correctEmployeeValue
+            & attributeValue "dynamic_72935" . _String .~ "permanent"
+            & attributeValue "employment_type" . _String .~ "external"
     ]
   where
     testValidation name warning val = testCase name $ do
