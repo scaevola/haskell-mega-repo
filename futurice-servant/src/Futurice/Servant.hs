@@ -306,22 +306,27 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
     cloudwatchJob :: TVar MutGC -> Logger -> AWS.Env -> Text -> IO ()
     cloudwatchJob mutgcTVar logger env service = runLogT "cloudwatch" logger $ do
 #if MIN_VERSION_base(4,10,0)
-        liveBytes <- Stats.gcdetails_live_bytes . Stats.gc <$> liftIO Stats.getRTSStats
+        stats <- liftIO Stats.getRTSStats
+
+        let liveBytes =  Stats.gcdetails_live_bytes (Stats.gc stats)
+
+        let currMut = Stats.mutator_cpu_ns stats
+        let currTot = Stats.cpu_ns stats
 #else
         stats <- liftIO Stats.getGCStats
 
         let liveBytes = Stats.currentBytesUsed stats
 
-        let currGc = Stats.gcCpuSeconds stats
         let currMut = Stats.mutatorCpuSeconds stats
+        let currTot = Stats.cpuSeconds stats
 #endif
 
-        MutGC prevGc prevMut <- liftIO $ atomically $
-            swapTVar mutgcTVar (MutGC currGc currMut)
+        MutGC prevMut prevTot <- liftIO $ atomically $
+            swapTVar mutgcTVar (MutGC currMut currTot)
 
-        let gcSec = currGc - prevGc
         let mutSec = currMut - prevMut
-        let productivity' = mutSec / (mutSec + gcSec)
+        let totSec = currTot - prevTot
+        let productivity' = realToFrac mutSec / realToFrac totSec :: Double
         -- filter out invalid (e.g NaN) values
         let productivity
                 | 0 <= productivity' &&  productivity' <= 100 = productivity'
@@ -391,7 +396,11 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
 -- MutGC
 -------------------------------------------------------------------------------
 
+#if MIN_VERSION_base(4,10,0)
+data MutGC = MutGC !Stats.RtsTime !Stats.RtsTime
+#else
 data MutGC = MutGC !Double !Double
+#endif
 
 -------------------------------------------------------------------------------
 -- Other stuff

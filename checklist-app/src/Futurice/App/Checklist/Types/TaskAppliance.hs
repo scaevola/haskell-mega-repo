@@ -124,8 +124,8 @@ parseTaskAppliance = p . T.toLower . T.strip
     taP = taP' <* eof
     taP' = orP
 
-    orP       = fmap joins1 $ (:) <$> andP <*> many (symbol "or" *> andP)
-    andP      = fmap meets1 $ (:) <$> notP <*> many (symbol "and" *> notP)
+    orP       = fmap joins1 $ (:|) <$> andP <*> many (symbol "or" *> andP)
+    andP      = fmap meets1 $ (:|) <$> notP <*> many (symbol "and" *> notP)
     notP      = foldl (\f _ -> f . negateTaskAppliance) id <$> many (symbol "not") <*> litP
 
     litP      =
