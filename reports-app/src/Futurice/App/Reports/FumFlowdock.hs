@@ -8,7 +8,6 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE UndecidableInstances  #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 -- | FUM
 module Futurice.App.Reports.FumFlowdock (
     -- * Report
@@ -24,7 +23,6 @@ import Futurice.Prelude
 import Control.Arrow           ((&&&))
 import Control.Lens            (to)
 import Data.List               (partition)
-import Data.Swagger            (NamedSchema (..))
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Report.Columns
@@ -168,10 +166,3 @@ alignByKey ((k, x) : xs) ys = case as of
   where
     (as, bs) = partition (keyEq k . fst) ys
     rest     = alignByKey xs bs
-
--------------------------------------------------------------------------------
--- Flowdock orphans
--------------------------------------------------------------------------------
-
-instance ToSchema (FD.Identifier a res) where
-    declareNamedSchema _ = return $ NamedSchema (Just "identifier") mempty

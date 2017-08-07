@@ -21,11 +21,14 @@ dependencies:
   - constraints
   - containers
   - env-config
+  - flowdock-rest
   - futurice-prelude
   - futurice-tribes
+  - github
   - http-api-data
   - http-client
   - lens
+  - lucid
   - monad-http
   - mtl
   - regex-applicative

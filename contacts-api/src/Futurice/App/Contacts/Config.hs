@@ -13,16 +13,15 @@ import qualified GitHub             as GH
 
 -- | TODO: split config into two parts
 data Config = Config
-    { cfgFumAuth     :: !FUM.AuthToken     -- ^ FUM auth token
-    , cfgFumBaseUrl  :: !FUM.BaseUrl       -- ^ FUM base url
-    , cfgFumUserList :: !FUM.ListName      -- ^ FUM user list
-    , cfgGhBaseReq   :: !Request           -- ^ github-proxy baseurl
-    , cfgGhOrg       :: !(GH.Name GH.Organization)
-      -- ^ Github organisation
-    , cfgFdAuth      :: !FD.AuthToken      -- ^ Flowdock token
-    , cfgFdOrg       :: !(FD.ParamName FD.Organisation)
-      -- ^ Flowdock organisation
-    , cfgPmBaseReq   :: !Request
+    { cfgFumAuth         :: !FUM.AuthToken     -- ^ FUM auth token
+    , cfgFumBaseUrl      :: !FUM.BaseUrl       -- ^ FUM base url
+    , cfgFumUserList     :: !FUM.ListName      -- ^ FUM user list
+    , cfgGhBaseReq       :: !Request           -- ^ github-proxy baseurl
+    , cfgGhOrg           :: !(GH.Name GH.Organization)
+    , cfgFdAuth          :: !FD.AuthToken      -- ^ Flowdock token
+    , cfgFdOrg           :: !(FD.ParamName FD.Organisation)
+    , cfgPmBaseReq       :: !Request
+    , cfgPersonioBaseReq :: !Request
     }
     deriving (Show)
 
@@ -36,5 +35,6 @@ instance Configure Config where
         <*> envVar "FD_AUTH_TOKEN"
         <*> envVar "FD_ORGANISATION"
         <*> (f <$> envVar "PLANMILLPROXY_HAXLURL")
+        <*> (f <$> envVar "PERSONIOPROXY_REQUESTURL")
       where
         f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }

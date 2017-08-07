@@ -54,6 +54,7 @@ library:
     - futurice-prelude
     - futurice-servant
     - github
+    - github
     - hashable
     - haxl
     - haxl-fxtra
@@ -67,6 +68,7 @@ library:
     - mtl
     - parallel-io
     - periocron
+    - personio-client
     - planmill-client
     - rfc5051
     - semigroups

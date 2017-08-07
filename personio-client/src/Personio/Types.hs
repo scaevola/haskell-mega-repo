@@ -11,6 +11,9 @@ module Personio.Types (
     module Personio.Types.EmployeeStatus,
     ) where
 
+-- Uncomment to get attribute hashmap
+-- #define PERSONIO_DEBUG 1
+
 import Control.Monad.Writer
 import Data.Aeson.Compat
 import Data.Aeson.Internal         (JSONPathElement (Key), (<?>))
@@ -21,12 +24,12 @@ import Data.List                   (foldl')
 import Data.Maybe                  (isJust)
 import Data.Time                   (zonedTimeToLocalTime)
 import Futurice.Aeson
-import Futurice.Office
-import Futurice.Tribe
 import Futurice.EnvConfig
 import Futurice.Generics
 import Futurice.IdMap              (HasKey (..))
+import Futurice.Office
 import Futurice.Prelude
+import Futurice.Tribe
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
@@ -34,8 +37,12 @@ import Personio.Types.EmployeeEmploymentType
        (EmploymentType (..), employmentTypeFromText)
 import Personio.Types.EmployeeStatus         (Status (..))
 
-import qualified Data.HashMap.Strict as HM
-import qualified Data.Text           as T
+import qualified Chat.Flowdock.REST            as FD
+import qualified Data.HashMap.Strict           as HM
+import qualified Data.Swagger                  as Swagger
+import qualified Data.Text                     as T
+import qualified GitHub                        as GH
+import qualified Text.Regex.Applicative.Common as RE
 
 -------------------------------------------------------------------------------
 -- Data
@@ -81,6 +88,33 @@ instance ToHttpApiData EmployeeId where
 _EmployeeId :: Prism' Text EmployeeId
 _EmployeeId = prism' toUrlPiece (either (const Nothing) Just . parseUrlPiece)
 
+-------------------------------------------------------------------------------
+-- Attribute
+-------------------------------------------------------------------------------
+
+-- | Personio attribute, i.e. labelled value.
+data Attribute = Attribute !Text !Value deriving (Eq, Show, Generic)
+
+instance ToJSON Attribute where
+    toJSON (Attribute l v) = object [ "label" .= l, "value" .= v ]
+
+instance FromJSON Attribute where
+    parseJSON = withObjectDump "Attribute" $ \obj -> Attribute
+        <$> obj .: "label"
+        <*> obj .: "value"
+
+instance ToSchema Attribute where
+    declareNamedSchema _ = pure $ Swagger.NamedSchema (Just "Attribute") mempty
+
+instance NFData Attribute
+
+instance Arbitrary Attribute where
+    arbitrary = pure (Attribute "arbitrary" "value")
+
+-------------------------------------------------------------------------------
+-- Employee
+-------------------------------------------------------------------------------
+
 -- | Employee structure. Doesn't contain sensitive information.
 data Employee = Employee
     { _employeeId             :: !EmployeeId
@@ -92,16 +126,18 @@ data Employee = Employee
     , _employeeEmail          :: !Text
     , _employeePhone          :: !Text
     , _employeeSupervisorId   :: !(Maybe EmployeeId)
-    , _employeeLogin          :: !(Maybe Text) -- TODO 4 or 5 lowercase letters `isLower` not good,
-    , _employeeTribe          :: !(Maybe Tribe)
-    , _employeeOffice         :: !(Maybe Office)
-    , _employeeCostCenter     :: !(Maybe Text) -- exactly 1
-    , _employeeGithub         :: !(Maybe Text)
+    , _employeeLogin          :: !(Maybe Text)  -- TODO: use proper newtype!
+    , _employeeTribe          :: !Tribe  -- ^ defaults to 'defaultTribe'
+    , _employeeOffice         :: !Office  -- ^ defaults to 'OffOther'
+    , _employeeCostCenter     :: !(Maybe Text)
+    , _employeeGithub         :: !(Maybe (GH.Name GH.User))
+    , _employeeFlowdock       :: !(Maybe FD.UserId)
     , _employeeStatus         :: !Status
     , _employeeHRNumber       :: !(Maybe Int)
     , _employeeEmploymentType :: !EmploymentType
-    -- use this when debugging
-    -- , employeeRest     :: !(HashMap Text Value)
+#ifdef PERSONIO_DEBUG
+    , _employeeRest           :: !(HashMap Text Attribute)
+#endif
     }
   deriving (Eq, Show, Generic)
 
@@ -169,22 +205,17 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseDynamicAttribute obj "Work phone"
         <*> fmap getSupervisorId (parseAttribute obj "supervisor")
         <*> fmap getMaybeLogin (parseDynamicAttribute obj "Login name")
-        <*> fmap getName (parseAttribute obj "department")
-        <*> fmap getName (parseAttribute obj "office")
+        <*> fmap (fromMaybe defaultTribe . getName) (parseAttribute obj "department")
+        <*> fmap (fromMaybe OffOther . getName) (parseAttribute obj "office")
         <*> fmap getName (parseAttribute obj "cost_centers")
         <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
+        <*> fmap getFlowdockId (parseDynamicAttribute obj "Flowdock")
         <*> parseAttribute obj "status"
         <*> parseDynamicAttribute obj "HR number"
         <*> parseAttribute obj "employment_type"
-        -- <*> pure obj -- for employeeRest field
-
--- | Personio attribute, i.e. labelled value.
-data Attribute = Attribute !Text !Value deriving Show
-
-instance FromJSON Attribute where
-    parseJSON = withObjectDump "Attribute" $ \obj -> Attribute
-        <$> obj .: "label"
-        <*> obj .: "value"
+#ifdef PERSONIO_DEBUG
+        <*> pure obj -- for employeeRest field
+#endif
 
 newtype SupervisorId = SupervisorId { getSupervisorId :: Maybe EmployeeId }
 
@@ -207,22 +238,35 @@ newtype NamedAttribute a = NamedAttribute { getName :: Maybe a }
 
 instance FromJSON a => FromJSON (NamedAttribute a) where
     parseJSON v = case v of
-        (Null)     -> pure (NamedAttribute Nothing)
-        (Array xs) -> case toList xs of
+        Null      -> pure (NamedAttribute Nothing)
+        Array xs  -> case toList xs of
             []    -> pure (NamedAttribute Nothing)
             (x:_) -> p x  -- take first attribute.
-        _          -> p v
+        _         -> p v
       where
         p = withObjectDump "NamedAttribute" $ \obj ->
             NamedAttribute . Just <$> ((obj .: "attributes") >>= (.: "name"))
 
-newtype GithubUsername = GithubUsername { getGithubUsername :: Maybe Text }
+newtype GithubUsername = GithubUsername
+    { getGithubUsername :: Maybe (GH.Name GH.User) }
 
 instance FromJSON GithubUsername where
-    parseJSON = withText "Github" (pure . GithubUsername . match githubRegexp)
+    parseJSON = withText "Github" $
+        pure . GithubUsername . fmap GH.mkUserName . match githubRegexp
 
 githubRegexp :: RE' Text
 githubRegexp = string "https://github.com/" *> (T.pack <$> some anySym)
+
+-- | Parses @"https://www.flowdock.com/app/private/123456"@.
+newtype FlowdockId = FlowdockId
+    { getFlowdockId :: Maybe FD.UserId }
+
+instance FromJSON FlowdockId where
+    parseJSON = withText "Flowdock" $
+        pure . FlowdockId . fmap FD.mkIdentifier . match flowdockRegexp
+
+flowdockRegexp :: RE' Word64
+flowdockRegexp = string "https://www.flowdock.com/app/private/" *> RE.decimal
 
 newtype MaybeLogin = MaybeLogin { getMaybeLogin  :: Maybe Text }
 

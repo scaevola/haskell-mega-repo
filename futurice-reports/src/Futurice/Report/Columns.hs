@@ -585,6 +585,10 @@ instance ReportValue Integer where
     reportValueType _ = CTNumber
     reportValueHtml   = toHtml . show
 
+instance ReportValue Word64 where
+    reportValueType _ = CTNumber
+    reportValueHtml   = toHtml . show
+
 instance ReportValue Day where
     reportValueType _ = CTDay
     reportValueHtml = fromString . show

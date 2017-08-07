@@ -32,6 +32,7 @@ import qualified FUM
 import qualified GitHub             as GH
 import qualified PlanMill           as PM
 import qualified PlanMill.Queries   as PMQ
+import qualified Personio
 
 -- Contacts modules
 import Futurice.App.Contacts.Types
@@ -70,6 +71,25 @@ contacts' users githubMembers flowdockOrg competenceMap teamMap =
         res3 = addPlanmillInfo competenceMap teamMap res2
     in sortBy (compareUnicodeText `on` contactName) res3
 
+_employeeToContact :: Personio.Employee -> Contact Text
+_employeeToContact e = Contact
+    { contactLogin      = FUM.UserName $ fromMaybe "" $ e ^. Personio.employeeLogin
+    , contactFirst      = e ^. Personio.employeeFirst
+    , contactName       = e ^. Personio.employeeFirst <> " " <> e ^. Personio.employeeLast
+    , contactEmail      = e ^. Personio.employeeEmail
+    , contactPhones     = [] -- e ^. Personio.employeePhone -- TODO: multiple phones
+    , contactTitle      = Just "title todo"
+    , contactThumb      = noImage -- from FUM
+    , contactImage      = noImage -- from FUM
+    , contactFlowdock   = Unknown -- TODO
+    , contactGithub     = Unknown -- TODO
+    , contactTeam       = Nothing -- e ^. Personio.employeeTribe
+    -- , contactOffice
+    , contactCompetence = Just "competence todo"
+    }
+  where
+    noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
+
 userToContact :: FUM.User -> Contact Text
 userToContact FUM.User{..} = Contact
     { contactLogin      = _userName
@@ -84,7 +104,6 @@ userToContact FUM.User{..} = Contact
     , contactGithub     = S.maybe Unknown (Sure . flip ContactGH noImage) _userGithub
     , contactTeam       = Nothing
     , contactCompetence = Nothing
-    , contactHrNumber   = _userHrNumber ^. lazy
     }
   where
     noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
@@ -197,7 +216,7 @@ addFlowdockInfo us = fmap add
         byName  = maybe Unknown (Unsure . f) (HM.lookup name nameMap)
 
         f :: u -> ContactFD Text
-        f u = ContactFD (fromInteger $ FD.getIdentifier $ u ^. FD.userId)
+        f u = ContactFD (fromIntegral $ FD.getIdentifier $ u ^. FD.userId)
                         (u ^. FD.userNick)
                         (u ^. FD.userAvatar)
 

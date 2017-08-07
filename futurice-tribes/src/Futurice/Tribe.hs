@@ -7,6 +7,7 @@ module Futurice.Tribe (
     tribeFromText,
     _Tribe,
     tribeOffices,
+    defaultTribe,
     ) where
 
 import Futurice.Generics
@@ -63,6 +64,17 @@ tribeLookup
     $ toList tribeInfos
   where
     f (i, ti) = [ (T.toLower k, (i, ti)) | k <- tiName ti : tiAliases ti ]
+
+-------------------------------------------------------------------------------
+-- Default
+-------------------------------------------------------------------------------
+
+-- | Some tribe with @default: true@, or  an 'error' if non found.
+defaultTribe :: Tribe
+defaultTribe
+    = Tribe
+    $ fromMaybe (error "defaultTribe: No default Tribe")
+    $ V.findIndex tiDefault tribeInfos
 
 -------------------------------------------------------------------------------
 -- Template Haskell

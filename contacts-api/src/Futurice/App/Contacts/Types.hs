@@ -75,7 +75,6 @@ data Contact avatar = Contact
     , contactGithub     :: !(Tri (ContactGH avatar))
     , contactTeam       :: !(Maybe Text)
     , contactCompetence :: !(Maybe Text)
-    , contactHrNumber   :: !(Maybe Text)
     }
   deriving
     ( Eq, Ord, Show, Read, Generic, Typeable
@@ -106,7 +105,6 @@ instance ToField a => ToNamedRecord (Contact a) where
         , (,) "github"     $ toField contactGithub
         , (,) "team"       $ toField contactTeam
         , (,) "competence" $ toField contactCompetence
-        , (,) "hrNumber"   $ toField contactHrNumber
         ]
 instance DefaultOrdered (Contact a) where
     headerOrder = sopHeaderOrder
