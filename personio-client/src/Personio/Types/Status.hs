@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-module Personio.Types.EmployeeStatus (
+module Personio.Types.Status (
     Status(..),
     statusToText,
     statusFromText,

@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
-module Personio.Types.EmployeeContractType ( 
+module Personio.Types.ContractType ( 
     ContractType (..), 
     contractTypeToText, 
     contractTypeFromText, 

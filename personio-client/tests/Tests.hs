@@ -13,7 +13,7 @@ import Test.Tasty.QuickCheck
 import Data.Aeson.Lens (key, _String)
 
 import Personio
-import Personio.Types.EmployeeEmploymentType
+import Personio.Types.EmploymentType
 
 main :: IO ()
 main = defaultMain $ testGroup "tests"

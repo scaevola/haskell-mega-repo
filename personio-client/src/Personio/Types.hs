@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeFamilies        #-}
 module Personio.Types (
     module Personio.Types,
-    module Personio.Types.EmployeeStatus,
+    module Personio.Types.Status,
     ) where
 
 -- Uncomment to get attribute hashmap
@@ -33,11 +33,11 @@ import Futurice.Tribe
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
-import Personio.Types.EmployeeContractType
+import Personio.Types.ContractType
        (ContractType (..), contractTypeFromText)
-import Personio.Types.EmployeeEmploymentType
+import Personio.Types.EmploymentType
        (EmploymentType (..), employmentTypeFromText)
-import Personio.Types.EmployeeStatus         (Status (..))
+import Personio.Types.Status       (Status (..))
 
 import qualified Chat.Flowdock.REST            as FD
 import qualified Data.HashMap.Strict           as HM
