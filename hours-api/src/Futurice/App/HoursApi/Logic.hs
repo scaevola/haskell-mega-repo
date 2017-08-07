@@ -129,7 +129,7 @@ hoursResponse interval = do
       where
         mk :: H.Capacity -> Maybe (Day, DayType)
         mk c
-            | Just desc <- c ^. H.capacityDescription
+            | Just desc <- c ^. H.capacityDescription, desc /= ""
                                             = mk' (DayTypeHoliday desc)
             | (c ^. H.capacityAmount) <= 0  = mk' DayTypeZero
             | otherwise                     = Nothing
