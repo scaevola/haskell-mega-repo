@@ -45,6 +45,7 @@ library
     , fum-client
     , fum-types
     , futurice-foundation
+    , futurice-integrations
     , futurice-prelude
     , futurice-servant
     , futurice-tribes
@@ -136,6 +137,7 @@ executable checklist-app-server
     , fum-client
     , fum-types
     , futurice-foundation
+    , futurice-integrations
     , futurice-prelude
     , futurice-servant
     , futurice-tribes
@@ -193,6 +195,7 @@ executable checklist-import
     , fum-client
     , fum-types
     , futurice-foundation
+    , futurice-integrations
     , futurice-prelude
     , futurice-servant
     , futurice-tribes
@@ -254,6 +257,7 @@ test-suite unit-tests
     , fum-client
     , fum-types
     , futurice-foundation
+    , futurice-integrations
     , futurice-prelude
     , futurice-servant
     , futurice-tribes

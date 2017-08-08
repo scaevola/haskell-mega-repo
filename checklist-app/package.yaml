@@ -30,6 +30,7 @@ dependencies:
   - fum-client
   - fum-types
   - futurice-foundation
+  - futurice-integrations
   - futurice-prelude
   - futurice-servant
   - futurice-tribes
