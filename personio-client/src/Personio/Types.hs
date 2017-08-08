@@ -16,7 +16,7 @@ module Personio.Types (
 -- Uncomment to get attribute hashmap
 -- #define PERSONIO_DEBUG 1
 
-import Control.Monad.Writer
+import Control.Monad.Writer        (WriterT, execWriterT)
 import Data.Aeson.Compat
 import Data.Aeson.Internal         (JSONPathElement (Key), (<?>))
 import Data.Aeson.Types
@@ -27,12 +27,14 @@ import Data.Maybe                  (isJust)
 import Data.Time                   (zonedTimeToLocalTime)
 import FUM.Types.Login             (Login, loginRegexp)
 import Futurice.Aeson
+import Futurice.Constants          (personioPublicUrl)
 import Futurice.EnvConfig
 import Futurice.Generics
 import Futurice.IdMap              (HasKey (..))
 import Futurice.Office
 import Futurice.Prelude
 import Futurice.Tribe
+import Lucid                       (ToHtml (..), a_, href_)
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
@@ -64,7 +66,6 @@ instance Arbitrary EmployeeId where
 instance Hashable EmployeeId where
     hashWithSalt salt (EmployeeId i) = hashWithSalt salt i
 
-
 instance FromJSON EmployeeId where
     parseJSON = fmap EmployeeId . parseJSON
 
@@ -74,6 +75,12 @@ instance ToJSON EmployeeId where
 
 instance NFData EmployeeId where
     rnf (EmployeeId i) = rnf i
+
+instance ToHtml EmployeeId where
+    toHtmlRaw = toHtml
+    toHtml (EmployeeId i) = do
+        let t = textShow i
+        a_ [ href_ $ personioPublicUrl <> "/staff/details/" <> t ] $ toHtml t
 
 -- | We could use 'GeneralizedNewtypeDeriving', but we don't (yet?).
 instance ToParamSchema EmployeeId where

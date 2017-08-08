@@ -87,15 +87,11 @@ data MissingHoursParams = MissingHoursParams
     { _mhpGenerated    :: !UTCTime
     , _mhpFromDay      :: !Day
     , _mhpToDay        :: !Day
-    , _mhpFUMPublicUrl :: !Text
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 deriveGeneric ''MissingHoursParams
 makeLenses ''MissingHoursParams
-
-instance HasFUMPublicURL MissingHoursParams where
-    fumPublicUrl = mhpFUMPublicUrl
 
 instance NFData MissingHoursParams
 instance ToSchema MissingHoursParams where declareNamedSchema = sopDeclareNamedSchema
@@ -170,13 +166,12 @@ missingHoursForUser interval user = do
 missingHoursReport
     :: forall m env title.
         ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m
-        , MonadReader env m, HasFUMEmployeeListName env, HasFUMPublicURL env
+        , MonadReader env m, HasFUMEmployeeListName env
         )
     => Maybe (Set (PM.EnumValue PM.User "contractType"))
     -> PM.Interval Day
     -> m (MissingHoursReport title)
 missingHoursReport mcontractTypes interval = do
-    fumPubUrl <- view fumPublicUrl
     now <- PM.currentTime
     fpm0 <- snd <$$> fumPlanmillMap
     let fpm1 = case mcontractTypes of
@@ -185,7 +180,7 @@ missingHoursReport mcontractTypes interval = do
             Nothing ->
                 fpm0
     fpm2 <- traverse perUser fpm1
-    pure $ Report (MissingHoursParams now (inf interval) (sup interval) fumPubUrl) fpm2
+    pure $ Report (MissingHoursParams now (inf interval) (sup interval)) fpm2
   where
     perUser :: PM.User -> m (StrictPair Employee :$ Vector :$ MissingHour)
     perUser pmUser = (S.:!:)

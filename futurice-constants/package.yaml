@@ -1,7 +1,7 @@
-name: fum-types
+name: futurice-constants
 version: "0"
-synopsis: FUM types
-description: "In other words: @Login@ and @GroupName@ types"
+synopsis: Futurice constants
+description: Futurice constants
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
 license: BSD3
@@ -22,17 +22,12 @@ default-extensions:
   - ScopedTypeVariables
 
 dependencies:
-  - base            >=4.7      && <4.11
-  - aeson
+  - base            >=4.7      && <4.10
   - aeson-compat
-  - cassava
   - containers
-  - futurice-constants
   - futurice-prelude
   - lucid
-  - postgresql-simple
   - QuickCheck
-  - regex-applicative-text
   - swagger2
   - template-haskell
   - text
@@ -40,3 +35,5 @@ dependencies:
 
 library:
   source-dirs: src
+  other-modules:
+    - Futurice.Constants.Internal

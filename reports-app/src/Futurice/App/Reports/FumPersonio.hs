@@ -17,11 +17,8 @@ module Futurice.App.Reports.FumPersonio (
     FumPersonioReport,
     fumPersonioReport,
     -- * Types
-    FumPersonioReportParams (..),
     PersonioUser (..),
     FUMUser (..),
-    -- * Lenses
-    fumPersonioReportGenerated,
     ) where
 
 import Prelude ()
@@ -30,7 +27,6 @@ import Futurice.Generics
 
 import Control.Arrow             ((&&&))
 import Futurice.Integrations
-import Futurice.Lucid.Foundation
 import Futurice.Report.Columns
 
 import qualified Data.HashMap.Strict as HM
@@ -73,34 +69,8 @@ instance ToSchema PersonioUser where
 instance ToSchema FUMUser where
     declareNamedSchema = sopDeclareNamedSchema
 
-
 instance ToColumns PersonioUser
 instance ToColumns FUMUser
-
-data FumPersonioReportParams = FumPersonioReportParams
-    { _fumPersonioReportGenerated    :: !UTCTime
-    , _fumPersonioReportFumPublicUrl :: !Text
-    }
-    deriving (Typeable, Generic)
-
-makeLenses ''FumPersonioReportParams
-deriveGeneric ''FumPersonioReportParams
-
-instance NFData FumPersonioReportParams
-
-instance ToJSON FumPersonioReportParams where
-    toJSON = sopToJSON
-    toEncoding = sopToEncoding
-
-instance ToSchema FumPersonioReportParams where
-    declareNamedSchema = sopDeclareNamedSchema
-
-instance ToHtml FumPersonioReportParams where
-    toHtml (FumPersonioReportParams r _) = do
-        div_ $ "This report is here to help user data migration to Personio"
-        toHtml $ show r
-    toHtmlRaw = toHtml
-
 
 -------------------------------------------------------------------------------
 -- Report
@@ -108,11 +78,8 @@ instance ToHtml FumPersonioReportParams where
 
 type FumPersonioReport = Report
     "TEMPORARY: Users in (old) FUM ↔ Personio"
-    FumPersonioReportParams
+    ReportGenerated
     (Vector :$ These PersonioUser FUMUser)
-
-instance HasFUMPublicURL FumPersonioReportParams where
-    fumPublicUrl = fumPersonioReportFumPublicUrl
 
 -------------------------------------------------------------------------------
 -- Logic
@@ -122,15 +89,14 @@ fumPersonioReport
     :: forall m env.
        ( MonadTime m, MonadFUM m, MonadPersonio m
        , MonadReader env m
-       , HasFUMEmployeeListName env, HasFUMPublicURL env
+       , HasFUMEmployeeListName env
        )
     => m FumPersonioReport
 fumPersonioReport = do
     now <- currentTime
     today <- currentDay
-    fumPubUrl <- view fumPublicUrl
     report <- makeReport <$> personioUsers today <*> fumUsers
-    return $ Report (FumPersonioReportParams now fumPubUrl) report
+    return $ Report (ReportGenerated now) report
   where
     fumUsers :: m [FUMUser]
     fumUsers = map mk . V.toList <$> fumEmployeeList

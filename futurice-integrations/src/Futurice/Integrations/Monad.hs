@@ -19,7 +19,6 @@ import Futurice.Constraint.Unit1 (Unit1)
 import Futurice.EnvConfig
 import Futurice.Has              (FlipIn)
 import Futurice.Prelude
-import Futurice.Report.Columns   (HasFUMPublicURL (..))
 import Generics.SOP.Lens         (uni)
 import Network.HTTP.Client
        (Request, responseTimeout, responseTimeoutMicro)
@@ -48,7 +47,6 @@ data Env fum gh fd = Env
     , _envFlowdockOrgName     :: !(fd :$ FD.ParamName FD.Organisation)
     , _envGithubOrgName       :: !(gh :$ GH.Name GH.Organization)
     , _envNow                 :: !UTCTime
-    , _envFumPubUrl           :: !Text
     }
 
 makeLenses ''Env
@@ -69,10 +67,8 @@ newtype Integrations
 
 -- | TODO: Show instance
 data IntegrationsConfig pm fum gh fd pe = MkIntegrationsConfig
-    -- Public FUM
-    { integrCfgFumPublicUrl             :: !Text
     -- Planmill
-    , integrCfgPlanmillProxyBaseRequest :: !(pm Request)
+    { integrCfgPlanmillProxyBaseRequest :: !(pm Request)
     -- FUM
     , integrCfgFumAuthToken             :: !(fum FUM.AuthToken)
     , integrCfgFumBaseUrl               :: !(fum FUM.BaseUrl)
@@ -99,7 +95,6 @@ runIntegrations mgr lgr now cfg (Integr m) = do
             , _envNow                 = now
             , _envFlowdockOrgName     = integrCfgFlowdockOrgName cfg
             , _envGithubOrgName       = integrCfgGithubOrgName cfg
-            , _envFumPubUrl           = integrCfgFumPublicUrl cfg
             }
     let haxl = runReaderT m env
     let stateStore
@@ -138,8 +133,7 @@ instance
     => Configure (IntegrationsConfig pm fum gh fd pe)
   where
     configure = MkIntegrationsConfig
-        <$> envVar "FUM_PUBLICURL"
-        <*> (f <$$> envVar' "PLANMILLPROXY_HAXLURL")
+        <$> (f <$$> envVar' "PLANMILLPROXY_HAXLURL")
         <*> envVar' "FUM_TOKEN"
         <*> envVar' "FUM_BASEURL"
         <*> envVar' "FUM_LISTNAME"
@@ -257,6 +251,3 @@ instance fd ~ I => HasFlowdockOrgName (Env fum gh fd) where
 
 instance (gh ~ I) => HasGithubOrgName (Env fum gh fd) where
     githubOrganisationName = envGithubOrgName . uni
-
-instance HasFUMPublicURL (Env fum gh fd) where
-    fumPublicUrl = envFumPubUrl

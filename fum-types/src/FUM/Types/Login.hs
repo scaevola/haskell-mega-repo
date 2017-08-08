@@ -13,10 +13,11 @@ module FUM.Types.Login (
 import Data.Aeson.Types
        (FromJSONKey (..), FromJSONKeyFunction (..), ToJSONKey (..),
        toJSONKeyText)
+import Futurice.Constants          (fumPublicUrl)
 import Futurice.Generics
 import Futurice.Prelude
 import Language.Haskell.TH         (ExpQ)
-import Lucid                       (ToHtml (..))
+import Lucid                       (ToHtml (..), a_, href_)
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', psym)
 
@@ -114,9 +115,12 @@ instance NFData Login where
 instance Arbitrary Login where
     arbitrary = QC.elements $ map Login [ "fooo", "booo", "hooo" ]
 
+-- | Prints link to FUM.
+-- Use 'loginToText' if you need to markup 'Login' differently.
 instance ToHtml Login where
     toHtmlRaw = toHtml
-    toHtml = toHtml . loginToText
+    toHtml (Login l) =
+        a_ [ href_ $ fumPublicUrl <> "/fum/users/" <> l ] (toHtml l)
 
 instance ToParamSchema Login where
     toParamSchema _ = mempty
