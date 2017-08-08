@@ -31,6 +31,8 @@ type ChecklistAPI = IndexPageEndpoint
     :<|> EmployeeAuditPageEndpoint
     -- Archive
     :<|> ArchivePageEndpoint
+    -- Personio
+    :<|> PersonioPageEndpoint
     -- Report(s)
     :<|> ReportPageEndpoint
     :<|> "reports" :> "charts" :> "done.svg" :> SSOUser :> Get '[SVG] (Chart "done")
@@ -120,6 +122,15 @@ type EmployeeAuditPageEndpoint =
     Get '[HTML] (HtmlPage "employee-audit")
 
 -------------------------------------------------------------------------------
+-- Personio
+-------------------------------------------------------------------------------
+
+type PersonioPageEndpoint =
+    SSOUser :>
+    "personio" :>
+    Get '[HTML] (HtmlPage "personio")
+
+-------------------------------------------------------------------------------
 -- Archive
 -------------------------------------------------------------------------------
 
@@ -189,6 +200,9 @@ applianceHelpEndpoint = Proxy
 
 archivePageEndpoint :: Proxy ArchivePageEndpoint
 archivePageEndpoint = Proxy
+
+personioPageEndpoint :: Proxy PersonioPageEndpoint
+personioPageEndpoint = Proxy
 
 reportPageEndpoint :: Proxy ReportPageEndpoint
 reportPageEndpoint = Proxy

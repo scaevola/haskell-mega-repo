@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Futurice.App.Checklist.Ctx (
     Ctx (..),
     newCtx,
@@ -8,43 +8,46 @@ module Futurice.App.Checklist.Ctx (
     ctxWithCryptoGen,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Concurrent.STM
        (TVar, atomically, modifyTVar', newTVarIO, readTVar, writeTVar)
-import Data.Pool                (Pool, createPool, withResource)
+import Data.Pool              (Pool, createPool, withResource)
 import Futurice.CryptoRandom
        (CRandT, CRandom, CryptoGen, CryptoGenError, getCRandom, mkCryptoGen,
        runCRandT)
+import Futurice.Integrations  (IntegrationsConfig)
+import Futurice.Prelude
+import Prelude ()
 
+import qualified Data.Map                   as M
 import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM
-import qualified Data.Map                   as M
 
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Logic
 import Futurice.App.Checklist.Types
 
 data Ctx = Ctx
-    { ctxLogger      :: !Logger
-    , ctxManager     :: !Manager
-    , ctxWorld       :: TVar World
-    , ctxOrigWorld   :: World
-    , ctxPostgres    :: Pool Postgres.Connection
-    , ctxPRNGs       :: Pool (TVar CryptoGen)
-    , ctxMockUser    :: !(Maybe FUM.Login)
-    , ctxACL         :: TVar (Map FUM.Login TaskRole)
+    { ctxLogger          :: !Logger
+    , ctxManager         :: !Manager
+    , ctxIntegrationsCfg :: !(IntegrationsConfig Proxy I Proxy Proxy I)
+    , ctxWorld           :: TVar World
+    , ctxOrigWorld       :: World
+    , ctxPostgres        :: Pool Postgres.Connection
+    , ctxPRNGs           :: Pool (TVar CryptoGen)
+    , ctxMockUser        :: !(Maybe FUM.Login)
+    , ctxACL             :: TVar (Map FUM.Login TaskRole)
     }
 
 newCtx
     :: Logger
+    -> IntegrationsConfig Proxy I Proxy Proxy I
     -> Postgres.ConnectInfo
     -> Maybe FUM.Login
     -> World
     -> IO Ctx
-newCtx logger ci mockUser w = do
+newCtx lgr cfg ci mockUser w = do
     mgr <- newManager tlsManagerSettings
-    Ctx logger mgr
+    Ctx lgr mgr cfg
         <$> newTVarIO w
         <*> pure w
         <*> createPool (Postgres.connect ci) Postgres.close 1 60 5

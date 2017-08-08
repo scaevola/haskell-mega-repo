@@ -87,6 +87,7 @@ navigation (fu, viewerRole) = do
             li_ $ a_ [ createChecklistPageHref ] "Create List"
             li_ $ a_ [ createTaskPageHref ] "Create Task"
             li_ $ a_ [ createEmployeePageHref Nothing ] "Create Employee"
+            li_ $ a_ [ personioPageHref ] "... from Personio"
             li_ $ a_ [ archivePageHref ] "Archive"
         div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
             li_ [ class_ "menu-text" ] $ do
@@ -202,6 +203,9 @@ applianceHelpHref = href_ $ linkToText $ safeLink checklistApi applianceHelpEndp
 
 archivePageHref :: Attribute
 archivePageHref = href_ $ linkToText $ safeLink checklistApi archivePageEndpoint
+
+personioPageHref :: Attribute
+personioPageHref = href_ $ linkToText $ safeLink checklistApi personioPageEndpoint 
 
 -------------------------------------------------------------------------------
 -- Links
