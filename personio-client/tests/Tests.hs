@@ -149,6 +149,16 @@ validations = testGroup "Validations"
         $ correctEmployeeValue
             & attributeValue "dynamic_72935" . _String .~ "permanent"
             & attributeValue "employment_type" . _String .~ "external"
+    , testValidation
+        "home phone"
+        HomePhoneInvalid
+        $ correctEmployeeValue
+            & attributeValue "dynamic_72936" . _String .~ "123a4"
+    , testValidation
+        "flowdock"
+        FlowdockInvalid
+        $ correctEmployeeValue
+            & attributeValue "dynamic_72914" . _String .~ "https://www.flowdock.com/12345"
     ]
   where
     testValidation name warning val = testCase name $ do

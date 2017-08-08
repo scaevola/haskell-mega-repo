@@ -455,6 +455,7 @@ data ValidationMessage
     | FixedTermEndDateMissing
     | PermanentExternal
     | HomePhoneInvalid
+    | FlowdockInvalid
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -506,7 +507,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 
     validate :: HashMap Text Attribute -> Parser [ValidationMessage]
     validate obj = execWriterT $ sequenceA_
-        [ validateGithub
+        [ githubValidate
         , costCenterValidate
         , ibanValidate
         , loginValidate
@@ -514,6 +515,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , externalContractValidate
         , employmentTypeValidate
         , homePhoneValidate
+        , flowdockValidate
         , attributeMissing "email" EmailMissing
         , attributeObjectMissing "department" TribeMissing
         , attributeObjectMissing "office" OfficeMissing
@@ -521,8 +523,8 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , dynamicAttributeMissing "Primary role" RoleMissing
         ]
       where
-        validateGithub :: WriterT [ValidationMessage] Parser ()
-        validateGithub = do
+        githubValidate :: WriterT [ValidationMessage] Parser ()
+        githubValidate = do
             githubText <- lift (parseDynamicAttribute obj "Github")
             case match (githubRegexp <|> pure "") githubText of
                 Nothing -> tell [GithubInvalid githubText]
@@ -636,6 +638,13 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
           where
             phoneRegexp = string "+" *> (T.pack <$> some (psym (`elem` allowedChars)))
             allowedChars = ' ':'-':['0'..'9']
+
+        flowdockValidate :: WriterT [ValidationMessage] Parser ()
+        flowdockValidate = do
+            fdockText <- lift (parseDynamicAttribute obj "Flowdock")
+            case match (flowdockRegexp <|> empty) fdockText of
+                Nothing -> tell [FlowdockInvalid]
+                Just _  -> pure ()
 
 -- | Validate IBAN.
 --
