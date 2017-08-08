@@ -23,6 +23,7 @@ import Data.Char                   (ord)
 import Data.List                   (foldl')
 import Data.Maybe                  (isJust)
 import Data.Time                   (zonedTimeToLocalTime)
+import FUM.Types.Login             (Login, loginRegexp)
 import Futurice.Aeson
 import Futurice.EnvConfig
 import Futurice.Generics
@@ -33,11 +34,10 @@ import Futurice.Tribe
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
-import Personio.Types.ContractType
-       (ContractType (..), contractTypeFromText)
+import Personio.Types.ContractType   (ContractType (..), contractTypeFromText)
 import Personio.Types.EmploymentType
        (EmploymentType (..), employmentTypeFromText)
-import Personio.Types.Status       (Status (..))
+import Personio.Types.Status         (Status (..))
 
 import qualified Chat.Flowdock.REST            as FD
 import qualified Data.HashMap.Strict           as HM
@@ -128,7 +128,7 @@ data Employee = Employee
     , _employeeEmail          :: !Text
     , _employeeWorkPhone      :: !Text
     , _employeeSupervisorId   :: !(Maybe EmployeeId)
-    , _employeeLogin          :: !(Maybe Text)  -- TODO: use proper newtype!
+    , _employeeLogin          :: !(Maybe Login)
     , _employeeTribe          :: !Tribe  -- ^ defaults to 'defaultTribe'
     , _employeeOffice         :: !Office  -- ^ defaults to 'OffOther'
     , _employeeCostCenter     :: !(Maybe Text)
@@ -207,7 +207,7 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseAttribute obj "email"
         <*> parseDynamicAttribute obj "Work phone"
         <*> fmap getSupervisorId (parseAttribute obj "supervisor")
-        <*> fmap getMaybeLogin (parseDynamicAttribute obj "Login name")
+        <*> optional (parseDynamicAttribute obj "Login name")
         <*> fmap (fromMaybe defaultTribe . getName) (parseAttribute obj "department")
         <*> fmap (fromMaybe OffOther . getName) (parseAttribute obj "office")
         <*> fmap getName (parseAttribute obj "cost_centers")
@@ -271,29 +271,6 @@ instance FromJSON FlowdockId where
 
 flowdockRegexp :: RE' Word64
 flowdockRegexp = string "https://www.flowdock.com/app/private/" *> RE.decimal
-
-newtype MaybeLogin = MaybeLogin { getMaybeLogin  :: Maybe Text }
-
-instance FromJSON MaybeLogin where
-    parseJSON = withText "Login" (pure . MaybeLogin . match loginRegexp)
-
-loginRegexp :: RE' Text
-loginRegexp = T.pack <$> range 4 5 (psym (`elem` ['a'..'z']))
-  where
-    range
-        :: Alternative f
-        => Int  -- ^ min
-        -> Int  -- ^ max
-        -> f a
-        -> f [a]
-    range mi ma f = go mi ma
-      where
-        go start end
-            | start > end || end <= 0 = pure []
-            | start > 0 = (:) <$> f <*> go (start - 1) (end - 1)
-            | otherwise = inRange <$> optional f <*> go 0 (end - 1)
-
-        inRange current next = maybe [] (:next) current
 
 ---------------------------------------------------------------------------
 -- Envelope
@@ -624,7 +601,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 
         employmentTypeValidate :: WriterT [ValidationMessage] Parser ()
         employmentTypeValidate = do
-            eType <- lift (parseAttribute obj "employment_type") 
+            eType <- lift (parseAttribute obj "employment_type")
             case employmentTypeFromText eType of
                 Nothing -> tell [EmploymentTypeMissing]
                 Just _  -> pure ()

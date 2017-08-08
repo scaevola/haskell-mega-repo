@@ -7,6 +7,7 @@
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 #if __GLASGOW_HASKELL__ >= 800
@@ -16,10 +17,10 @@ module Futurice.App.Contacts.Logic (
     contacts,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Data.RFC5051          (compareUnicode)
 import Futurice.Integrations
+import Futurice.Prelude
+import Prelude ()
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Maybe.Strict   as S
@@ -30,9 +31,9 @@ import qualified Data.Vector         as V
 import qualified Chat.Flowdock.REST as FD
 import qualified FUM
 import qualified GitHub             as GH
+import qualified Personio
 import qualified PlanMill           as PM
 import qualified PlanMill.Queries   as PMQ
-import qualified Personio
 
 -- Contacts modules
 import Futurice.App.Contacts.Types
@@ -60,8 +61,8 @@ contacts'
     :: Vector FUM.User
     -> Vector GH.User
     -> FD.Organisation
-    -> HashMap FUM.UserName (Maybe Text)
-    -> HashMap FUM.UserName (Maybe Text)
+    -> HashMap FUM.Login (Maybe Text)
+    -> HashMap FUM.Login (Maybe Text)
     -> [Contact Text]
 contacts' users githubMembers flowdockOrg competenceMap teamMap =
     let users' = filter ((==FUM.StatusActive) . view FUM.userStatus) $ V.toList users
@@ -73,7 +74,7 @@ contacts' users githubMembers flowdockOrg competenceMap teamMap =
 
 _employeeToContact :: Personio.Employee -> Contact Text
 _employeeToContact e = Contact
-    { contactLogin      = FUM.UserName $ fromMaybe "" $ e ^. Personio.employeeLogin
+    { contactLogin      = fromMaybe $(FUM.mkLogin "xxxx") $ e ^. Personio.employeeLogin
     , contactFirst      = e ^. Personio.employeeFirst
     , contactName       = e ^. Personio.employeeFirst <> " " <> e ^. Personio.employeeLast
     , contactEmail      = e ^. Personio.employeeEmail
@@ -107,7 +108,7 @@ userToContact FUM.User{..} = Contact
     }
   where
     noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
-    defaultEmail = FUM._getUserName _userName <> "@futurice.com"
+    defaultEmail = FUM.loginToText _userName <> "@futurice.com"
 
 githubDetailedMembers
     :: ( MonadGitHub m
@@ -124,7 +125,7 @@ fumPlanmillTeamMap
        ( MonadPlanMillQuery m, MonadFUM m
        , MonadReader env m, HasFUMEmployeeListName env
        )
-    => m (HashMap FUM.UserName (Maybe Text))
+    => m (HashMap FUM.Login (Maybe Text))
 fumPlanmillTeamMap = fumPlanmillMap >>= traverse (f . snd)
   where
     f :: PM.User -> m (Maybe Text)
@@ -135,7 +136,7 @@ fumPlanmillCompetenceMap
        ( MonadPlanMillQuery m, MonadFUM m
        , MonadReader env m, HasFUMEmployeeListName env
        )
-    => m (HashMap FUM.UserName (Maybe Text))
+    => m (HashMap FUM.Login (Maybe Text))
 fumPlanmillCompetenceMap = PM.uCompetence . snd  <$$> fumPlanmillMap
 
 addGithubInfo
@@ -222,8 +223,8 @@ addFlowdockInfo us = fmap add
 
 addPlanmillInfo
     :: Functor f
-    => HashMap FUM.UserName (Maybe Text)
-    -> HashMap FUM.UserName (Maybe Text)
+    => HashMap FUM.Login (Maybe Text)
+    -> HashMap FUM.Login (Maybe Text)
     -> f (Contact a)
     -> f (Contact a)
 addPlanmillInfo competenceMap teamMap = fmap f

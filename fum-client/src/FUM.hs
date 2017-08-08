@@ -41,8 +41,8 @@ fumListR (ListName listName) =
     FumGet $ "list/" <> listName ^. unpacked <> "/"
 
 fumGroupR :: GroupName -> FUM Group
-fumGroupR (GroupName name) =
-    FumGet $ "groups/" <> name ^. unpacked <> "/"
+fumGroupR g =
+    FumGet $ "groups/" <> groupNameToText g ^. unpacked <> "/"
 
 -------------------------------------------------------------------------------
 -- Actions

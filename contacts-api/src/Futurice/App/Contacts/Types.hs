@@ -63,7 +63,7 @@ instance ToField (ContactGH a) where
     toField = toField . cghNick
 
 data Contact avatar = Contact
-    { contactLogin      :: !FUM.UserName
+    { contactLogin      :: !FUM.Login
     , contactFirst      :: !Text
     , contactName       :: !Text
     , contactEmail      :: !Text
@@ -77,7 +77,7 @@ data Contact avatar = Contact
     , contactCompetence :: !(Maybe Text)
     }
   deriving
-    ( Eq, Ord, Show, Read, Generic, Typeable
+    ( Eq, Ord, Show, Generic, Typeable
     , Functor, Foldable, Traversable
     )
 

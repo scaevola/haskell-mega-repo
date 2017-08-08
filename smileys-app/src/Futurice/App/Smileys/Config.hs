@@ -11,7 +11,7 @@ import Futurice.EnvConfig
 import qualified FUM
 
 data Config = Config
-    { cfgMockUser          :: !(Maybe FUM.UserName)
+    { cfgMockUser          :: !(Maybe FUM.Login)
     , cfgPostgresConnInfo  :: !ConnectInfo
     }
     deriving (Show)

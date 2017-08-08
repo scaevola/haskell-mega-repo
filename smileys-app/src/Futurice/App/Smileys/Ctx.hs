@@ -19,5 +19,5 @@ data Ctx = Ctx
     { ctxPostgresPool :: !(Pool Connection)
     , ctxCache        :: !DynMapCache
     , ctxLogger       :: !Logger
-    , ctxMockUser     :: !(Maybe FUM.UserName)
+    , ctxMockUser     :: !(Maybe FUM.Login)
     }

@@ -25,7 +25,7 @@ import Futurice.App.FUM.Types
 import qualified Futurice.IdMap as IdMap
 import qualified Personio
 
-import qualified FUM
+import qualified FUM.Types.Login as FUM
 
 -------------------------------------------------------------------------------
 -- Server
@@ -82,7 +82,7 @@ validationReportImpl = liftIO . validationReport
 
 indexPageImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Handler (HtmlPage "indexpage")
 indexPageImpl ctx fu = withAuthUser ctx fu impl
   where
@@ -90,7 +90,7 @@ indexPageImpl ctx fu = withAuthUser ctx fu impl
 
 createEmployeePageImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Personio.EmployeeId
     -> Handler (HtmlPage "create-employee")
 createEmployeePageImpl ctx fu pid = withAuthUser ctx fu impl
@@ -115,7 +115,7 @@ forbiddenPage = fumPage_ "Forbidden" ()
 withAuthUser
     :: (MonadIO m, MonadBase IO m, MonadTime m)
     => Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> (World -> IdMap.IdMap Personio.Employee -> m (HtmlPage a))
     -> m (HtmlPage a)
 withAuthUser ctx fu f = runLogT "withAuthUser" (ctxLogger ctx) $
@@ -125,7 +125,7 @@ withAuthUser'
     :: (MonadIO m, MonadBase IO m, MonadTime m)
     => a                           -- ^ Response to unauthenticated users
     -> Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> (World -> IdMap.IdMap Personio.Employee -> LogT m a)
     -> LogT m a
 withAuthUser' def ctx fu f

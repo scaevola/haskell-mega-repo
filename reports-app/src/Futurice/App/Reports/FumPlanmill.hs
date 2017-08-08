@@ -19,19 +19,18 @@ module Futurice.App.Reports.FumPlanmill (
     FUMUser (..),
     ) where
 
-import Prelude ()
-import Futurice.Prelude
-import Control.Lens (to)
+import Control.Lens                (to)
 import Futurice.Generics
 import Futurice.Integrations
+import Futurice.Prelude
 import Futurice.Report.Columns
-import Text.Regex.Applicative.Text   (anySym, match)
+import Prelude ()
+import Text.Regex.Applicative.Text (match)
 
-import qualified PlanMill            as PM
-import qualified PlanMill.Queries    as PMQ
 import qualified FUM
+import qualified PlanMill         as PM
+import qualified PlanMill.Queries as PMQ
 
-type Login = Text
 type Status = Text
 
 -------------------------------------------------------------------------------
@@ -40,14 +39,14 @@ type Status = Text
 
 data PlanmillUser = PlanmillUser
     { _pmName      :: !Text
-    , _pmLogin     :: !Text
+    , _pmLogin     :: !FUM.Login
     , _pmStatus    :: !Status
     }
     deriving (Eq, Ord, Show, Typeable, Generic)
 
 data FUMUser = FUMUser
     { _fumUserName  :: !Text
-    , _fumUserLogin :: !Text
+    , _fumUserLogin :: !FUM.Login
     , _fumStatus    :: !Status
     , _fumPmStatus  :: !Status
     }
@@ -128,9 +127,9 @@ fumPlanmillReport = do
         -> [These FUMUser PlanmillUser]
     makeReport enums fs pms = toList (align fs' pms')
       where
-        fs' :: Map Login FUMUser
+        fs' :: Map FUM.Login FUMUser
         fs'  = toMapOf (folded . to (toFUMUser enums). ifolded) fs
-        pms' :: Map Login PlanmillUser
+        pms' :: Map FUM.Login PlanmillUser
         pms' = toMapOf (folded . to (toPMUser enums) . ifolded) pms
 
     metric :: These FUMUser PlanmillUser -> Int
@@ -148,29 +147,27 @@ fumPlanmillReport = do
     metric (These _ _) | otherwise                   = 0
     metric (That _)    | otherwise                   = 0
 
-    toFUMUser :: Enums -> FUM.User -> (Login, FUMUser)
-    toFUMUser _enums u = (_fumUserLogin u', u')
+    toFUMUser :: Enums -> FUM.User -> (FUM.Login, FUMUser)
+    toFUMUser _enums u = (u ^. FUM.userName , u')
       where
         u' = FUMUser
             { _fumUserName  = u ^. FUM.userFirst <> " " <> u ^. FUM.userLast
-            , _fumUserLogin = u ^. FUM.userName ^. FUM.getUserName
+            , _fumUserLogin = u ^. FUM.userName
             , _fumStatus    = textShow $ u ^. FUM.userStatus
             , _fumPmStatus  = textShow $ u ^. FUM.userActiveInPm
             }
 
-    toPMUser :: Enums -> PM.User -> (Login, PlanmillUser)
+    toPMUser :: Enums -> PM.User -> (FUM.Login, PlanmillUser)
     toPMUser enums u = (_pmLogin u', u')
       where
         u' = PlanmillUser
             { _pmName   = PM.uFirstName u <> " " <> PM.uLastName u
             -- this should always match, but use user-name field if it doesn't
-            , _pmLogin  = fromMaybe (PM.uUserName u) $
+            , _pmLogin  = fromMaybe $(FUM.mkLogin "xxxx") $
                 match loginRe (PM.uUserName u)
             , _pmStatus = fromMaybe "unknown" $ enums ^? ix (PM.uPassive u)
             }
 
-    loginRe = view packed
-        <$  "https://login.futurice.com/openid/"
-        <*> many anySym
+    loginRe = "https://login.futurice.com/openid/" *> FUM.loginRegexp
 
 

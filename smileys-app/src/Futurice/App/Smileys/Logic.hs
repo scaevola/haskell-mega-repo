@@ -20,7 +20,7 @@ import qualified FUM
 getOwnSmileys
     :: (MonadIO m, MonadBaseControl IO m, MonadTime m, MonadError ServantErr m)
     => Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Maybe Day
     -> Maybe Day
     -> m [Smileys]
@@ -35,7 +35,7 @@ getSmileys
     => Ctx
     -> Maybe Day
     -> Maybe Day
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> m [Smileys]
 getSmileys ctx start end mFumUsername =
     withResource (ctxPostgresPool ctx) $ \conn -> do
@@ -47,7 +47,7 @@ getSmileysImpl
     => Postgres.Connection
     -> Day
     -> Day
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> m [Smileys]
 getSmileysImpl conn s e Nothing = liftIO $ Postgres.query conn
     "SELECT entries, username, smiley, day FROM smileys.trail WHERE day >= ? AND day <= ?;"
@@ -59,7 +59,7 @@ getSmileysImpl conn s e (Just fumUsername) = liftIO $ Postgres.query conn
 postOwnSmileys
     :: (MonadIO m, MonadBaseControl IO m, MonadError ServantErr m)
     => Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> PostSmiley
     -> m Res
 postOwnSmileys ctx mfum req =

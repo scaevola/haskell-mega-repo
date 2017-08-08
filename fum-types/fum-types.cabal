@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 
-name:           futurice-servant
+name:           fum-types
 version:        0
-synopsis:       Collection of utilities for servant
-description:    ...
+synopsis:       FUM types
+description:    In other words: @Login@ and @GroupName@ types
 category:       Web
 homepage:       https://github.com/futurice/haskell-mega-repo#readme
 bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
@@ -13,7 +13,7 @@ author:         Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
 license:        BSD3
 license-file:   LICENSE
-tested-with:    GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
+tested-with:    GHC==7.10.3, GHC==8.0.2
 build-type:     Simple
 cabal-version:  >= 1.10
 
@@ -30,45 +30,21 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base                  >=4.7 && <5
+      base            >=4.7      && <4.11
     , aeson
-    , amazonka
-    , amazonka-cloudwatch
-    , amazonka-cloudwatch-logs
-    , base-compat
-    , constraints
-    , dynmap-cache
-    , ekg
-    , ekg-core
-    , ekg-json
-    , env-config
-    , exceptions
-    , fum-types
-    , futurice-logo
+    , aeson-compat
+    , cassava
+    , containers
     , futurice-prelude
-    , futurice-foundation
-    , ghc-prim
-    , gitrev >=1.2.0
-    , http-types
-    , lens
-    , log-cloudwatch
-    , periocron
-    , servant ==0.11.*
-    , servant-cassava
-    , servant-lucid
-    , servant-server
-    , servant-status
-    , servant-swagger
-    , servant-swagger-ui == 0.2.*
-    , stm
+    , lucid
+    , postgresql-simple
+    , QuickCheck
+    , regex-applicative-text
     , swagger2
-    , tdigest-ekg
+    , template-haskell
     , text
-    , uuid-types
-    , wai
-    , wai-extra
-    , wai-middleware-metrics
-    , warp >= 3.2.11.1
+    , vector
   exposed-modules:
-      Futurice.Servant
+      FUM.Types.GroupName
+      FUM.Types.Login
   default-language: Haskell2010

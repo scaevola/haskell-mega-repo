@@ -39,7 +39,7 @@ server ctx = pure "This is futuhours api"
 
 authorisedUser
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Hours a
     -> Handler a
 authorisedUser ctx mfum action =

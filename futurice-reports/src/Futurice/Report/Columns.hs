@@ -1,17 +1,17 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DefaultSignatures     #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE InstanceSigs          #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE CPP                     #-}
+{-# LANGUAGE DataKinds               #-}
+{-# LANGUAGE DefaultSignatures       #-}
+{-# LANGUAGE FlexibleContexts        #-}
+{-# LANGUAGE FlexibleInstances       #-}
+{-# LANGUAGE InstanceSigs            #-}
+{-# LANGUAGE MultiParamTypeClasses   #-}
+{-# LANGUAGE OverloadedStrings       #-}
+{-# LANGUAGE RankNTypes              #-}
+{-# LANGUAGE ScopedTypeVariables     #-}
+{-# LANGUAGE TemplateHaskell         #-}
+{-# LANGUAGE TypeFamilies            #-}
+{-# LANGUAGE TypeOperators           #-}
+{-# LANGUAGE UndecidableInstances    #-}
 #if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
 #endif
@@ -31,8 +31,6 @@ module Futurice.Report.Columns (
     HasFUMPublicURL (..),
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Data.Aeson                (encode, pairs, (.=))
 import Data.Aeson.Encoding       (encodingToLazyByteString, list, pair)
 import Data.Constraint           (Constraint)
@@ -42,22 +40,24 @@ import Futurice.Generics
 import Futurice.IsMaybe
 import Futurice.List
 import Futurice.Lucid.Foundation
+import Futurice.Prelude
 import Futurice.Time
        (AsScientific, IsTimeUnit (..), NDT (..), TimeUnit (..))
 import Generics.SOP              ((:.:) (..), All, SListI (..))
 import GHC.TypeLits              (KnownSymbol, Symbol, symbolVal)
+import Prelude ()
 import Servant.API               (MimeRender (..))
 import Servant.CSV.Cassava       (CSV', EncodeOpts, SHasHeaderI, encodeOpts')
 
-import qualified Data.Csv           as Csv
-import qualified Data.Set           as Set
-import qualified Data.Tuple.Strict  as S
-import qualified Generics.SOP       as SOP
-import qualified PlanMill           as PM
+import qualified Data.Csv          as Csv
+import qualified Data.Set          as Set
+import qualified Data.Tuple.Strict as S
+import qualified Generics.SOP      as SOP
+import qualified PlanMill          as PM
 
 -- instances
 import qualified Chat.Flowdock.REST as FD
-import qualified FUM
+import qualified FUM.Types.Login    as FUM
 import qualified GitHub             as GH
 
 -------------------------------------------------------------------------------
@@ -295,8 +295,8 @@ instance
 -- Another alternative for /scalar/ types is to wrap them:
 --
 -- @
--- instance ToColumns FUM.UserName where
---     type Columns FUM.UserName = '[FUM.UserName]
+-- instance ToColumns FUM.Login where
+--     type Columns FUM.Login = '[FUM.Login]
 --     columnNames _ = K "FUM" :* Nil
 --     toColumns u   = [I u :* Nil]
 -- @
@@ -335,8 +335,8 @@ instance ToColumns () where
     columnNames _ = Nil
     toColumns _   = [Nil]
 
-instance ToColumns FUM.UserName where
-    type Columns FUM.UserName = '[FUM.UserName]
+instance ToColumns FUM.Login where
+    type Columns FUM.Login = '[FUM.Login]
     columnNames _ = K "fum" :* Nil
     toColumns u   = [I u :* Nil]
 
@@ -607,13 +607,14 @@ instance ReportValue Bool where
 class HasFUMPublicURL env where
     fumPublicUrl :: Lens' env Text
 
-instance ReportValue FUM.UserName where
+instance ReportValue FUM.Login where
     reportValueType _ = CTFumUser
-    type ReportValueC FUM.UserName = HasFUMPublicURL
-    reportValueHtml u = do
-        fumPub <- view fumPublicUrl
-        let u' = FUM._getUserName u
-        a_ [ href_ $ fumPub <> "fum/users/" <> u' ] $ toHtml u'
+    -- TODO: fix
+    type ReportValueC FUM.Login = Unit1 -- HasFUMPublicURL
+    reportValueHtml u = toHtml u
+        -- fumPub <- view fumPublicUrl
+        -- let u' = FUM.loginToText u
+        -- a_ [ href_ $ fumPub <> "fum/users/" <> u' ] $ toHtml u'
 
 instance ReportValue a => ReportValue (FD.Identifier a res) where
     type ReportValueC (FD.Identifier a res) = ReportValueC a

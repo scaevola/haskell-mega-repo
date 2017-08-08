@@ -10,9 +10,9 @@ import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
 
-import qualified Data.Map  as Map
-import qualified Data.Text as T
-import qualified FUM
+import qualified Data.Map        as Map
+import qualified Data.Text       as T
+import qualified FUM.Types.Login as FUM
 
 -- | States of the tasks
 data TaskItem
@@ -25,7 +25,7 @@ deriveGeneric ''TaskItem
 
 -- | Annotated task item with who and when have done it.
 data AnnTaskItem
-    = AnnTaskItemDone !Text !FUM.UserName !UTCTime
+    = AnnTaskItemDone !Text !FUM.Login !UTCTime
     | AnnTaskItemTodo !Text
   deriving (Eq, Ord, Show, Typeable, Generic)
 

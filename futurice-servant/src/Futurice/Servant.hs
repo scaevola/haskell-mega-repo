@@ -65,7 +65,6 @@ import Control.Concurrent.STM
        (TVar, atomically, newTVarIO, swapTVar)
 import Control.Lens                         (LensLike)
 import Control.Monad.Catch                  (fromException, handleAll)
-import Data.Char                            (isAlpha)
 import Data.Constraint                      (Dict (..))
 import Data.Swagger                         hiding (port)
 import Data.TDigest.Metrics                 (registerTDigest)
@@ -99,8 +98,7 @@ import Servant.Swagger.UI
 import System.Remote.Monitoring             (forkServer, serverMetricStore)
 
 import qualified Data.Aeson               as Aeson
-import qualified Data.Text                as T
-import qualified FUM
+import qualified FUM.Types.Login          as FUM
 import qualified Futurice.DynMap          as DynMap
 import qualified GHC.Stats                as Stats
 import qualified Network.HTTP.Types       as H
@@ -416,13 +414,14 @@ newDynMapCache = DynMap.newIO
 data SSOUser
 
 instance HasServer api context => HasServer (SSOUser :> api) context where
-    type ServerT (SSOUser :> api) m = Maybe FUM.UserName -> ServerT api m
+    type ServerT (SSOUser :> api) m = Maybe FUM.Login -> ServerT api m
 
     route Proxy context subserver =
         route (Proxy :: Proxy api) context (passToServer subserver ssoUser)
       where
-        ssoUser req = FUM.UserName . T.filter isAlpha . decodeLatin1 <$>
-            lookup "REMOTE-USER" (requestHeaders req)
+        ssoUser req = do
+            l <- lookup "REMOTE-USER" (requestHeaders req)
+            FUM.parseLogin . decodeLatin1 $ l
 
 instance HasLink api => HasLink (SSOUser :> api) where
     type MkLink (SSOUser :> api) = MkLink api

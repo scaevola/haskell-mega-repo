@@ -23,7 +23,7 @@ data Config = Config
     , cfgFumToken          :: !FUM.AuthToken
     , cfgFumBaseurl        :: !FUM.BaseUrl
     , cfgFumList           :: !FUM.ListName
-    , cfgMockUser          :: !(Maybe FUM.UserName)
+    , cfgMockUser          :: !(Maybe FUM.Login)
     }
   deriving (Show)
 

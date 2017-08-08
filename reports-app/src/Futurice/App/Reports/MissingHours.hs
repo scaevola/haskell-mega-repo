@@ -81,7 +81,7 @@ type MissingHoursTitleFilt = "Missing hour markings, filtered"
 type MissingHoursReport title = Report
     title
     MissingHoursParams
-    (HashMap FUM.UserName :$ StrictPair Employee :$ Vector :$ MissingHour)
+    (HashMap FUM.Login :$ StrictPair Employee :$ Vector :$ MissingHour)
 
 data MissingHoursParams = MissingHoursParams
     { _mhpGenerated    :: !UTCTime

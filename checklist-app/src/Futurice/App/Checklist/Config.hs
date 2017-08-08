@@ -10,7 +10,7 @@ import Prelude ()
 import qualified FUM
 
 data Config = Config
-    { cfgMockUser           :: !(Maybe FUM.UserName)
+    { cfgMockUser           :: !(Maybe FUM.Login)
     , cfgPostgresConnInfo   :: !ConnectInfo
     -- ACL:
     , cfgFumToken           :: !FUM.AuthToken

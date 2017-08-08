@@ -15,13 +15,13 @@ import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
-import qualified FUM (UserName (..))
+import qualified FUM (Login)
 
 employeeAuditPage
     :: World
     -> AuthUser
     -> Employee
-    -> [(Command Identity, FUM.UserName, UTCTime)]
+    -> [(Command Identity, FUM.Login, UTCTime)]
     -> HtmlPage "employee-audit"
 employeeAuditPage world authUser employee cmds = checklistPage_ (view nameText employee) authUser $ do
     let eid = employee ^. identifier
@@ -43,8 +43,8 @@ employeeAuditPage world authUser employee cmds = checklistPage_ (view nameText e
             th_ "When"
             th_ "What"
 
-        for_ (processCommands world eid _1 cmds) $ \(cmdHtml, FUM.UserName username, timestamp) -> tr_ $ do
-            td_ $ toHtml $ username
+        for_ (processCommands world eid _1 cmds) $ \(cmdHtml, username, timestamp) -> tr_ $ do
+            td_ $ toHtml username
             td_ $ toHtml $ formatHumanHelsinkiTime timestamp
             td_ $ cmdHtml
 
