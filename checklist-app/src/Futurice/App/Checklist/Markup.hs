@@ -45,9 +45,9 @@ module Futurice.App.Checklist.Markup (
     defaultShowAll,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens        (Getter, has, non, re, to, _Wrapped)
+import Futurice.Prelude
+import Prelude ()
 import Servant.Utils.Links (Link, safeLink)
 import Web.HttpApiData     (toUrlPiece)
 
@@ -86,7 +86,7 @@ navigation (fu, viewerRole) = do
             li_ $ a_ [ tasksPageHref Nothing (Nothing :: Maybe Checklist) ] "Tasks"
             li_ $ a_ [ createChecklistPageHref ] "Create List"
             li_ $ a_ [ createTaskPageHref ] "Create Task"
-            li_ $ a_ [ createEmployeePageHref Nothing ] "Create Employee"
+            li_ $ a_ [ createEmployeePageHref ] "Create Employee"
             li_ $ a_ [ personioPageHref ] "... from Personio"
             li_ $ a_ [ archivePageHref ] "Archive"
         div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
@@ -170,9 +170,9 @@ createTaskPageHref :: Attribute
 createTaskPageHref =
     href_ $ linkToText $ safeLink checklistApi createTaskPageEndpoint
 
-createEmployeePageHref :: Maybe (Identifier Employee) -> Attribute
-createEmployeePageHref meid =
-    href_ $ linkToText $ safeLink checklistApi createEmployeePageEndpoint meid
+createEmployeePageHref :: Attribute
+createEmployeePageHref =
+    href_ $ linkToText $ safeLink checklistApi createEmployeePageEndpoint Nothing Nothing
 
 taskPageHref
     :: (HasIdentifier t Task)
@@ -205,7 +205,7 @@ archivePageHref :: Attribute
 archivePageHref = href_ $ linkToText $ safeLink checklistApi archivePageEndpoint
 
 personioPageHref :: Attribute
-personioPageHref = href_ $ linkToText $ safeLink checklistApi personioPageEndpoint 
+personioPageHref = href_ $ linkToText $ safeLink checklistApi personioPageEndpoint
 
 -------------------------------------------------------------------------------
 -- Links

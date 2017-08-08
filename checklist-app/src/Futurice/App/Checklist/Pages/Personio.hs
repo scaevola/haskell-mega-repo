@@ -6,7 +6,9 @@ import Data.Maybe                (isJust)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
+import Servant.API               (safeLink)
 
+import Futurice.App.Checklist.API    (checklistApi, createEmployeePageEndpoint)
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
@@ -42,7 +44,12 @@ personioPage world authUser now employees0 = checklistPage_ "Import from personi
             td_ $ toHtml $  e ^. Personio.employeeTribe
             td_ $ toHtml $  e ^. Personio.employeeOffice
             td_ $ traverse_ (toHtml . show) $ e ^. Personio.employeeHireDate
-            td_ $ button_ [ class_ "button" ] "TODO"
+            td_ $ button_
+                [ class_ "button"
+                , data_ "futu-link-button" $ linkToText
+                $ safeLink checklistApi createEmployeePageEndpoint Nothing (e ^? Personio.employeeId)
+                ]
+                "Import"
 
   where
     employees = employees0

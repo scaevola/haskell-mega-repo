@@ -8,6 +8,7 @@ module Futurice.App.Checklist (defaultMain) where
 
 import Control.Applicative       (liftA3)
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
+import Control.Lens              (filtered, firstOf)
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
 import Futurice.Integrations
@@ -135,12 +136,21 @@ createEmployeePageImpl
     :: Ctx
     -> Maybe FUM.Login
     -> Maybe (Identifier Employee)
+    -> Maybe Personio.EmployeeId
     -> Handler (HtmlPage "create-employee")
-createEmployeePageImpl ctx fu meid = withAuthUser ctx fu impl
+createEmployeePageImpl ctx fu meid mpeid = withAuthUser ctx fu impl
   where
-    impl world userInfo = pure $ createEmployeePage world userInfo memployee
-      where
-        memployee = meid >>= \eid -> world ^? worldEmployees . ix eid
+    impl world userInfo = do
+        let memployee = meid >>= \eid -> world ^? worldEmployees . ix eid
+        now <- currentTime
+        mpersonio <- fmap join $ for mpeid $ \eid -> do
+            employees <- getPersonioEmployees now ctx
+            -- Note: 'find' would be simpler
+            pure $ firstOf
+                (folded . filtered (\e -> eid == e ^. Personio.employeeId))
+                employees
+
+        pure $ createEmployeePage world userInfo memployee mpersonio
 
 checklistsPageImpl
     :: Ctx
@@ -200,13 +210,9 @@ personioPageImpl
     -> Handler (HtmlPage "personio")
 personioPageImpl ctx fu = withAuthUser ctx fu $ \world userInfo -> do
     now <- currentTime
-    employees <- liftIO $ runIntegrations
-        (ctxManager ctx)
-        (ctxLogger ctx)
-        now
-        (ctxIntegrationsCfg ctx)
-        $ personio Personio.PersonioEmployees
+    employees <- getPersonioEmployees now ctx
     pure (personioPage world userInfo now employees)
+
 
 reportPageImpl
     :: Ctx
@@ -232,6 +238,18 @@ applianceHelpImpl
     -> Handler (HtmlPage "appliance-help")
 applianceHelpImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
     pure $ helpAppliancePage world userInfo
+
+-------------------------------------------------------------------------------
+-- Personio helper
+-------------------------------------------------------------------------------
+
+getPersonioEmployees :: MonadIO m => UTCTime -> Ctx -> m [Personio.Employee]
+getPersonioEmployees now ctx = liftIO $ runIntegrations
+    (ctxManager ctx)
+    (ctxLogger ctx)
+    now
+    (ctxIntegrationsCfg ctx)
+    $ personio Personio.PersonioEmployees
 
 -------------------------------------------------------------------------------
 -- Audit

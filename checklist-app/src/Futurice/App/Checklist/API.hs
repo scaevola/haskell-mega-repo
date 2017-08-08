@@ -16,6 +16,8 @@ import Futurice.App.Checklist.Command (Command)
 import Futurice.App.Checklist.Types
        (Checklist, Employee, Identifier, Office, Task, TaskRole)
 
+import qualified Personio
+
 type ChecklistAPI = IndexPageEndpoint
     -- Collections
     :<|> TasksPageEndpoint
@@ -90,6 +92,7 @@ type CreateEmployeePageEndpoint =
     "employees" :>
     "create" :>
     QueryParam "copy-employee" (Identifier Employee) :>
+    QueryParam "personio-id" Personio.EmployeeId :>
     Get '[HTML] (HtmlPage "create-employee")
 
 -------------------------------------------------------------------------------
