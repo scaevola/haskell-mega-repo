@@ -8,6 +8,8 @@
 {-# LANGUAGE TypeFamilies        #-}
 module Personio.Types (
     module Personio.Types,
+    module Personio.Types.ContractType,
+    module Personio.Types.EmploymentType,
     module Personio.Types.Status,
     ) where
 
@@ -34,10 +36,9 @@ import Futurice.Tribe
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
-import Personio.Types.ContractType   (ContractType (..), contractTypeFromText)
+import Personio.Types.ContractType
 import Personio.Types.EmploymentType
-       (EmploymentType (..), employmentTypeFromText)
-import Personio.Types.Status         (Status (..))
+import Personio.Types.Status
 
 import qualified Chat.Flowdock.REST            as FD
 import qualified Data.HashMap.Strict           as HM
@@ -126,7 +127,7 @@ data Employee = Employee
     , _employeeEndDate        :: !(Maybe Day)
     , _employeeRole           :: !Text
     , _employeeEmail          :: !Text
-    , _employeeWorkPhone      :: !Text
+    , _employeeWorkPhone      :: !(Maybe Text)
     , _employeeSupervisorId   :: !(Maybe EmployeeId)
     , _employeeLogin          :: !(Maybe Login)
     , _employeeTribe          :: !Tribe  -- ^ defaults to 'defaultTribe'
@@ -136,7 +137,8 @@ data Employee = Employee
     , _employeeFlowdock       :: !(Maybe FD.UserId)
     , _employeeStatus         :: !Status
     , _employeeHRNumber       :: !(Maybe Int)
-    , _employeeEmploymentType :: !EmploymentType
+    , _employeeEmploymentType :: !(Maybe EmploymentType)
+    , _employeeContractType   :: !(Maybe ContractType)
     , _employeeHomePhone      :: !(Maybe Text)
 #ifdef PERSONIO_DEBUG
     , _employeeRest           :: !(HashMap Text Attribute)
@@ -216,6 +218,7 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseAttribute obj "status"
         <*> parseDynamicAttribute obj "HR number"
         <*> parseAttribute obj "employment_type"
+        <*> optional (parseDynamicAttribute obj "Contract type")
         <*> parseDynamicAttribute obj "Home phone"
 #ifdef PERSONIO_DEBUG
         <*> pure obj -- for employeeRest field
@@ -573,11 +576,11 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 
         fixedEndDateValidate :: WriterT [ValidationMessage] Parser ()
         fixedEndDateValidate = do
-            cType <- lift (parseDynamicAttribute obj "Contract type")
-            case contractTypeFromText cType of
+            cType <- lift (optional $ parseDynamicAttribute obj "Contract type")
+            case cType of
                 Just FixedTerm -> checkEndDate FixedTermEndDateMissing
                 Just _         -> pure ()
-                Nothing        -> lift (typeMismatch "Contract type" (String cType))
+                Nothing        -> pure () -- TODO: invalid contract type
           where
               checkEndDate err = do
                 eDate <- lift (parseAttribute obj "contract_end_date")
@@ -588,16 +591,12 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 
         externalContractValidate :: WriterT [ValidationMessage] Parser ()
         externalContractValidate = do
-            cType <- lift (parseDynamicAttribute obj "Contract type")
-            eType <- lift (parseAttribute obj "employment_type")
-            case f cType eType of
+            cType <- lift (optional $ parseDynamicAttribute obj "Contract type")
+            eType <- lift (optional $ parseAttribute obj "employment_type")
+            case (cType, eType) of
                 (Just PermanentAllIn, Just External) -> tell [PermanentExternal]
                 (Just Permanent, Just External)      -> tell [PermanentExternal]
                 _                                    -> pure ()
-          where
-            f :: Text -> Text -> (Maybe ContractType, Maybe EmploymentType)
-            f conT eTypeT = (contractTypeFromText conT
-                            , employmentTypeFromText eTypeT)
 
         employmentTypeValidate :: WriterT [ValidationMessage] Parser ()
         employmentTypeValidate = do
