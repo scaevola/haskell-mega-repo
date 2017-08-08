@@ -31,10 +31,13 @@ library
   ghc-options: -Wall
   build-depends:
       base            >=4.7      && <4.11
+    , aeson
     , aeson-compat
+    , cassava
     , containers
     , futurice-prelude
     , lucid
+    , postgresql-simple
     , QuickCheck
     , swagger2
     , template-haskell

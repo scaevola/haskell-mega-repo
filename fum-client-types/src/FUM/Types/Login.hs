@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module FUM.Types.Login (
     Login,
     mkLogin,
@@ -8,16 +8,22 @@ module FUM.Types.Login (
     InvalidLoginFormat (..),
     ) where
 
-import Prelude
-import Futurice.Prelude
+import Data.Aeson.Types
+       (FromJSONKey (..), FromJSONKeyFunction (..), ToJSONKey (..),
+       toJSONKeyText)
 import Futurice.Generics
-import Language.Haskell.TH     (ExpQ)
-import Lucid                   (ToHtml (..))
+import Futurice.Prelude
+import Language.Haskell.TH (ExpQ)
+import Lucid               (ToHtml (..))
+import Prelude ()
 
-import qualified Data.Aeson.Compat as Aeson
-import qualified Data.Swagger      as Swagger
-import qualified Data.Text         as T
-import qualified Test.QuickCheck   as QC
+import qualified Data.Aeson.Compat                    as Aeson
+import qualified Data.Csv                             as Csv
+import qualified Data.Swagger                         as Swagger
+import qualified Data.Text                            as T
+import qualified Database.PostgreSQL.Simple.FromField as Postgres
+import qualified Database.PostgreSQL.Simple.ToField   as Postgres
+import qualified Test.QuickCheck                      as QC
 
 newtype Login = Login Text
   deriving (Eq, Ord)
@@ -94,10 +100,28 @@ instance ToJSON Login where
 
 instance FromJSON Login where
     parseJSON = Aeson.withText "Login" $
-        either (fail . view unpacked) pure . parseLogin'
+        either fail pure . parseLogin'
 
 instance FromHttpApiData Login where
     parseUrlPiece = first (view packed) . parseLogin'
 
 instance ToHttpApiData Login where
     toUrlPiece = loginToText
+
+instance ToJSONKey Login where
+    toJSONKey = toJSONKeyText loginToText
+
+instance FromJSONKey Login where
+    fromJSONKey = FromJSONKeyTextParser $
+        either fail pure . parseLogin'
+
+instance Csv.ToField Login where
+    toField = Csv.toField . loginToText
+
+instance Postgres.ToField Login where
+    toField = Postgres.toField . loginToText
+
+instance Postgres.FromField Login where
+    fromField f mdata = do
+        t <- Postgres.fromField f mdata
+        either fail pure (parseLogin' t)
