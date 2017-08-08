@@ -1,5 +1,6 @@
-{-# LANGUAGE DataKinds     #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds      #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE TypeOperators  #-}
 module Futurice.App.FUM.API (
     module Futurice.App.FUM.API,
     ) where
@@ -10,6 +11,7 @@ import Prelude ()
 import Futurice.Lomake           (LomakeRequest, LomakeResponse)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Servant          (SSOUser)
+import GHC.TypeLits              (Symbol)
 import Servant.API
 import Servant.HTML.Lucid        (HTML)
 
@@ -43,9 +45,13 @@ fumCarbonApi = Proxy
 -- Commands
 -------------------------------------------------------------------------------
 
-type CreateEmployeeCmdEndpoint = "create-employee"
-    :> ReqBody '[JSON] (LomakeRequest CommandM CreateEmployee)
+type CommandEndpoint (path :: Symbol) (cmd :: Phase -> *) = path
+    :> ReqBody '[JSON] (LomakeRequest (cmd 'Input))
     :> Post '[JSON] LomakeResponse
+
+
+type CreateEmployeeCmdEndpoint =
+    CommandEndpoint "create-employee" CreateEmployee
 
 createEmployeeCmdEndpoint :: Proxy ("commands" :> CreateEmployeeCmdEndpoint)
 createEmployeeCmdEndpoint = Proxy

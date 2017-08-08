@@ -14,6 +14,7 @@ import Prelude ()
 import Servant
 
 import Futurice.App.FUM.API
+import Futurice.App.FUM.Command
 import Futurice.App.FUM.Config
 import Futurice.App.FUM.Ctx
 import Futurice.App.FUM.Markup
@@ -50,12 +51,20 @@ apiServer ctx = personioRequest :<|> rawEmployees :<|> rawValidations
 
     rawValidations = liftIO $ readTVarIO $ ctxPersonioValidations ctx
 
--- TODO: write command handler
-commandServer :: Ctx -> Server FumCarbonCommandApi
-commandServer ctx (LomakeRequest cmd) = runLogT "command" (ctxLogger ctx) $ do
-    logTrace "input" $ (error "not implemented" cmd :: Value)
-    fail "not-implemented"
-    -- pure LomakeResponseNoop
+commandServer
+    :: forall path cmd. Command cmd
+    => Ctx -> Server (CommandEndpoint path cmd)
+commandServer ctx (LomakeRequest cmdInput) = runLogT "command" (ctxLogger ctx) $ do
+    world <- liftIO $ readTVarIO (ctxWorld ctx)
+    cmdInternal' <- liftIO (internalizeCommand world cmdInput)
+    cmdInternal <- either undefined pure cmdInternal'
+    logTrace ("command " <> commandTag (Proxy :: Proxy cmd)) cmdInternal
+    case applyCommand cmdInternal world of
+        Right (res, world') -> do
+            -- TODO: transact
+            liftIO $ atomically $ writeTVar (ctxWorld ctx) world'
+            pure res
+        Left err -> fail err
 
 server :: Ctx -> Server FumCarbonApi
 server ctx = indexPageImpl ctx

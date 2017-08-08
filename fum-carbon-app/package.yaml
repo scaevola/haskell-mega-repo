@@ -57,6 +57,7 @@ dependencies:
   - text
   - time
   - trifecta
+  - unordered-containers
   - uuid
   - uuid-types
 

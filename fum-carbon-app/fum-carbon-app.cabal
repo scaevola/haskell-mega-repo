@@ -72,6 +72,7 @@ library
     , text
     , time
     , trifecta
+    , unordered-containers
     , uuid
     , uuid-types
   exposed-modules:
@@ -80,6 +81,8 @@ library
       Futurice.App.FUM.API
       Futurice.App.FUM.Clay
       Futurice.App.FUM.Command
+      Futurice.App.FUM.Command.CreateEmployee
+      Futurice.App.FUM.Command.Definition
       Futurice.App.FUM.Config
       Futurice.App.FUM.Ctx
       Futurice.App.FUM.Logic
@@ -94,7 +97,6 @@ library
       Futurice.App.FUM.Types.Status
       Futurice.App.FUM.Types.World
       Futurice.Lomake
-      Futurice.MonadTrans
   default-language: Haskell2010
 
 executable fum-carbon-server
@@ -149,6 +151,7 @@ executable fum-carbon-server
     , text
     , time
     , trifecta
+    , unordered-containers
     , uuid
     , uuid-types
     , fum-carbon-app
@@ -207,6 +210,7 @@ test-suite unit-tests
     , text
     , time
     , trifecta
+    , unordered-containers
     , uuid
     , uuid-types
     , tasty
