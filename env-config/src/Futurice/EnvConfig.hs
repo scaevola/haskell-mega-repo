@@ -22,6 +22,7 @@ module Futurice.EnvConfig (
 
 import Algebra.Lattice
        (JoinSemiLattice (..), MeetSemiLattice (..))
+import Control.Monad                  ((>=>))
 import Control.Monad.Logger           (LogLevel (..))
 import Data.Functor.Alt               (Alt (..))
 import Data.List                      (foldl')
@@ -250,8 +251,8 @@ instance FromEnvVar FUM.ListName where
 instance FromEnvVar FUM.GroupName where
     fromEnvVar = fmap FUM.GroupName . fromEnvVar
 
-instance FromEnvVar FUM.UserName where
-    fromEnvVar = fmap FUM.UserName . fromEnvVar
+instance FromEnvVar FUM.Login where
+    fromEnvVar = fromEnvVar >=> FUM.parseLogin
 
 -------------------------------------------------------------------------------
 -- GitHub

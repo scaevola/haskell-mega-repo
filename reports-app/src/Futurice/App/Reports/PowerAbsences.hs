@@ -46,7 +46,7 @@ import qualified PlanMill.Queries          as PMQ
 -------------------------------------------------------------------------------
 
 data PowerAbsence = PowerAbsence
-    { _powerAbsenceUsername     :: !(Maybe FUM.UserName)
+    { _powerAbsenceUsername     :: !(Maybe FUM.Login)
     , _powerAbsenceStart        :: !Day
     , _powerAbsenceEnd          :: !Day
     , _powerAbsencePlanmillId   :: !PM.AbsenceId
@@ -66,7 +66,7 @@ instance ToJSON PowerAbsence where
 
 instance ToColumns PowerAbsence where
     type Columns PowerAbsence =
-        '[ Maybe FUM.UserName, Day, Day, NDT 'Days Int, NDT 'Days Int ]
+        '[ Maybe FUM.Login, Day, Day, NDT 'Days Int, NDT 'Days Int ]
 
     columnNames _ =
         K "fum" :*
@@ -120,7 +120,7 @@ powerAbsenceReport mmonth = do
 
 powerAbsence
     :: MonadPlanMillQuery m
-    => HashMap FUM.UserName PM.User
+    => HashMap FUM.Login PM.User
     -> PM.Absence
     -> m PowerAbsence
 powerAbsence idsLookup ab  = do
@@ -136,7 +136,7 @@ powerAbsence idsLookup ab  = do
         , _powerAbsenceBusinessDays = NDT $ length uc'
         }
   where
-    revLookup :: HashMap PM.UserId FUM.UserName
+    revLookup :: HashMap PM.UserId FUM.Login
     revLookup
         = HM.fromList
         . map (first (view PM.identifier) . swap)

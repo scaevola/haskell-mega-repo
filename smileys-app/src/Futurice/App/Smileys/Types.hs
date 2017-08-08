@@ -61,7 +61,7 @@ data HourEntry = HourEntry
 
 data Smileys = Smileys
     { _smileysEntries  :: !HourEntries
-    , _smileysUsername :: !FUM.UserName
+    , _smileysUsername :: !FUM.Login
     , _smileysSmiley   :: !SmileyValue
     , _smileysDate     :: !Day
     }

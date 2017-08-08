@@ -25,7 +25,7 @@ import Futurice.App.Checklist.Types.TaskAppliance
 import Futurice.App.Checklist.Types.TaskRole
 
 import qualified Data.Text       as T
-import qualified FUM
+import qualified FUM.Types.Login as FUM
 import qualified Test.QuickCheck as QC
 
 newtype Name a = Name Text
@@ -50,7 +50,7 @@ data Employee = Employee
     , _employeeConfirmed    :: !Bool
       -- ^ /Note:/ This is non-work email!
     , _employeeStartingDay  :: !Day
-    , _employeeSupervisor   :: !FUM.UserName
+    , _employeeSupervisor   :: !FUM.Login
     , _employeeTribe        :: !Tribe
       -- ^ /Note:/ ATM this is free form text.
     , _employeeInfo         :: !Text
@@ -58,7 +58,7 @@ data Employee = Employee
     -- Data filled up later:
     , _employeePhone        :: !(Maybe Text)
     , _employeeContactEmail :: !(Maybe Text)
-    , _employeeFUMLogin     :: !(Maybe FUM.UserName)
+    , _employeeFUMLogin     :: !(Maybe FUM.Login)
     , _employeeHRNumber     :: !(Maybe Int) -- TODO: make a newtype for this
     }
   deriving (Eq, Ord, Show, Typeable, Generic)

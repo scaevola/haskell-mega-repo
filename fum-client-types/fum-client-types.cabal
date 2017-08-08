@@ -39,6 +39,7 @@ library
     , lucid
     , postgresql-simple
     , QuickCheck
+    , regex-applicative-text
     , swagger2
     , template-haskell
     , text

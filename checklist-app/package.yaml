@@ -28,6 +28,7 @@ dependencies:
   - distributive
   - env-config
   - fum-client
+  - fum-client-types
   - futurice-foundation
   - futurice-prelude
   - futurice-servant

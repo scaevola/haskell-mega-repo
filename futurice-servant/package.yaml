@@ -36,7 +36,7 @@ library:
     - ekg-json
     - env-config
     - exceptions
-    - fum-client
+    - fum-client-types
     - futurice-logo
     - futurice-prelude
     - futurice-foundation

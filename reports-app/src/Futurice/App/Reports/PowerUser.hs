@@ -32,12 +32,12 @@ import qualified FUM
 -------------------------------------------------------------------------------
 
 data PowerUser = PowerUser
-    { _powerUserUsername       :: !FUM.UserName
+    { _powerUserUsername       :: !FUM.Login
     , _powerUserFirst          :: !Text
     , _powerUserLast           :: !Text
     , _powerUserTeam           :: !Text
     , _powerUserCompetence     :: !Text
-    , _powerUserSupervisor     :: !(Maybe FUM.UserName)
+    , _powerUserSupervisor     :: !(Maybe FUM.Login)
     , _powerUserSupervisorName :: !(Maybe Text)
     , _powerUserStart          :: !(Maybe Day)
     , _powerUserEnd            :: !(Maybe Day)
@@ -67,7 +67,7 @@ type PowerUserReport = Vector PowerUser
 -- Logic
 -------------------------------------------------------------------------------
 
-type SupervisorMap = HashMap FUM.UserName (FUM.UserName, Text)
+type SupervisorMap = HashMap FUM.Login (FUM.Login, Text)
 
 powerUserReport
     :: forall m env.
@@ -92,10 +92,10 @@ powerUserReport = do
           pure (u ^. FUM.userName, superData)
 
         -- id to name map
-        ss :: HashMap Int (FUM.UserName, Text)
+        ss :: HashMap Int (FUM.Login, Text)
         ss = HM.fromList . map mkData $ us'
 
-        mkData :: FUM.User -> (Int, (FUM.UserName, Text))
+        mkData :: FUM.User -> (Int, (FUM.Login, Text))
         mkData u =
             ( u ^. FUM.userId
             , ( u ^. FUM.userName, u ^. FUM.userFullName)
@@ -104,7 +104,7 @@ powerUserReport = do
 powerUser
     :: MonadPlanMillQuery m
     => SupervisorMap
-    -> FUM.UserName -> PM.User -> m PowerUser
+    -> FUM.Login -> PM.User -> m PowerUser
 powerUser supervisors fumLogin u = do
     t <- traverse PMQ.team (PM.uTeam u)
     a <- PMQ.enumerationValue (PM.uPassive u) "-"

@@ -21,7 +21,7 @@ import Futurice.App.Checklist.Types
 -- | = operators are the same as ~ lens operators, but modify the state of MonadState.
 --
 -- todo: in error monad, if e.g. identifier don't exist
-applyCommand :: UTCTime -> FUM.UserName -> Command Identity -> World -> World
+applyCommand :: UTCTime -> FUM.Login -> Command Identity -> World -> World
 applyCommand now ssoUser cmd world = flip execState world $ case cmd of
     CmdCreateChecklist (Identity cid) n ->
         worldLists . at cid ?= Checklist cid n mempty
@@ -105,7 +105,7 @@ applyCommand now ssoUser cmd world = flip execState world $ case cmd of
 
 transactCommand
     :: (MonadLog m, MonadIO m)
-    => Postgres.Connection -> FUM.UserName -> Command Identity -> m ()
+    => Postgres.Connection -> FUM.Login -> Command Identity -> m ()
 transactCommand conn ssoUser cmd = do
     logInfo "transactCommand" cmd
     _ <- liftIO $ Postgres.execute conn

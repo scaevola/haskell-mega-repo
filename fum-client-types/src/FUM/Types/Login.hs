@@ -2,9 +2,11 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module FUM.Types.Login (
     Login,
+    loginToText,
     mkLogin,
     parseLogin,
     parseLogin',
+    loginRegexp,
     InvalidLoginFormat (..),
     ) where
 
@@ -13,9 +15,10 @@ import Data.Aeson.Types
        toJSONKeyText)
 import Futurice.Generics
 import Futurice.Prelude
-import Language.Haskell.TH (ExpQ)
-import Lucid               (ToHtml (..))
+import Language.Haskell.TH         (ExpQ)
+import Lucid                       (ToHtml (..))
 import Prelude ()
+import Text.Regex.Applicative.Text (RE', psym)
 
 import qualified Data.Aeson.Compat                    as Aeson
 import qualified Data.Csv                             as Csv
@@ -25,6 +28,7 @@ import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 import qualified Test.QuickCheck                      as QC
 
+-- | Login name. @[a-z]{4,5}@.
 newtype Login = Login Text
   deriving (Eq, Ord)
 
@@ -60,6 +64,7 @@ instance Exception InvalidLoginFormat
 loginToText :: Login -> Text
 loginToText (Login l) = l
 
+-- | Parse login identifier
 parseLogin' :: Text -> Either String Login
 parseLogin' t
     | not (4 <= len && len <= 5) = Left $ "login of invalid length: " ++ show len
@@ -68,6 +73,27 @@ parseLogin' t
   where
     len = T.length t
     isInvalidChar = (`notElem` ['a'..'z'])
+
+-- | Regexp for login identifier
+--
+-- /Note:/ use `parseLogin` if possible, as it provides better errors.
+loginRegexp :: RE' Login
+loginRegexp = Login . T.pack <$> range 4 5 (psym (`elem` ['a'..'z']))
+  where
+    range
+        :: Alternative f
+        => Int  -- ^ min
+        -> Int  -- ^ max
+        -> f a
+        -> f [a]
+    range mi ma f = go mi ma
+      where
+        go start end
+            | start > end || end <= 0 = pure []
+            | start > 0 = (:) <$> f <*> go (start - 1) (end - 1)
+            | otherwise = inRange <$> optional f <*> go 0 (end - 1)
+
+        inRange current next = maybe [] (:next) current
 
 -------------------------------------------------------------------------------
 -- Instances

@@ -28,7 +28,7 @@ import Data.Time
 import Futurice.IdMap                (IdMap, idMapOf)
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Types
-import Text.Regex.Applicative.Text   (anySym, match)
+import Text.Regex.Applicative.Text   (match)
 
 import qualified Data.HashMap.Strict as HM
 
@@ -109,7 +109,7 @@ fumPlanmillMap
     :: ( MonadFUM m, MonadPlanMillQuery m
        , MonadReader env m, HasFUMEmployeeListName env
        )
-    => m (HashMap FUM.UserName (FUM.User, PM.User))
+    => m (HashMap FUM.Login (FUM.User, PM.User))
 fumPlanmillMap =
     combine <$> fumEmployeeList <*> users
   where
@@ -117,21 +117,19 @@ fumPlanmillMap =
         us <- PMQ.users
         traverse (\u -> (u,) <$> PMQ.user (view PM.identifier u)) us
 
-    combine :: Vector FUM.User -> Vector (PM.User, PM.User) -> HashMap FUM.UserName (FUM.User, PM.User)
+    combine :: Vector FUM.User -> Vector (PM.User, PM.User) -> HashMap FUM.Login (FUM.User, PM.User)
     combine fum pm = HM.fromList $ catMaybes $ map extract $ toList pm
       where
         fumNames :: IdMap FUM.User
         fumNames = idMapOf folded fum
 
-        extract :: (PM.User, PM.User) -> Maybe (FUM.UserName, (FUM.User, PM.User))
+        extract :: (PM.User, PM.User) -> Maybe (FUM.Login, (FUM.User, PM.User))
         extract (pmUser', pmUser) = do
             name <- match loginRe (PM.uUserName pmUser)
             fumUser <- fumNames ^. at name
             pure (name, (fumUser, update pmUser' pmUser))
 
-        loginRe = FUM.UserName . view packed
-            <$  "https://login.futurice.com/openid/"
-            <*> many anySym
+        loginRe = "https://login.futurice.com/openid/" *> FUM.loginRegexp
 
     -- workaround for https://github.com/planmill/api/issues/11
     -- some data is present in users output but not in per-user

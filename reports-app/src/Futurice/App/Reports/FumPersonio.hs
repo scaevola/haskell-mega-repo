@@ -44,13 +44,13 @@ import qualified Personio
 
 data PersonioUser = PersonioUser
     { _personioUserName  :: !Text
-    , _personioUserLogin :: !FUM.UserName
+    , _personioUserLogin :: !FUM.Login
     }
     deriving (Eq, Ord, Show, Typeable, Generic)
 
 data FUMUser = FUMUser
     { _fumUserName  :: !Text
-    , _fumUserLogin :: !FUM.UserName
+    , _fumUserLogin :: !FUM.Login
     }
     deriving (Eq, Ord, Show, Typeable, Generic)
 
@@ -150,7 +150,7 @@ fumPersonioReport = do
             guard $ maybe False (<= today) $ e ^. Personio.employeeHireDate
             pure PersonioUser  
                 { _personioUserName  = e ^. Personio.employeeFirst <> " " <> e ^. Personio.employeeLast
-                , _personioUserLogin = FUM.UserName login
+                , _personioUserLogin = login
                 }
 
     -- | Align on `

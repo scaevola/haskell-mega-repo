@@ -34,15 +34,15 @@ data Ctx = Ctx
     , ctxOrigWorld   :: World
     , ctxPostgres    :: Pool Postgres.Connection
     , ctxPRNGs       :: Pool (TVar CryptoGen)
-    , ctxMockUser    :: !(Maybe FUM.UserName)
-    , ctxACL         :: TVar (Map FUM.UserName TaskRole)
+    , ctxMockUser    :: !(Maybe FUM.Login)
+    , ctxACL         :: TVar (Map FUM.Login TaskRole)
     , ctxManager     :: Manager
     }
 
 newCtx
     :: Logger
     -> Postgres.ConnectInfo
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> World
     -> IO Ctx
 newCtx logger ci mockUser w = do
@@ -71,7 +71,7 @@ ctxGetCRandom ctx = ctxWithCryptoGen ctx getCRandom
 
 ctxApplyCmd
     :: (MonadLog m, MonadBaseControl IO m, MonadIO m)
-    => UTCTime -> FUM.UserName -> Command Identity -> Ctx -> m ()
+    => UTCTime -> FUM.Login -> Command Identity -> Ctx -> m ()
 ctxApplyCmd now fumuser cmd ctx = do
     liftIO $ atomically $ modifyTVar' (ctxWorld ctx) (applyCommand now fumuser cmd)
     withResource (ctxPostgres ctx) $ \conn -> do
@@ -83,7 +83,7 @@ ctxFetchGroups
     -> FUM.AuthToken
     -> FUM.BaseUrl
     -> (FUM.GroupName, FUM.GroupName, FUM.GroupName)
-    -> IO (Map FUM.UserName TaskRole)
+    -> IO (Map FUM.Login TaskRole)
 ctxFetchGroups mgr logger fumAuthToken fumBaseUrl (itGroupName, hrGroupName, supervisorGroupName) = do
     ((itGroup, hrGroup), supervisorGroup) <-
         fetchGroup mgr itGroupName `concurrently`

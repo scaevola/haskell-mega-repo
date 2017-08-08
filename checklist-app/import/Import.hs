@@ -1,13 +1,12 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
 -- |
 --
 -- > tajna run -s checklist-import checklist-app/data.sample.yaml
 module Main (main) where
 
-import Prelude ()
-import Futurice.Prelude
 import Algebra.Lattice                  (top)
 import Control.Exception.Lifted         (bracket)
 import Control.Lens                     (use, _4)
@@ -16,8 +15,11 @@ import Control.Monad.Trans.State.Strict
 import Data.Aeson.Compat
        (FromJSON (..), Parser, withObject, (.:))
 import Data.Yaml                        (decodeFileEither)
+import FUM.Types.Login                  (mkLogin)
 import Futurice.EnvConfig               (getConfig)
+import Futurice.Prelude
 import Futurice.UUID                    (uuidWords)
+import Prelude ()
 import System.Environment               (getArgs)
 
 import qualified Data.UUID                  as UUID
@@ -27,6 +29,7 @@ import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
 import Futurice.App.Checklist.Logic
 import Futurice.App.Checklist.Types
+
 
 -------------------------------------------------------------------------------
 -- Main
@@ -48,7 +51,7 @@ main' fp = withStderrLogger $ \logger -> runLogT "checklist-import" logger $ do
         Right v  -> do
             let cmds = evalState (dataToCommands v) UUID.nil
             bracket (liftIO $ Postgres.connect cfgPostgresConnInfo) (liftIO . Postgres.close) $ \conn -> do
-                for_ cmds $ transactCommand conn "xxxx"
+                for_ cmds $ transactCommand conn $(mkLogin "xxxx")
 
 -------------------------------------------------------------------------------
 -- MonadUUID

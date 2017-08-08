@@ -101,9 +101,9 @@ import Futurice.App.Checklist.Types.TaskAppliance
 import Futurice.App.Checklist.Types.TaskComment
 import Futurice.App.Checklist.Types.TaskRole
 
-import qualified FUM (UserName)
+import qualified FUM.Types.Login as FUM (Login)
 
-type AuthUser = (FUM.UserName, TaskRole)
+type AuthUser = (FUM.Login, TaskRole)
 
 authUserTaskRole :: Lens' AuthUser TaskRole
 authUserTaskRole = _2

@@ -166,7 +166,7 @@ balanceReport interval = do
     cmpPE :: StrictPair Employee a -> StrictPair Employee a -> Ordering
     cmpPE = (comparing employeeTeam <> comparing employeeName) `on` S.fst
 
-    supervisors :: Vector FUM.User -> HashMap FUM.UserName Text
+    supervisors :: Vector FUM.User -> HashMap FUM.Login Text
     supervisors us = HM.fromList . mapMaybe mk $ us'
       where
         us' = toList us
@@ -183,8 +183,8 @@ balanceReport interval = do
     -- TODO: put planmillEmployee into fumPlanmillMap!
     -- Also MissingHours report
     perUser
-        :: HashMap FUM.UserName Text
-        -> FUM.UserName
+        :: HashMap FUM.Login Text
+        -> FUM.Login
         -> PM.User
         -> m (StrictPair Employee (StrictPair Supervisor Balance))
     perUser svs fumLogin pmUser = mk

@@ -11,8 +11,8 @@ import qualified PlanMill            as PM
 import qualified PlanMill.Worker     as PM
 
 data Ctx = Ctx
-    { ctxMockUser            :: !(Maybe FUM.UserName)
-    , ctxFumPlanmillMap      :: !(TVar (HashMap FUM.UserName (FUM.User, PM.User)))
+    { ctxMockUser            :: !(Maybe FUM.Login)
+    , ctxFumPlanmillMap      :: !(TVar (HashMap FUM.Login (FUM.User, PM.User)))
     , ctxCache               :: !DynMapCache
     , ctxLogger              :: !Logger
     , ctxManager             :: !Manager

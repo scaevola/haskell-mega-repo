@@ -19,8 +19,6 @@ import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
-import qualified FUM
-
 -- |
 --
 -- === Preconditions
@@ -139,7 +137,7 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
                 td_ $ taskCheckbox_ world employee task
                 td_ $ taskCommentInput_ world employee task
                 td_ $ forOf_ _AnnTaskItemDone taskItem $ \(_, fumUser, timestamp) -> do
-                    toHtml $ fumUser ^. FUM.getUserName
+                    toHtml fumUser
                     " "
                     toHtml $ show $ localDay $ utcToHelsinkiTime timestamp
 

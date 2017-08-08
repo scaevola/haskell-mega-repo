@@ -6,15 +6,15 @@
 {-# LANGUAGE TupleSections     #-}
 module Futurice.App.Checklist (defaultMain) where
 
-import Prelude ()
-import Futurice.Periocron
-import Futurice.Prelude
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
 import Futurice.Lucid.Foundation (HtmlPage)
+import Futurice.Periocron
+import Futurice.Prelude
 import Futurice.Servant
 import Futurice.Stricter
+import Prelude ()
 import Servant
 import Servant.Chart             (Chart)
 
@@ -43,7 +43,7 @@ import Futurice.App.Checklist.Types
 import Futurice.App.Checklist.Types.Ctx
 
 import qualified Database.PostgreSQL.Simple as Postgres
-import qualified FUM                        (UserName (..))
+import qualified FUM.Types.Login            as FUM
 
 -------------------------------------------------------------------------------
 -- Server
@@ -72,7 +72,7 @@ server ctx = indexPageImpl ctx
 
 indexPageImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Maybe Office
     -> Maybe (Identifier Checklist)
     -> Maybe (Identifier Task)
@@ -95,7 +95,7 @@ indexPageImpl ctx fu loc cid tid showDone showOld = withAuthUser ctx fu impl
 
 tasksPageImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Maybe TaskRole
     -> Maybe (Identifier Checklist)
     -> Handler (HtmlPage "tasks")
@@ -110,7 +110,7 @@ tasksPageImpl ctx fu role cid = withAuthUser ctx fu impl
 
 createChecklistPageImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Handler (HtmlPage "create-checklist")
 createChecklistPageImpl ctx fu = withAuthUser ctx fu impl
   where
@@ -118,7 +118,7 @@ createChecklistPageImpl ctx fu = withAuthUser ctx fu impl
 
 createTaskPageImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Handler (HtmlPage "create-task")
 createTaskPageImpl ctx fu = withAuthUser ctx fu impl
   where
@@ -126,7 +126,7 @@ createTaskPageImpl ctx fu = withAuthUser ctx fu impl
 
 createEmployeePageImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Maybe (Identifier Employee)
     -> Handler (HtmlPage "create-employee")
 createEmployeePageImpl ctx fu meid = withAuthUser ctx fu impl
@@ -138,7 +138,7 @@ createEmployeePageImpl ctx fu meid = withAuthUser ctx fu impl
 
 checklistsPageImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Handler (HtmlPage "checklists")
 checklistsPageImpl ctx fu = withAuthUser ctx fu impl
   where
@@ -146,7 +146,7 @@ checklistsPageImpl ctx fu = withAuthUser ctx fu impl
 
 taskPageImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Identifier Task
     -> Handler (HtmlPage "task")
 taskPageImpl ctx fu tid = withAuthUser ctx fu impl
@@ -159,7 +159,7 @@ taskPageImpl ctx fu tid = withAuthUser ctx fu impl
 
 checklistPageImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Identifier Checklist
     -> Handler (HtmlPage "checklist")
 checklistPageImpl ctx fu cid = withAuthUser ctx fu impl
@@ -172,7 +172,7 @@ checklistPageImpl ctx fu cid = withAuthUser ctx fu impl
 
 employeePageImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Identifier Employee
     -> Handler (HtmlPage "employee")
 employeePageImpl ctx fu eid = withAuthUser ctx fu impl
@@ -183,14 +183,14 @@ employeePageImpl ctx fu eid = withAuthUser ctx fu impl
 
 archivePageImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Handler (HtmlPage "archive")
 archivePageImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
     pure $ archivePage world userInfo
 
 reportPageImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Maybe (Identifier Checklist)
     -> Maybe Day
     -> Maybe Day
@@ -200,7 +200,7 @@ reportPageImpl ctx fu cid fday tday= withAuthUser ctx fu $ \world userInfo ->
 
 doneChartImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Handler (Chart "done")
 doneChartImpl ctx fu = withAuthUserChart ctx fu $ \world userInfo -> do
     today <- currentDay
@@ -208,7 +208,7 @@ doneChartImpl ctx fu = withAuthUserChart ctx fu $ \world userInfo -> do
 
 applianceHelpImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Handler (HtmlPage "appliance-help")
 applianceHelpImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
     pure $ helpAppliancePage world userInfo
@@ -219,7 +219,7 @@ applianceHelpImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
 
 employeeAuditPageImpl
     :: Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Identifier Employee
     -> Handler (HtmlPage "employee-audit")
 employeeAuditPageImpl ctx fu eid = withAuthUser ctx fu impl
@@ -237,7 +237,7 @@ employeeAuditPageImpl ctx fu eid = withAuthUser ctx fu impl
 commandImpl
     :: (MonadIO m, MonadBaseControl IO m, MonadTime m)
     => Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> Command Proxy
     -> m Ack
 commandImpl ctx fu cmd = runLogT "command" (ctxLogger ctx) $
@@ -276,7 +276,7 @@ fetchEmployeeCommands
     :: MonadBaseControl IO m
     => Ctx
     -> Employee
-    -> m [(Command Identity, FUM.UserName, UTCTime)]
+    -> m [(Command Identity, FUM.Login, UTCTime)]
 fetchEmployeeCommands ctx e = withResource (ctxPostgres ctx) $ \conn ->
     liftBase $ Postgres.query conn query (e ^. identifier, e ^. employeeChecklist)
   where
@@ -294,7 +294,7 @@ fetchEmployeeCommands ctx e = withResource (ctxPostgres ctx) $ \conn ->
 -- | Read only pages
 withAuthUser
     :: (MonadIO m, MonadBase IO m, MonadTime m)
-    => Ctx -> Maybe FUM.UserName
+    => Ctx -> Maybe FUM.Login
     -> (World -> AuthUser -> m (HtmlPage a))
     -> m (HtmlPage a)
 withAuthUser ctx fu f = runLogT "withAuthUser" (ctxLogger ctx) $
@@ -302,7 +302,7 @@ withAuthUser ctx fu f = runLogT "withAuthUser" (ctxLogger ctx) $
 
 withAuthUserChart
     :: (MonadIO m, MonadBase IO m, MonadTime m)
-    => Ctx -> Maybe FUM.UserName
+    => Ctx -> Maybe FUM.Login
     -> (World -> AuthUser -> m (Chart a))
     -> m (Chart a)
 withAuthUserChart ctx fu f = runLogT "withAuthUser" (ctxLogger ctx) $
@@ -312,7 +312,7 @@ withAuthUser'
     :: (MonadIO m, MonadBase IO m, MonadTime m)
     => a                           -- ^ Response to unauthenticated users
     -> Ctx
-    -> Maybe FUM.UserName
+    -> Maybe FUM.Login
     -> (World -> AuthUser -> LogT m a)
     -> LogT m a
 withAuthUser' def ctx fu f = do

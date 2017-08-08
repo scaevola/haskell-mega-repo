@@ -134,13 +134,13 @@ data EmployeeEdit f = EmployeeEdit
     , eeLocation     :: !(f Office) -- todo: Location because of JSON keys
     , eeConfirmed    :: !(f Bool)
     , eeStartingDay  :: !(f Day)
-    , eeSupervisor   :: !(f FUM.UserName)
+    , eeSupervisor   :: !(f FUM.Login)
     , eeTribe        :: !(f Tribe)
     , eeInfo         :: !(f Text)
     -- this fields are optional
     , eePhone        :: !(Maybe Text)
     , eeContactEmail :: !(Maybe Text)
-    , eeFumLogin     :: !(Maybe FUM.UserName)
+    , eeFumLogin     :: !(Maybe FUM.Login)
     , eeHrNumber     :: !(Maybe Int)
     }
 
@@ -186,7 +186,7 @@ applyEmployeeEdit ee
     . Lens.over employeeHRNumber (eeHrNumber ee <|>)
 
 type EmployeeEditTypes =
-    '[Text, ContractType, Office, Bool, FUM.UserName, Int, Day, Tribe]
+    '[Text, ContractType, Office, Bool, FUM.Login, Int, Day, Tribe]
 
 deriving instance SOP.All (SOP.Compose Eq f) EmployeeEditTypes => Eq (EmployeeEdit f)
 deriving instance SOP.All (SOP.Compose Show f) EmployeeEditTypes => Show (EmployeeEdit f)

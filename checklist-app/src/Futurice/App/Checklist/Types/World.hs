@@ -49,10 +49,10 @@ import qualified Data.Set        as Set
 import qualified Test.QuickCheck as QC
 -}
 
-import qualified FUM
+import qualified FUM.Types.Login as FUM
 
 -- | Primitive ACL. Given possible username, return the actual username, role and location.
-type AuthCheck = Maybe FUM.UserName -> Maybe (FUM.UserName, TaskRole, Office)
+type AuthCheck = Maybe FUM.Login -> Maybe (FUM.Login, TaskRole, Office)
 
 type ArchivedEmployee = (Employee, TodoCounter)
 type Archive = Map (Identifier Employee) ArchivedEmployee

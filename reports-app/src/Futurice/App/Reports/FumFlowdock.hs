@@ -44,7 +44,7 @@ data FlowdockUser = FlowdockUser
 
 data FUMUser = FUMUser
     { _fumUserName    :: !Text
-    , _fumUserLogin   :: !Text
+    , _fumUserLogin   :: !FUM.Login
     , _fumFlowdockUid :: !(Maybe FD.UserId)
     }
     deriving (Eq, Ord, Show, Typeable, Generic)
@@ -115,7 +115,7 @@ fumFlowdockReport = do
     fumKey u = Key
         (u ^? FUM.userFlowdock . lazy . _Just . to (FD.mkIdentifier . fromIntegral))
         (u ^.FUM.userFirst <> " " <> u ^. FUM.userLast)
-        (fromMaybe ((u ^. FUM.userName . FUM.getUserName) <> "@futurice.com") $ u ^. FUM.userEmail . lazy)
+        (fromMaybe ((FUM.loginToText $ u ^. FUM.userName) <> "@futurice.com") $ u ^. FUM.userEmail . lazy)
 
     fdKey :: FD.OrgUser -> Key
     fdKey u = Key (Just $ u ^. FD.userId) (u ^. FD.userName) (u ^. FD.userEmail)
@@ -123,7 +123,7 @@ fumFlowdockReport = do
     mkFum :: FUM.User -> FUMUser
     mkFum u = FUMUser
         { _fumUserName    = u ^. FUM.userFirst <> " " <> u ^. FUM.userLast
-        , _fumUserLogin   = u ^. FUM.userName ^. FUM.getUserName
+        , _fumUserLogin   = u ^. FUM.userName
         , _fumFlowdockUid = u ^? FUM.userFlowdock . lazy . _Just . to (FD.mkIdentifier . fromIntegral)
         }
 

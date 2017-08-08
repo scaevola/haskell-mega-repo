@@ -58,7 +58,6 @@ import Futurice.Lucid.Foundation
 
 import qualified Data.Text as T
 import qualified Data.UUID as UUID
-import qualified FUM
 
 -------------------------------------------------------------------------------
 -- Navigation
@@ -92,7 +91,7 @@ navigation (fu, viewerRole) = do
         div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
             li_ [ class_ "menu-text" ] $ do
                 "Hello "
-                toHtml $ fu ^. FUM.getUserName
+                toHtml fu
                 ", you are "
                 toHtml $ viewerRole ^. re _TaskRole
 

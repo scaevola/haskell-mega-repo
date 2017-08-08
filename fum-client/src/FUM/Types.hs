@@ -5,24 +5,19 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
-module FUM.Types where
+module FUM.Types (
+    module FUM.Types,
+    module FUM.Types.Login,
+    ) where
 
 import Control.Lens      (Getter, to)
 import Data.Aeson.Compat
-import Data.Aeson.Types
-       (FromJSONKey (..), ToJSONKey (..), fromJSONKeyCoerce, toJSONKeyText)
-import Data.Swagger      (ToParamSchema (..), ToSchema)
+import FUM.Types.Login
 import Futurice.IdMap    (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
-import Test.QuickCheck   (Arbitrary (..), elements)
-import Web.HttpApiData   (FromHttpApiData (..), ToHttpApiData (..))
 
-import qualified Data.Csv                             as Csv
-import qualified Data.Maybe.Strict                    as S
-import qualified Data.Swagger                         as Swag
-import qualified Database.PostgreSQL.Simple.FromField as Postgres
-import qualified Database.PostgreSQL.Simple.ToField   as Postgres
+import qualified Data.Maybe.Strict as S
 
 -------------------------------------------------------------------------------
 -- Utilities for aeson
@@ -104,67 +99,6 @@ instance HasAuthToken Cfg where authToken = cfgAuthToken
 instance HasBaseUrl Cfg where baseUrl = cfgBaseUrl
 
 -------------------------------------------------------------------------------
--- User name
--------------------------------------------------------------------------------
-
--- | FUM user name
-newtype UserName = UserName { _getUserName :: Text }
-    deriving (Eq, Ord, Show, Read, Typeable, Generic)
-
-makeLenses ''UserName
-instance Hashable UserName
-instance NFData UserName
-
--- | TODO: implement using "Futurice.Generics"
-instance FromJSON UserName where
-    parseJSON = fmap UserName . parseJSON
-instance ToJSON UserName where
-    toJSON = toJSON . _getUserName
-    toEncoding = toEncoding ._getUserName
-
-instance ToSchema UserName where
-    declareNamedSchema p = pure $ Swag.NamedSchema (Just "FUM.UserName") $
-        Swag.paramSchemaToSchema p
-            & Swag.example ?~ toJSON (UserName "test")
-instance ToParamSchema UserName where
-    toParamSchema _ = mempty
-        & Swag.type_ .~ Swag.SwaggerString
-        & Swag.format ?~ "FUM.UserName"
-
-instance ToJSONKey UserName where
-    toJSONKey = toJSONKeyText _getUserName
-
-instance FromJSONKey UserName where
-    fromJSONKey = fromJSONKeyCoerce
-
-instance Csv.ToField UserName where
-    toField = Csv.toField . _getUserName
-
-instance Postgres.ToField UserName where
-    toField = Postgres.toField . _getUserName
-
-instance Postgres.FromField UserName where
-    fromField f mdata = UserName <$> Postgres.fromField f mdata
-
-instance IsString UserName where
-    fromString = UserName . fromString
-
-instance ToHttpApiData UserName where
-    toUrlPiece = _getUserName
-    toQueryParam = _getUserName
-
-instance FromHttpApiData UserName where
-    parseUrlPiece = Right . UserName
-    parseQueryParam = Right . UserName
-
-instance Arbitrary UserName where
-    arbitrary = UserName <$> gen
-      where
-        gen        = mk <$> g <*> g <*> g <*> g
-        mk a b c d = [a,b,c,d] ^. packed
-        g          = elements ['a'..'z']
-
--------------------------------------------------------------------------------
 -- Group name
 -------------------------------------------------------------------------------
 
@@ -233,7 +167,7 @@ instance FromJSON UserStatus where
 -------------------------------------------------------------------------------
 
 data User = User
-    { _userName       :: !UserName
+    { _userName       :: !Login
     , _userFirst      :: !Text
     , _userLast       :: !Text
     , _userTitle      :: !(S.Maybe Text)
@@ -251,14 +185,14 @@ data User = User
     , _userActiveInPm :: !Int
     , _userHrNumber   :: !(S.Maybe Text)
     }
-    deriving (Eq, Ord, Show, Read, Typeable, Generic)
+    deriving (Eq, Ord, Show, Typeable, Generic)
 
 makeLenses ''User
 instance Hashable User
 instance NFData User
 
 instance HasKey User where
-    type Key User = UserName
+    type Key User = Login
     key = userName
 
 instance FromJSON User where
@@ -294,11 +228,11 @@ data Group = Group
     , _groupEmail       :: !(Maybe Text)
     , _groupDescription :: !Text
     , _groupEditor      :: !GroupName
-    , _groupUsers       :: !(Vector UserName)
+    , _groupUsers       :: !(Vector Login)
     , _groupId          :: !Int
     -- group resources, json key: resources
     }
-  deriving (Eq, Ord, Show, Read, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic)
 
 makeLenses ''Group
 instance Hashable Group

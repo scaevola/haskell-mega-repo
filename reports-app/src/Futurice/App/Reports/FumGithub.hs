@@ -53,7 +53,7 @@ data GitHubUser = GitHubUser
 
 data FUMUser = FUMUser
     { _fumUserName  :: !Text
-    , _fumUserLogin :: !FUM.UserName
+    , _fumUserLogin :: !FUM.Login
     , _fumGhLogin   :: !Text
     }
     deriving (Eq, Ord, Show, Typeable, Generic)
