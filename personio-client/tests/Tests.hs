@@ -2,18 +2,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 import Data.Aeson.Compat
+import Data.Aeson.Lens       (key, _String)
 import Data.Aeson.Types      (parseEither)
+import Futurice.Office       (Office (..))
 import Futurice.Prelude
 import Futurice.Tribe        (mkTribe)
-import Futurice.Office (Office (..))
 import Prelude ()
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Data.Aeson.Lens (key, _String)
 
 import Personio
-import Personio.Types.EmploymentType
 
 main :: IO ()
 main = defaultMain $ testGroup "tests"
@@ -73,7 +72,7 @@ examples = testGroup "HUnit"
 -- Validations
 -------------------------------------------------------------------------------
 
--- | 
+-- |
 -- @
 -- attributeValue :: Text -> Traversal' Value Value
 -- @
