@@ -60,13 +60,14 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
     makeCtx config lgr cache = do
-        now <- currentTime
         mgr <- newManager tlsManagerSettings
             { managerConnCount = 100
             }
 
-        let integrConfig = makeIntegrationsConfig now lgr mgr config
-        let getFumPlanmillMap = runIntegrations integrConfig fumPlanmillMap
+        let integrConfig = cfgIntegrationsCfg config
+        let getFumPlanmillMap = do
+                now <- currentTime
+                runIntegrations mgr lgr now integrConfig fumPlanmillMap
         let job = mkJob "Update Planmill <- FUM map"  getFumPlanmillMap $ every 600
 
         fpm <- getFumPlanmillMap
@@ -76,37 +77,12 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         ws <- PM.workers lgr mgr pmCfg ["worker1", "worker2", "worker3"]
 
         pure $ flip (,) [job] Ctx
-            { ctxFumPlanmillMap      = fpmTVar
-            , ctxPlanmillCfg         = cfgPlanmillCfg config
-            , ctxMockUser            = cfgMockUser config
-            , ctxManager             = mgr
-            , ctxLogger              = lgr
-            , ctxCache               = cache
-            , ctxPlanMillHaxlBaseReq = cfgPlanmillProxyReq config
-            , ctxWorkers             = ws
+            { ctxFumPlanmillMap  = fpmTVar
+            , ctxPlanmillCfg     = cfgPlanmillCfg config
+            , ctxMockUser        = cfgMockUser config
+            , ctxManager         = mgr
+            , ctxLogger          = lgr
+            , ctxCache           = cache
+            , ctxIntegrationsCfg = integrConfig
+            , ctxWorkers         = ws
             }
-
-makeIntegrationsConfig
-    :: UTCTime -> Logger -> Manager -> Config
-    -> IntegrationsConfig I I Proxy Proxy Proxy
-makeIntegrationsConfig now lgr mgr Config {..} = MkIntegrationsConfig
-    { integrCfgManager                  = mgr
-    , integrCfgNow                      = now
-    , integrCfgLogger                   = lgr
-    -- Public FUM
-    , integrCfgFumPublicUrl             = ""
-    -- Planmill
-    , integrCfgPlanmillProxyBaseRequest = I cfgPlanmillProxyReq
-    -- FUM
-    , integrCfgFumAuthToken             = I cfgFumToken
-    , integrCfgFumBaseUrl               = I cfgFumBaseurl
-    , integrCfgFumEmployeeListName      = I cfgFumList
-    -- GitHub
-    , integrCfgGithubProxyBaseRequest   = Proxy
-    , integrCfgGithubOrgName            = Proxy
-    -- Flowdock
-    , integrCfgFlowdockToken            = Proxy
-    , integrCfgFlowdockOrgName          = Proxy
-    -- Personio
-    , integrCfgPersonioProxyBaseRequest = Proxy
-    }

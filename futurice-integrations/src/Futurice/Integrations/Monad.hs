@@ -67,13 +67,10 @@ newtype Integrations
     a
     = Integr { unIntegr :: ReaderT (Env fum gh fd) (H.GenHaxl ()) a }
 
+-- | TODO: Show instance
 data IntegrationsConfig pm fum gh fd pe = MkIntegrationsConfig
-    { integrCfgManager                  :: !Manager
-    , integrCfgLogger                   :: !Logger
-    -- Time
-    , integrCfgNow                      :: !UTCTime
     -- Public FUM
-    , integrCfgFumPublicUrl             :: !Text
+    { integrCfgFumPublicUrl             :: !Text
     -- Planmill
     , integrCfgPlanmillProxyBaseRequest :: !(pm Request)
     -- FUM
@@ -90,37 +87,16 @@ data IntegrationsConfig pm fum gh fd pe = MkIntegrationsConfig
     , integrCfgPersonioProxyBaseRequest :: !(pe Request)
     }
 
--- | A helper useful in REPL.
-loadIntegrationConfig :: Logger -> IO (IntegrationsConfig I I I I I)
-loadIntegrationConfig lgr = do
-    now <- currentTime
-    mgr <- newManager tlsManagerSettings
-    runLogT "loadIntegrationConfig" lgr $
-        getConfig' "REPL" $ MkIntegrationsConfig mgr lgr now
-            <$> envVar "FUM_PUBLICURL"
-            <*> (f <$$> envVar' "PLANMILLPROXY_HAXLURL")
-            <*> envVar' "FUM_TOKEN"
-            <*> envVar' "FUM_BASEURL"
-            <*> envVar' "FUM_LISTNAME"
-            <*> (f <$$> envVar' "GITHUBPROXY_HAXLURL")
-            <*> envVar' "GH_ORG"
-            <*> envVar' "FD_AUTH_TOKEN"
-            <*> envVar' "FD_ORGANISATION"
-            <*> (f <$$> envVar' "PERSONIOPROXY_REQUESTURL")
-  where
-    f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }
-    envVar' :: FromEnvVar a => String -> ConfigParser (I a)
-    envVar' = fmap I . envVar
-
 runIntegrations
     :: (SFunctorI pm, SFunctorI fum, SFunctorI gh, SFunctorI fd, SFunctorI pe)
-    => IntegrationsConfig pm fum gh fd pe
+    => Manager -> Logger -> UTCTime
+    -> IntegrationsConfig pm fum gh fd pe
     -> Integrations pm fum gh fd pe a
     -> IO a
-runIntegrations cfg (Integr m) = do
+runIntegrations mgr lgr now cfg (Integr m) = do
     let env = Env
             { _envFumEmployeeListName = integrCfgFumEmployeeListName cfg
-            , _envNow                 = integrCfgNow cfg
+            , _envNow                 = now
             , _envFlowdockOrgName     = integrCfgFlowdockOrgName cfg
             , _envGithubOrgName       = integrCfgGithubOrgName cfg
             , _envFumPubUrl           = integrCfgFumPublicUrl cfg
@@ -136,8 +112,6 @@ runIntegrations cfg (Integr m) = do
     haxlEnv <- H.initEnv stateStore ()
     H.runHaxl haxlEnv haxl
   where
-    mgr         = integrCfgManager cfg
-    lgr         = integrCfgLogger cfg
     fumStateSet = extractSEndo $ fmap H.stateSet $ FUM.Haxl.initDataSource' mgr
         <$> integrCfgFumAuthToken cfg
         <*> integrCfgFumBaseUrl cfg
@@ -149,6 +123,38 @@ runIntegrations cfg (Integr m) = do
         <$> integrCfgGithubProxyBaseRequest cfg
     peStateSet  = extractSEndo $ fmap H.stateSet $ Personio.Haxl.initDataSource lgr mgr
         <$> integrCfgPersonioProxyBaseRequest cfg
+
+-------------------------------------------------------------------------------
+-- env-config
+-------------------------------------------------------------------------------
+--
+-- | A helper useful in REPL.
+loadIntegrationConfig :: Logger -> IO (IntegrationsConfig I I I I I)
+loadIntegrationConfig lgr =
+    runLogT "loadIntegrationConfig" lgr $ getConfig "REPL"
+
+instance
+    (SFunctorI pm, SFunctorI fum, SFunctorI gh, SFunctorI fd, SFunctorI pe)
+    => Configure (IntegrationsConfig pm fum gh fd pe)
+  where
+    configure = MkIntegrationsConfig
+        <$> envVar "FUM_PUBLICURL"
+        <*> (f <$$> envVar' "PLANMILLPROXY_HAXLURL")
+        <*> envVar' "FUM_TOKEN"
+        <*> envVar' "FUM_BASEURL"
+        <*> envVar' "FUM_LISTNAME"
+        <*> (f <$$> envVar' "GITHUBPROXY_HAXLURL")
+        <*> envVar' "GH_ORG"
+        <*> envVar' "FD_AUTH_TOKEN"
+        <*> envVar' "FD_ORGANISATION"
+        <*> (f <$$> envVar' "PERSONIOPROXY_REQUESTURL")
+      where
+        f req = req { responseTimeout = responseTimeoutMicro $ 300 * 1000000 }
+
+        envVar' :: forall f a. (FromEnvVar a, SFunctorI f) => String -> ConfigParser (f a)
+        envVar' name = case sfunctor :: SFunctor f of
+            SP -> pure Proxy
+            SI -> I <$> envVar name
 
 -------------------------------------------------------------------------------S
 -- Functor singletons

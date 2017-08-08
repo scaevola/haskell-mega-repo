@@ -14,8 +14,8 @@
 module Futurice.App.Reports (defaultMain) where
 
 import Futurice.Integrations
-       (Integrations, IntegrationsConfig (..), beginningOfPrev2Month,
-       beginningOfPrevMonth, runIntegrations)
+       (Integrations, beginningOfPrev2Month, beginningOfPrevMonth,
+       runIntegrations)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
@@ -69,66 +69,56 @@ ctxConfig :: Ctx -> Config
 ctxConfig (_, _, _, cfg) = cfg
 
 -------------------------------------------------------------------------------
+-- Integrations
+-------------------------------------------------------------------------------
+
+runIntegrations' :: Ctx -> Integrations I I I I I a -> IO a
+runIntegrations' (_, mgr, lgr, cfg) m = do
+    now <- currentTime
+    runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m
+
+-------------------------------------------------------------------------------
 -- Endpoints
 -------------------------------------------------------------------------------
 
 -- Note: we cachedIO with () :: () as a key. It's ok as 'DynMapCache'
 -- uses both @key@ and @value@ TypeRep's as key to non-typed map.
 
+
 serveIssues :: Ctx -> IO IssueReport
 serveIssues ctx@(_, mgr, _, cfg) = cachedIO' ctx () $ do
     repos' <- repos mgr (cfgReposUrl cfg)
-    now <- currentTime
-    runIntegrations
-        (ctxToIntegrationsConfig now ctx)
+    runIntegrations' ctx
         (issueReport repos')
 
 serveFumGitHubReport :: Ctx -> IO FumGitHubReport
-serveFumGitHubReport ctx = cachedIO' ctx () $ do
-    now <- currentTime
-    runIntegrations
-        (ctxToIntegrationsConfig now ctx)
-        fumGithubReport
+serveFumGitHubReport ctx = cachedIO' ctx () $
+    runIntegrations' ctx fumGithubReport
 
 serveGithubUsersReport :: Ctx -> IO GithubUsersReport
-serveGithubUsersReport ctx = cachedIO' ctx () $ do
-    now <- currentTime
-    runIntegrations
-        (ctxToIntegrationsConfig now ctx)
-        githubUsersReport
+serveGithubUsersReport ctx = cachedIO' ctx () $
+    runIntegrations' ctx githubUsersReport
 
 serveFumFlowdockReport :: Ctx -> IO FumFlowdockReport
-serveFumFlowdockReport ctx = cachedIO' ctx () $ do
-    now <- currentTime
-    runIntegrations
-        (ctxToIntegrationsConfig now ctx)
-        fumFlowdockReport
+serveFumFlowdockReport ctx = cachedIO' ctx () $
+    runIntegrations' ctx fumFlowdockReport
 
 serveFumPlanmillReport :: Ctx -> IO FumPlanmillReport
-serveFumPlanmillReport ctx = cachedIO' ctx () $ do
-    now <- currentTime
-    runIntegrations
-        (ctxToIntegrationsConfig now ctx)
-        fumPlanmillReport
+serveFumPlanmillReport ctx = cachedIO' ctx () $
+    runIntegrations' ctx fumPlanmillReport
 
 serveFumPersonioReport :: Ctx -> IO FumPersonioReport
-serveFumPersonioReport ctx = cachedIO' ctx () $ do
-    now <- currentTime
-    runIntegrations
-        (ctxToIntegrationsConfig now ctx)
-        fumPersonioReport
+serveFumPersonioReport ctx = cachedIO' ctx () $
+    runIntegrations' ctx fumPersonioReport
 
 serveMissingHoursReport
     :: (KnownSymbol title, Typeable title)
     => Bool -> Ctx -> IO (MissingHoursReport title)
 serveMissingHoursReport allContracts ctx = cachedIO' ctx allContracts $ do
-    now <- currentTime
     day <- currentDay
     -- TODO: end date to the last friday
     let interval = beginningOfPrev2Month day ... pred day
-    runIntegrations
-        (ctxToIntegrationsConfig now ctx)
-        (missingHoursReport contractTypes interval)
+    runIntegrations' ctx (missingHoursReport contractTypes interval)
   where
     contractTypes
         | allContracts = Nothing
@@ -136,47 +126,29 @@ serveMissingHoursReport allContracts ctx = cachedIO' ctx allContracts $ do
 
 serveBalancesReport :: Ctx -> IO BalanceReport
 serveBalancesReport ctx = cachedIO' ctx () $ do
-    now <- currentTime
     day <- currentDay
     let interval = beginningOfPrevMonth day ... day
-    runIntegrations
-        (ctxToIntegrationsConfig now ctx)
-        (balanceReport interval)
+    runIntegrations' ctx (balanceReport interval)
 
 servePowerUsersReport :: Ctx -> IO PowerUserReport
-servePowerUsersReport ctx = cachedIO' ctx () $ do
-    now <- currentTime
-    runIntegrations
-        (ctxToIntegrationsConfig now ctx)
-        powerUserReport
+servePowerUsersReport ctx = cachedIO' ctx () $
+    runIntegrations' ctx powerUserReport
 
 servePowerProjectsReport :: Ctx -> IO PowerProjectsReport
-servePowerProjectsReport ctx = cachedIO' ctx () $ do
-    now <- currentTime
-    runIntegrations
-        (ctxToIntegrationsConfig now ctx)
-        powerProjectsReport
+servePowerProjectsReport ctx = cachedIO' ctx () $
+    runIntegrations' ctx powerProjectsReport
 
 servePowerAbsencesReport :: Ctx -> Maybe Month -> IO PowerAbsenceReport
-servePowerAbsencesReport ctx mmonth = cachedIO' ctx mmonth $ do
-    now <- currentTime
-    runIntegrations
-        (ctxToIntegrationsConfig now ctx)
-        $ powerAbsenceReport mmonth
+servePowerAbsencesReport ctx mmonth = cachedIO' ctx mmonth $
+    runIntegrations' ctx $ powerAbsenceReport mmonth
 
 serveTimereportsByTaskReport :: Ctx -> IO TimereportsByTaskReport
-serveTimereportsByTaskReport ctx = cachedIO' ctx () $ do
-    now <- currentTime
-    runIntegrations
-        (ctxToIntegrationsConfig now ctx)
-        timereportsByTaskReport
+serveTimereportsByTaskReport ctx = cachedIO' ctx () $
+    runIntegrations' ctx timereportsByTaskReport
 
 servePlanmillEmployeesReport :: Ctx -> IO PlanmillEmployeesReport
-servePlanmillEmployeesReport ctx = cachedIO' ctx () $ do
-    now <- currentTime
-    runIntegrations
-        (ctxToIntegrationsConfig now ctx)
-        planmillEmployeesReport
+servePlanmillEmployeesReport ctx = cachedIO' ctx () $
+    runIntegrations' ctx planmillEmployeesReport
 
 cachedIO' :: (Eq k, Hashable k, Typeable k, Typeable v) => Ctx -> k -> IO v -> IO v
 cachedIO' (cache, _, logger, _) = cachedIO logger cache 600
@@ -203,11 +175,8 @@ serveChart
     => Integrations I I I I I (Chart key)
     -> Ctx
     -> IO (Chart key)
-serveChart f ctx = cachedIO' ctx () $ do
-    now <- currentTime
-    runIntegrations
-        (ctxToIntegrationsConfig now ctx)
-        f
+serveChart f ctx = cachedIO' ctx () $
+    runIntegrations' ctx f
 
 -- TODO: introduce "HasMissingHoursContracts"
 missingHoursChart'
@@ -254,29 +223,6 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         $ shifted (2 * 60) $ every $ 10 * 60
       where
         name = "Updating report " <> symbolVal (Proxy :: Proxy (RName r))
-
-ctxToIntegrationsConfig :: UTCTime -> Ctx -> IntegrationsConfig I I I I I
-ctxToIntegrationsConfig now (_cache, mgr, lgr, Config {..}) = MkIntegrationsConfig
-    { integrCfgManager                  = mgr
-    , integrCfgNow                      = now
-    , integrCfgLogger                   = lgr
-    -- Public FUM
-    , integrCfgFumPublicUrl             = cfgFumPubUrl
-    -- Planmill
-    , integrCfgPlanmillProxyBaseRequest = I cfgPlanmillProxyBaseRequest
-    -- FUM
-    , integrCfgFumAuthToken             = I cfgFumAuth
-    , integrCfgFumBaseUrl               = I cfgFumBaseUrl
-    , integrCfgFumEmployeeListName      = I cfgFumUserList
-    -- GitHub
-    , integrCfgGithubProxyBaseRequest   = I cfgGithubProxyBaseRequest
-    , integrCfgGithubOrgName            = I cfgGhOrg
-    -- Flowdock
-    , integrCfgFlowdockToken            = I cfgFlowdockAuthToken
-    , integrCfgFlowdockOrgName          = I cfgFlowdockOrgName
-    -- Personio
-    , integrCfgPersonioProxyBaseRequest = I cfgPersonioProxyBaseRequest
-    }
 
 -------------------------------------------------------------------------------
 -- Temporary
