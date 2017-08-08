@@ -109,7 +109,7 @@ validations = testGroup "Validations"
             & attributeValue "office" .~  Array mempty
     , testValidation
         "phone"
-        PhoneMissing
+        WorkPhoneMissing
         $ correctEmployeeValue
             & attributeValue "dynamic_27163" . _String .~  ""
     , testValidation
