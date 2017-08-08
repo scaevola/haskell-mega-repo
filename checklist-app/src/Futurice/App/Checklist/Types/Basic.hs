@@ -46,11 +46,11 @@ data Employee = Employee
     , _employeeFirstName    :: !Text
     , _employeeLastName     :: !Text
     , _employeeContractType :: !ContractType
-    , _employeeOffice     :: !Office
+    , _employeeOffice       :: !Office
     , _employeeConfirmed    :: !Bool
       -- ^ /Note:/ This is non-work email!
     , _employeeStartingDay  :: !Day
-    , _employeeSupervisor   :: !FUM.Login
+    , _employeeSupervisor   :: !Text -- TODO: FUM.Login
     , _employeeTribe        :: !Tribe
       -- ^ /Note:/ ATM this is free form text.
     , _employeeInfo         :: !Text

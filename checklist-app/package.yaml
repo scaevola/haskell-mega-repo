@@ -39,6 +39,7 @@ dependencies:
   - http-api-data
   - lattices >=1.6
   - lens
+  - lens-aeson
   - lucid
   - mtl
   - periocron

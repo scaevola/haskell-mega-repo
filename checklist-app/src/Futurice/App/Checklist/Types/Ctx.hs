@@ -11,7 +11,6 @@ module Futurice.App.Checklist.Types.Ctx (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Concurrent.Async (concurrently)
 import Control.Concurrent.STM
        (TVar, atomically, modifyTVar', newTVarIO, readTVar, writeTVar)
 import Data.Pool                (Pool, createPool, withResource)

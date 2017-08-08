@@ -54,6 +54,7 @@ library
     , http-api-data
     , lattices >=1.6
     , lens
+    , lens-aeson
     , lucid
     , mtl
     , periocron
@@ -146,6 +147,7 @@ executable checklist-app-server
     , http-api-data
     , lattices >=1.6
     , lens
+    , lens-aeson
     , lucid
     , mtl
     , periocron
@@ -204,6 +206,7 @@ executable checklist-import
     , http-api-data
     , lattices >=1.6
     , lens
+    , lens-aeson
     , lucid
     , mtl
     , periocron
@@ -266,6 +269,7 @@ test-suite unit-tests
     , http-api-data
     , lattices >=1.6
     , lens
+    , lens-aeson
     , lucid
     , mtl
     , periocron
