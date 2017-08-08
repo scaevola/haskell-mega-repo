@@ -6,9 +6,11 @@
 {-# LANGUAGE TupleSections     #-}
 module Futurice.App.Checklist (defaultMain) where
 
+import Control.Applicative       (liftA3)
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
+import Futurice.Integrations     (IntegrationsConfig, runIntegrations)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
 import Futurice.Prelude
@@ -23,6 +25,7 @@ import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Charts.Done
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
+import Futurice.App.Checklist.Ctx
 import Futurice.App.Checklist.Logic
 import Futurice.App.Checklist.Pages.Archive
 import Futurice.App.Checklist.Pages.Checklist
@@ -40,10 +43,9 @@ import Futurice.App.Checklist.Pages.Report
 import Futurice.App.Checklist.Pages.Task
 import Futurice.App.Checklist.Pages.Tasks
 import Futurice.App.Checklist.Types
-import Futurice.App.Checklist.Types.Ctx
 
 import qualified Database.PostgreSQL.Simple as Postgres
-import qualified FUM.Types.Login            as FUM
+import qualified FUM
 
 -------------------------------------------------------------------------------
 -- Server
@@ -351,13 +353,33 @@ makeCtx Config {..} logger _cache = do
     let world0 = foldl' (\world (fumuser, now, cmd) -> applyCommand now fumuser cmd world) emptyWorld cmds
     atomically $ writeTVar (ctxWorld ctx) world0
 
-    let action = ctxFetchGroups
-            (ctxManager ctx)
-            logger
-            cfgFumToken
-            cfgFumBaseurl
-            (cfgFumITGroup, cfgFumHRGroup, cfgFumSupervisorGroup)
-            >>= atomically . writeTVar (ctxACL ctx)
-        job = mkJob "update checklist ACL" action $ every 600
+    -- We don't need manager in ctx for now
+    let action = do
+            acl <- fetchGroups
+                (ctxManager ctx)
+                logger
+                cfgIntegrationsCfg
+                (cfgFumITGroup, cfgFumHRGroup, cfgFumSupervisorGroup)
+            atomically (writeTVar (ctxACL ctx) acl)
+
+    let job = mkJob "update checklist ACL" action $ every 600
 
     pure (ctx, [job])
+
+fetchGroups
+    :: Manager
+    -> Logger
+    -> IntegrationsConfig Proxy I Proxy Proxy Proxy
+    -> (FUM.GroupName, FUM.GroupName, FUM.GroupName)
+    -> IO (Map FUM.Login TaskRole)
+fetchGroups mgr lgr cfg (itGroupName, hrGroupName, supervisorGroupName) = do
+    now <- currentTime
+    (itGroup, hrGroup, supervisorGroup) <- runIntegrations mgr lgr now cfg $
+        liftA3 (,,)
+            (FUM.fumGroup itGroupName)
+            (FUM.fumGroup hrGroupName)
+            (FUM.fumGroup supervisorGroupName)
+    pure $ toMapOf (folded . ifolded) $
+        [ (login, TaskRoleIT) | login <- itGroup ^.. FUM.groupUsers . folded ] ++
+        [ (login, TaskRoleHR) | login <- hrGroup ^.. FUM.groupUsers . folded ] ++
+        [ (login, TaskRoleSupervisor) | login <- supervisorGroup ^.. FUM.groupUsers . folded ]

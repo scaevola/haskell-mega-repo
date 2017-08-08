@@ -28,7 +28,7 @@ import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 import qualified Test.QuickCheck                      as QC
 
--- | Login name. @[a-z]{4,5}@.
+-- | Login name. @[a-z]{4,5}|itteam@.
 newtype Login = Login Text
   deriving (Eq, Ord)
 
@@ -67,7 +67,8 @@ loginToText (Login l) = l
 -- | Parse login identifier
 parseLogin' :: Text -> Either String Login
 parseLogin' t
-    | not (4 <= len && len <= 5) = Left $ "login of invalid length: " ++ show len
+    | t == "itteam"              = Right (Login t)
+    | not (4 <= len && len <= 5) = Left $ "login of invalid length: " ++ show len ++ " " ++ T.take 10 t ^. unpacked
     | T.any isInvalidChar t      = Left $ "login with invalid characters: " ++ show (T.take 3 (T.filter isInvalidChar t))
     | otherwise                  = Right (Login t)
   where
@@ -76,7 +77,12 @@ parseLogin' t
 
 -- | Regexp for login identifier
 --
--- /Note:/ use `parseLogin` if possible, as it provides better errors.
+-- /Notes:/
+--
+-- * use `parseLogin` if possible, as it provides better errors.
+--
+-- * this is strict @[a-z]{4,5}@ regexp.
+--
 loginRegexp :: RE' Login
 loginRegexp = Login . T.pack <$> range 4 5 (psym (`elem` ['a'..'z']))
   where

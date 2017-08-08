@@ -21,6 +21,7 @@ import Data.Ord                  (comparing)
 import Data.Time                 (addDays)
 import Futurice.Cache            (DynMapCache, cachedIO)
 import Futurice.Constraint.Unit1 (Unit1)
+import Futurice.Integrations     (IntegrationsConfig (..))
 import Futurice.Prelude
 import Futurice.Time             (NDT (..), ndtConvert, ndtConvert', ndtDivide)
 import Numeric.Interval.NonEmpty ((...))
@@ -68,11 +69,11 @@ runHours ctx pmUser profilePic (Hours m) = liftIO $ do
     -- TODO: catch ServantErr
     Haxl.runHaxl haxlEnv haxl
   where
-    lgr   = ctxLogger ctx
-    mgr   = ctxManager ctx
-    pmReq = ctxPlanMillHaxlBaseReq ctx
-    cache = ctxCache ctx
-    ws    = ctxWorkers ctx
+    lgr     = ctxLogger ctx
+    mgr     = ctxManager ctx
+    I pmReq = integrCfgPlanmillProxyBaseRequest (ctxIntegrationsCfg ctx)
+    cache   = ctxCache ctx
+    ws      = ctxWorkers ctx
 
 -------------------------------------------------------------------------------
 -- Utilities

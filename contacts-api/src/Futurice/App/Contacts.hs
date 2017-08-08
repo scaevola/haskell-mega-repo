@@ -17,8 +17,8 @@ import Servant
 
 -- Contacts modules
 import Futurice.App.Contacts.API
-import Futurice.App.Contacts.Config (Config (..))
-import Futurice.App.Contacts.Logic  (contacts)
+import Futurice.App.Contacts.Config
+import Futurice.App.Contacts.Logic
 import Futurice.App.Contacts.Types
 
 type Ctx = IO [Contact Text]
@@ -37,36 +37,15 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx          .~ "CONTACTSAPI"
   where
     makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-    makeCtx Config {..} logger cache = do
+    makeCtx cfg lgr cache = do
         mgr <- newManager tlsManagerSettings
         now <- currentTime
-        let cfg = MkIntegrationsConfig
-                { integrCfgManager                  = mgr
-                , integrCfgLogger                   = logger
-                , integrCfgNow                      = now
-                -- Public FUM
-                , integrCfgFumPublicUrl             = "" -- TODO: would be useful in UI
-                -- Planmill
-                , integrCfgPlanmillProxyBaseRequest = I cfgPmBaseReq
-                -- FUM
-                , integrCfgFumAuthToken             = I cfgFumAuth
-                , integrCfgFumBaseUrl               = I cfgFumBaseUrl
-                , integrCfgFumEmployeeListName      = I cfgFumUserList
-                -- GitHub
-                , integrCfgGithubProxyBaseRequest   = I cfgGhBaseReq
-                , integrCfgGithubOrgName            = I cfgGhOrg
-                -- Flowdock
-                , integrCfgFlowdockToken            = I cfgFdAuth
-                , integrCfgFlowdockOrgName          = I cfgFdOrg
-                -- Personio
-                , integrCfgPersonioProxyBaseRequest = I cfgPersonioBaseReq
-                }
 
         -- Contacts action
-        let getContacts = runIntegrations cfg contacts
+        let getContacts = runIntegrations mgr lgr now cfg contacts
 
         -- Action returning the contact list
-        let action = cachedIO logger cache 3600 () getContacts
+        let action = cachedIO lgr cache 3600 () getContacts
 
         -- Periodically try to fetch new data
         let job = mkJob "update contacts" action $ every 300

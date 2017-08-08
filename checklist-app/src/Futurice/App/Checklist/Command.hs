@@ -32,21 +32,23 @@ module Futurice.App.Checklist.Command (
     TaskAddition (..),
     ) where
 
-import Prelude ()
-import Futurice.Prelude
-import Algebra.Lattice            (top)
-import Data.Char                  (isUpper, toLower)
-import Data.List                  (intercalate)
-import Data.List.CommonPrefix     (CommonPrefix (..), getCommonPrefix)
-import Data.List.Split            (keepDelimsL, split, whenElt)
+import Algebra.Lattice        (top)
+import Data.Aeson             (Value (..))
+import Data.Aeson.Lens        (key)
+import Data.Char              (isUpper, toLower)
+import Data.List              (intercalate)
+import Data.List.CommonPrefix (CommonPrefix (..), getCommonPrefix)
+import Data.List.Split        (keepDelimsL, split, whenElt)
 import Data.Singletons.Bool
-import Data.Swagger               (NamedSchema (..))
+import Data.Swagger           (NamedSchema (..))
 import Data.Type.Equality
 import Futurice.Aeson
        (FromJSONField1, fromJSONField1, object, withBool, withObject, (.!=),
        (.:), (.:?), (.=))
 import Futurice.Generics
 import Futurice.IsMaybe
+import Futurice.Prelude
+import Prelude ()
 
 import qualified Control.Lens                         as Lens
 import qualified Data.Aeson.Compat                    as Aeson
@@ -134,7 +136,7 @@ data EmployeeEdit f = EmployeeEdit
     , eeLocation     :: !(f Office) -- todo: Location because of JSON keys
     , eeConfirmed    :: !(f Bool)
     , eeStartingDay  :: !(f Day)
-    , eeSupervisor   :: !(f FUM.Login)
+    , eeSupervisor   :: !(f Text) -- TODO: FUM.Login
     , eeTribe        :: !(f Tribe)
     , eeInfo         :: !(f Text)
     -- this fields are optional
@@ -212,7 +214,13 @@ instance
     )
     => FromJSON (EmployeeEdit f)
   where
-    parseJSON = sopParseJSON
+    parseJSON value = sopParseJSON $ value
+        -- monkey patch values for backwards-compat
+        & key "fumLogin" %~ emptyToNull
+      where
+        emptyToNull x
+            | x == ""   = Null
+            | otherwise = x
 
 -------------------------------------------------------------------------------
 -- TaskAddition

@@ -45,6 +45,7 @@ library
     , fum-client
     , fum-types
     , futurice-foundation
+    , futurice-integrations
     , futurice-prelude
     , futurice-servant
     , futurice-tribes
@@ -53,6 +54,7 @@ library
     , http-api-data
     , lattices >=1.6
     , lens
+    , lens-aeson
     , lucid
     , mtl
     , periocron
@@ -82,6 +84,7 @@ library
       Futurice.App.Checklist.Clay
       Futurice.App.Checklist.Command
       Futurice.App.Checklist.Config
+      Futurice.App.Checklist.Ctx
       Futurice.App.Checklist.Logic
       Futurice.App.Checklist.Markup
       Futurice.App.Checklist.Pages.Archive
@@ -102,7 +105,6 @@ library
       Futurice.App.Checklist.Types.Basic
       Futurice.App.Checklist.Types.ContractType
       Futurice.App.Checklist.Types.Counter
-      Futurice.App.Checklist.Types.Ctx
       Futurice.App.Checklist.Types.Identifier
       Futurice.App.Checklist.Types.TaskAppliance
       Futurice.App.Checklist.Types.TaskComment
@@ -136,6 +138,7 @@ executable checklist-app-server
     , fum-client
     , fum-types
     , futurice-foundation
+    , futurice-integrations
     , futurice-prelude
     , futurice-servant
     , futurice-tribes
@@ -144,6 +147,7 @@ executable checklist-app-server
     , http-api-data
     , lattices >=1.6
     , lens
+    , lens-aeson
     , lucid
     , mtl
     , periocron
@@ -193,6 +197,7 @@ executable checklist-import
     , fum-client
     , fum-types
     , futurice-foundation
+    , futurice-integrations
     , futurice-prelude
     , futurice-servant
     , futurice-tribes
@@ -201,6 +206,7 @@ executable checklist-import
     , http-api-data
     , lattices >=1.6
     , lens
+    , lens-aeson
     , lucid
     , mtl
     , periocron
@@ -254,6 +260,7 @@ test-suite unit-tests
     , fum-client
     , fum-types
     , futurice-foundation
+    , futurice-integrations
     , futurice-prelude
     , futurice-servant
     , futurice-tribes
@@ -262,6 +269,7 @@ test-suite unit-tests
     , http-api-data
     , lattices >=1.6
     , lens
+    , lens-aeson
     , lucid
     , mtl
     , periocron
