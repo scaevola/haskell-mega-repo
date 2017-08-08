@@ -8,11 +8,13 @@
 module FUM.Types (
     module FUM.Types,
     module FUM.Types.Login,
+    module FUM.Types.GroupName,
     ) where
 
 import Control.Lens      (Getter, to)
 import Data.Aeson.Compat
 import FUM.Types.Login
+import FUM.Types.GroupName
 import Futurice.IdMap    (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
@@ -97,27 +99,6 @@ instance NFData Cfg
 
 instance HasAuthToken Cfg where authToken = cfgAuthToken
 instance HasBaseUrl Cfg where baseUrl = cfgBaseUrl
-
--------------------------------------------------------------------------------
--- Group name
--------------------------------------------------------------------------------
-
--- | FUM group name
-newtype GroupName = GroupName { _getGroupName :: Text }
-    deriving (Eq, Ord, Show, Read, Typeable, Generic)
-
-makeLenses ''GroupName
-instance Hashable GroupName
-instance NFData GroupName
-
-instance IsString GroupName where
-    fromString = GroupName . view packed
-
-instance FromJSON GroupName where
-    parseJSON = withText "FUM GroupName" $ pure . GroupName
-
-instance ToJSON GroupName where
-    toJSON = toJSON . _getGroupName
 
 -------------------------------------------------------------------------------
 -- List name

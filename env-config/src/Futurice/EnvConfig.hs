@@ -37,15 +37,15 @@ import Servant.Client                 (BaseUrl, parseBaseUrl)
 import System.Environment             (getEnvironment)
 import System.Exit                    (exitFailure)
 
-import qualified Chat.Flowdock.REST as FD
-import qualified Data.ByteString    as B
-import qualified Data.Map           as Map
-import qualified Data.Set           as Set
-import qualified Data.Text          as T
-import qualified Data.UUID.Types    as UUID
+import qualified Chat.Flowdock.REST  as FD
+import qualified Data.ByteString     as B
+import qualified Data.Map            as Map
+import qualified Data.Set            as Set
+import qualified Data.Text           as T
+import qualified Data.UUID.Types     as UUID
 import qualified FUM
-import qualified GitHub             as GH
-import qualified Network.AWS        as AWS
+import qualified GitHub              as GH
+import qualified Network.AWS         as AWS
 
 data EnvVarP a = EnvVar
     { _envVarName :: String
@@ -249,7 +249,7 @@ instance FromEnvVar FUM.ListName where
     fromEnvVar = fmap FUM.ListName . fromEnvVar
 
 instance FromEnvVar FUM.GroupName where
-    fromEnvVar = fmap FUM.GroupName . fromEnvVar
+    fromEnvVar = fromEnvVar >=> FUM.parseGroupName
 
 instance FromEnvVar FUM.Login where
     fromEnvVar = fromEnvVar >=> FUM.parseLogin
