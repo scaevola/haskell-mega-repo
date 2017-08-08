@@ -126,7 +126,7 @@ data Employee = Employee
     , _employeeEndDate        :: !(Maybe Day)
     , _employeeRole           :: !Text
     , _employeeEmail          :: !Text
-    , _employeePhone          :: !Text
+    , _employeeWorkPhone      :: !Text
     , _employeeSupervisorId   :: !(Maybe EmployeeId)
     , _employeeLogin          :: !(Maybe Text)  -- TODO: use proper newtype!
     , _employeeTribe          :: !Tribe  -- ^ defaults to 'defaultTribe'
@@ -137,6 +137,7 @@ data Employee = Employee
     , _employeeStatus         :: !Status
     , _employeeHRNumber       :: !(Maybe Int)
     , _employeeEmploymentType :: !EmploymentType
+    , _employeeHomePhone      :: !(Maybe Text)
 #ifdef PERSONIO_DEBUG
     , _employeeRest           :: !(HashMap Text Attribute)
 #endif
@@ -215,6 +216,7 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseAttribute obj "status"
         <*> parseDynamicAttribute obj "HR number"
         <*> parseAttribute obj "employment_type"
+        <*> parseDynamicAttribute obj "Home phone"
 #ifdef PERSONIO_DEBUG
         <*> pure obj -- for employeeRest field
 #endif
@@ -446,12 +448,14 @@ data ValidationMessage
     | GithubInvalid Text
     | OfficeMissing
     | RoleMissing
-    | PhoneMissing
+    | WorkPhoneMissing
     | IbanInvalid
     | LoginInvalid Text
     | EmploymentTypeMissing
     | FixedTermEndDateMissing
     | PermanentExternal
+    | HomePhoneInvalid
+    | FlowdockInvalid
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -503,22 +507,24 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 
     validate :: HashMap Text Attribute -> Parser [ValidationMessage]
     validate obj = execWriterT $ sequenceA_
-        [ validateGithub
+        [ githubValidate
         , costCenterValidate
         , ibanValidate
         , loginValidate
         , fixedEndDateValidate
         , externalContractValidate
         , employmentTypeValidate
+        , homePhoneValidate
+        , flowdockValidate
         , attributeMissing "email" EmailMissing
         , attributeObjectMissing "department" TribeMissing
         , attributeObjectMissing "office" OfficeMissing
-        , dynamicAttributeMissing "Work phone" PhoneMissing
+        , dynamicAttributeMissing "Work phone" WorkPhoneMissing
         , dynamicAttributeMissing "Primary role" RoleMissing
         ]
       where
-        validateGithub :: WriterT [ValidationMessage] Parser ()
-        validateGithub = do
+        githubValidate :: WriterT [ValidationMessage] Parser ()
+        githubValidate = do
             githubText <- lift (parseDynamicAttribute obj "Github")
             case match (githubRegexp <|> pure "") githubText of
                 Nothing -> tell [GithubInvalid githubText]
@@ -621,6 +627,23 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             eType <- lift (parseAttribute obj "employment_type") 
             case employmentTypeFromText eType of
                 Nothing -> tell [EmploymentTypeMissing]
+                Just _  -> pure ()
+
+        homePhoneValidate :: WriterT [ValidationMessage] Parser ()
+        homePhoneValidate = do
+            hPhone <- lift (parseDynamicAttribute obj "Home phone")
+            case match (phoneRegexp <|> pure "") hPhone of
+                Nothing -> tell [HomePhoneInvalid]
+                Just _  -> pure ()
+          where
+            phoneRegexp = string "+" *> (T.pack <$> some (psym (`elem` allowedChars)))
+            allowedChars = ' ':'-':['0'..'9']
+
+        flowdockValidate :: WriterT [ValidationMessage] Parser ()
+        flowdockValidate = do
+            fdockText <- lift (parseDynamicAttribute obj "Flowdock")
+            case match (flowdockRegexp <|> empty) fdockText of
+                Nothing -> tell [FlowdockInvalid]
                 Just _  -> pure ()
 
 -- | Validate IBAN.

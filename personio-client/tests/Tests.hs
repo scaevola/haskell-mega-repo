@@ -56,7 +56,7 @@ examples = testGroup "HUnit"
         Nothing @=? e ^. employeeEndDate
         "Developer (Primary)" @=? e ^. employeeRole
         "teemu.teekkari@example.com" @=? e ^. employeeEmail
-        "+123 5678910" @=? e ^. employeePhone
+        "+123 5678910" @=? e ^. employeeWorkPhone
         Just (EmployeeId 1337) @=? e ^. employeeSupervisorId
         $(mkTribe "Tammerforce") @=? e ^. employeeTribe
         OffTampere @=? e ^. employeeOffice
@@ -65,6 +65,7 @@ examples = testGroup "HUnit"
         Active @=? e ^. employeeStatus
         Just 0 @=? e ^. employeeHRNumber
         Internal @=? e ^. employeeEmploymentType
+        Just "+123 5678910" @=? e ^. employeeHomePhone
     , validations
     ]
 
@@ -108,7 +109,7 @@ validations = testGroup "Validations"
             & attributeValue "office" .~  Array mempty
     , testValidation
         "phone"
-        PhoneMissing
+        WorkPhoneMissing
         $ correctEmployeeValue
             & attributeValue "dynamic_27163" . _String .~  ""
     , testValidation
@@ -148,6 +149,16 @@ validations = testGroup "Validations"
         $ correctEmployeeValue
             & attributeValue "dynamic_72935" . _String .~ "permanent"
             & attributeValue "employment_type" . _String .~ "external"
+    , testValidation
+        "home phone"
+        HomePhoneInvalid
+        $ correctEmployeeValue
+            & attributeValue "dynamic_72936" . _String .~ "123a4"
+    , testValidation
+        "flowdock"
+        FlowdockInvalid
+        $ correctEmployeeValue
+            & attributeValue "dynamic_72914" . _String .~ "https://www.flowdock.com/12345"
     ]
   where
     testValidation name warning val = testCase name $ do
