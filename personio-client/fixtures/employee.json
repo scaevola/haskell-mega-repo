@@ -288,6 +288,10 @@
     "dynamic_72935": {
         "label": "Contract type",
         "value": "permanent"
+    },
+    "dynamic_72936": {
+      "label": "Home phone",
+      "value": "+123 5678910"
     }
   }
 }

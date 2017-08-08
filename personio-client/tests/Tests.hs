@@ -56,7 +56,7 @@ examples = testGroup "HUnit"
         Nothing @=? e ^. employeeEndDate
         "Developer (Primary)" @=? e ^. employeeRole
         "teemu.teekkari@example.com" @=? e ^. employeeEmail
-        "+123 5678910" @=? e ^. employeePhone
+        "+123 5678910" @=? e ^. employeeWorkPhone
         Just (EmployeeId 1337) @=? e ^. employeeSupervisorId
         $(mkTribe "Tammerforce") @=? e ^. employeeTribe
         OffTampere @=? e ^. employeeOffice
@@ -65,6 +65,7 @@ examples = testGroup "HUnit"
         Active @=? e ^. employeeStatus
         Just 0 @=? e ^. employeeHRNumber
         Internal @=? e ^. employeeEmploymentType
+        Just "+123 5678910" @=? e ^. employeeHomePhone
     , validations
     ]
 

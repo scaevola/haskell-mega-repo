@@ -126,7 +126,7 @@ data Employee = Employee
     , _employeeEndDate        :: !(Maybe Day)
     , _employeeRole           :: !Text
     , _employeeEmail          :: !Text
-    , _employeePhone          :: !Text
+    , _employeeWorkPhone      :: !Text
     , _employeeSupervisorId   :: !(Maybe EmployeeId)
     , _employeeLogin          :: !(Maybe Text)  -- TODO: use proper newtype!
     , _employeeTribe          :: !Tribe  -- ^ defaults to 'defaultTribe'
@@ -137,6 +137,7 @@ data Employee = Employee
     , _employeeStatus         :: !Status
     , _employeeHRNumber       :: !(Maybe Int)
     , _employeeEmploymentType :: !EmploymentType
+    , _employeeHomePhone      :: !(Maybe Text)
 #ifdef PERSONIO_DEBUG
     , _employeeRest           :: !(HashMap Text Attribute)
 #endif
@@ -215,6 +216,7 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseAttribute obj "status"
         <*> parseDynamicAttribute obj "HR number"
         <*> parseAttribute obj "employment_type"
+        <*> parseDynamicAttribute obj "Home phone"
 #ifdef PERSONIO_DEBUG
         <*> pure obj -- for employeeRest field
 #endif
@@ -452,6 +454,7 @@ data ValidationMessage
     | EmploymentTypeMissing
     | FixedTermEndDateMissing
     | PermanentExternal
+    | HomePhoneInvalid
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -510,6 +513,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , fixedEndDateValidate
         , externalContractValidate
         , employmentTypeValidate
+        , homePhoneValidate
         , attributeMissing "email" EmailMissing
         , attributeObjectMissing "department" TribeMissing
         , attributeObjectMissing "office" OfficeMissing
@@ -622,6 +626,16 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             case employmentTypeFromText eType of
                 Nothing -> tell [EmploymentTypeMissing]
                 Just _  -> pure ()
+
+        homePhoneValidate :: WriterT [ValidationMessage] Parser ()
+        homePhoneValidate = do
+            hPhone <- lift (parseDynamicAttribute obj "Home phone")
+            case match (phoneRegexp <|> pure "") hPhone of
+                Nothing -> tell [HomePhoneInvalid]
+                Just _  -> pure ()
+          where
+            phoneRegexp = string "+" *> (T.pack <$> some (psym (`elem` allowedChars)))
+            allowedChars = ' ':'-':['0'..'9']
 
 -- | Validate IBAN.
 --
