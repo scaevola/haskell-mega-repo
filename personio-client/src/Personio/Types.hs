@@ -126,7 +126,7 @@ data Employee = Employee
     , _employeeEndDate        :: !(Maybe Day)
     , _employeeRole           :: !Text
     , _employeeEmail          :: !Text
-    , _employeeWorkPhone      :: !Text
+    , _employeeWorkPhone      :: !(Maybe Text)
     , _employeeSupervisorId   :: !(Maybe EmployeeId)
     , _employeeLogin          :: !(Maybe Login)
     , _employeeTribe          :: !Tribe  -- ^ defaults to 'defaultTribe'
@@ -136,7 +136,7 @@ data Employee = Employee
     , _employeeFlowdock       :: !(Maybe FD.UserId)
     , _employeeStatus         :: !Status
     , _employeeHRNumber       :: !(Maybe Int)
-    , _employeeEmploymentType :: !EmploymentType
+    , _employeeEmploymentType :: !(Maybe EmploymentType)
     , _employeeHomePhone      :: !(Maybe Text)
 #ifdef PERSONIO_DEBUG
     , _employeeRest           :: !(HashMap Text Attribute)
@@ -425,7 +425,7 @@ data ValidationMessage
     | GithubInvalid Text
     | OfficeMissing
     | RoleMissing
-    | WorkPhoneMissing
+    | PhoneMissing
     | IbanInvalid
     | LoginInvalid Text
     | EmploymentTypeMissing
@@ -496,7 +496,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , attributeMissing "email" EmailMissing
         , attributeObjectMissing "department" TribeMissing
         , attributeObjectMissing "office" OfficeMissing
-        , dynamicAttributeMissing "Work phone" WorkPhoneMissing
+        , dynamicAttributeMissing "Work phone" PhoneMissing
         , dynamicAttributeMissing "Primary role" RoleMissing
         ]
       where
