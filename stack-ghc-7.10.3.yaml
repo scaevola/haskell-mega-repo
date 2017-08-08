@@ -12,6 +12,7 @@ packages:
 - favicon-app/
 - flowdock-rest/
 - fum-carbon-app/
+- fum-client-types/
 - fum-client/
 - futurice-foundation/
 - futurice-github/
