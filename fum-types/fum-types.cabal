@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 
-name:           fum-client-types
+name:           fum-types
 version:        0
-synopsis:       FUM client types
-description:    In other words: @Login@ type
+synopsis:       FUM types
+description:    In other words: @Login@ and @GroupName@ types
 category:       Web
 homepage:       https://github.com/futurice/haskell-mega-repo#readme
 bug-reports:    https://github.com/futurice/haskell-mega-repo/issues

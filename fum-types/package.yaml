@@ -1,7 +1,7 @@
-name: fum-client-types
+name: fum-types
 version: "0"
-synopsis: FUM client types
-description: "In other words: @Login@ type"
+synopsis: FUM types
+description: "In other words: @Login@ and @GroupName@ types"
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
 license: BSD3

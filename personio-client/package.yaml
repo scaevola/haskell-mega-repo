@@ -22,7 +22,7 @@ dependencies:
   - containers
   - env-config
   - flowdock-rest
-  - fum-client-types
+  - fum-types
   - futurice-prelude
   - futurice-tribes
   - github

@@ -14,8 +14,8 @@ packages:
 - flowdock-grep/
 - flowdock-rest/
 - fum-carbon-app/
-- fum-client-types/
 - fum-client/
+- fum-types/
 - futurice-foundation/
 - futurice-github/
 - futurice-integrations/

@@ -43,7 +43,7 @@ library
     , distributive
     , env-config
     , fum-client
-    , fum-client-types
+    , fum-types
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
@@ -134,7 +134,7 @@ executable checklist-app-server
     , distributive
     , env-config
     , fum-client
-    , fum-client-types
+    , fum-types
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
@@ -191,7 +191,7 @@ executable checklist-import
     , distributive
     , env-config
     , fum-client
-    , fum-client-types
+    , fum-types
     , futurice-foundation
     , futurice-prelude
     , futurice-servant
@@ -252,7 +252,7 @@ test-suite unit-tests
     , distributive
     , env-config
     , fum-client
-    , fum-client-types
+    , fum-types
     , futurice-foundation
     , futurice-prelude
     , futurice-servant

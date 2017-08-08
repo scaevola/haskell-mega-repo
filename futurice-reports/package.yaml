@@ -24,7 +24,7 @@ library:
     - containers
     - file-embed
     - flowdock-rest
-    - fum-client-types
+    - fum-types
     - futurice-foundation
     - futurice-prelude
     - generics-sop

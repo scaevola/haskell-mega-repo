@@ -32,7 +32,7 @@ import Futurice.Office
 import Futurice.Prelude
 import Futurice.Tribe
 import Prelude ()
-import Text.Regex.Applicative.Text (RE', anySym, match, string)
+import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
 import Personio.Types.ContractType   (ContractType (..), contractTypeFromText)
 import Personio.Types.EmploymentType
