@@ -22,7 +22,6 @@ module Futurice.EnvConfig (
 
 import Algebra.Lattice
        (JoinSemiLattice (..), MeetSemiLattice (..))
-import Control.Monad                  ((>=>))
 import Control.Monad.Logger           (LogLevel (..))
 import Data.Functor.Alt               (Alt (..))
 import Data.List                      (foldl')
@@ -37,15 +36,14 @@ import Servant.Client                 (BaseUrl, parseBaseUrl)
 import System.Environment             (getEnvironment)
 import System.Exit                    (exitFailure)
 
-import qualified Chat.Flowdock.REST  as FD
-import qualified Data.ByteString     as B
-import qualified Data.Map            as Map
-import qualified Data.Set            as Set
-import qualified Data.Text           as T
-import qualified Data.UUID.Types     as UUID
-import qualified FUM
-import qualified GitHub              as GH
-import qualified Network.AWS         as AWS
+import qualified Chat.Flowdock.REST as FD
+import qualified Data.ByteString    as B
+import qualified Data.Map           as Map
+import qualified Data.Set           as Set
+import qualified Data.Text          as T
+import qualified Data.UUID.Types    as UUID
+import qualified GitHub             as GH
+import qualified Network.AWS        as AWS
 
 data EnvVarP a = EnvVar
     { _envVarName :: String
@@ -234,25 +232,6 @@ instance FromEnvVar AWS.AccessKey where
 
 instance FromEnvVar AWS.SecretKey where
     fromEnvVar = fmap AWS.SecretKey . fromEnvVar
-
--------------------------------------------------------------------------------
--- FUM
--------------------------------------------------------------------------------
-
-instance FromEnvVar FUM.AuthToken where
-    fromEnvVar = fmap FUM.AuthToken . fromEnvVar
-
-instance FromEnvVar FUM.BaseUrl where
-    fromEnvVar = Just . FUM.BaseUrl
-
-instance FromEnvVar FUM.ListName where
-    fromEnvVar = fmap FUM.ListName . fromEnvVar
-
-instance FromEnvVar FUM.GroupName where
-    fromEnvVar = fromEnvVar >=> FUM.parseGroupName
-
-instance FromEnvVar FUM.Login where
-    fromEnvVar = fromEnvVar >=> FUM.parseLogin
 
 -------------------------------------------------------------------------------
 -- GitHub

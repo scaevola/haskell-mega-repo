@@ -10,10 +10,12 @@ module FUM.Types.Login (
     InvalidLoginFormat (..),
     ) where
 
+import Control.Monad               ((>=>))
 import Data.Aeson.Types
        (FromJSONKey (..), FromJSONKeyFunction (..), ToJSONKey (..),
        toJSONKeyText)
 import Futurice.Constants          (fumPublicUrl)
+import Futurice.EnvConfig          (FromEnvVar (..))
 import Futurice.Generics
 import Futurice.Prelude
 import Language.Haskell.TH         (ExpQ)
@@ -161,3 +163,6 @@ instance Postgres.FromField Login where
     fromField f mdata = do
         t <- Postgres.fromField f mdata
         either fail pure (parseLogin' t)
+
+instance FromEnvVar Login where
+    fromEnvVar = fromEnvVar >=> parseLogin

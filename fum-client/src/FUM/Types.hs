@@ -11,11 +11,12 @@ module FUM.Types (
     module FUM.Types.GroupName,
     ) where
 
-import Control.Lens      (Getter, to)
+import Control.Lens        (Getter, to)
 import Data.Aeson.Compat
-import FUM.Types.Login
 import FUM.Types.GroupName
-import Futurice.IdMap    (HasKey (..))
+import FUM.Types.Login
+import Futurice.EnvConfig  (FromEnvVar (..))
+import Futurice.IdMap      (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
 
@@ -228,3 +229,15 @@ instance FromJSON Group where
         <*> v .: "users"
         <*> v .: "id"
 
+-------------------------------------------------------------------------------
+-- EnvConfig
+-------------------------------------------------------------------------------
+
+instance FromEnvVar AuthToken where
+    fromEnvVar = fmap AuthToken . fromEnvVar
+
+instance FromEnvVar BaseUrl where
+    fromEnvVar = Just . BaseUrl
+
+instance FromEnvVar ListName where
+    fromEnvVar = fmap ListName . fromEnvVar

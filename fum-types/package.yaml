@@ -27,6 +27,7 @@ dependencies:
   - aeson-compat
   - cassava
   - containers
+  - env-config
   - futurice-constants
   - futurice-prelude
   - lucid
