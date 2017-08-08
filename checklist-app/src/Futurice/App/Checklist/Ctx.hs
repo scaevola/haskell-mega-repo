@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-module Futurice.App.Checklist.Types.Ctx (
+module Futurice.App.Checklist.Ctx (
     Ctx (..),
     newCtx,
     ctxApplyCmd,

@@ -25,6 +25,7 @@ import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Charts.Done
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Config
+import Futurice.App.Checklist.Ctx
 import Futurice.App.Checklist.Logic
 import Futurice.App.Checklist.Pages.Archive
 import Futurice.App.Checklist.Pages.Checklist
@@ -42,7 +43,6 @@ import Futurice.App.Checklist.Pages.Report
 import Futurice.App.Checklist.Pages.Task
 import Futurice.App.Checklist.Pages.Tasks
 import Futurice.App.Checklist.Types
-import Futurice.App.Checklist.Types.Ctx
 
 import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM
