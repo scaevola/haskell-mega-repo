@@ -34,7 +34,7 @@ server ctx = pure "smileys backend"
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
-    & serverName             .~ "Smileys-app"
+    & serverName             .~ "Smileys API"
     & serverDescription      .~ "Hours Smileys"
     & serverColour           .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC3))
     & serverApp smileysApi .~ server
