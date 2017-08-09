@@ -26,5 +26,10 @@ dependencies:
   - svg-builder
   - SVGFonts
 
+when:
+  - condition: impl(ghc >= 8.2)
+    dependencies:
+      - compact
+
 library:
   source-dirs: src

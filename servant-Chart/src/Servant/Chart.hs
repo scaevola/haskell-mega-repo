@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -36,6 +37,11 @@ import qualified Graphics.Svg.Core                as S
 import qualified Graphics.SVGFonts.ReadFont       as F
 import qualified Network.HTTP.Media               as M
 
+#ifdef MIN_VERSION_compact
+import Data.Compact     (Compact, compactWithSharing, getCompact)
+import System.IO.Unsafe (unsafePerformIO)
+#else
+#endif
 
 -------------------------------------------------------------------------------
 -- Servant
@@ -71,26 +77,28 @@ instance ToRenderable a => MimeRender SVG a where
 -------------------------------------------------------------------------------
 
 denv :: DEnv Double
-denv = createEnv B.vectorAlignmentFns 1000 700 loadSansSerifFonts
+denv = getCompact $ unsafePerformIO denvIO
 {-# NOINLINE denv #-}
 
-loadSansSerifFonts :: FontSelector Double
-loadSansSerifFonts = selectFont
+denvIO :: IO (Compact (DEnv Double))
+denvIO = compactWithSharing $ createEnv B.vectorAlignmentFns 1000 700 loadSansSerifFonts
   where
-    sansR = snd $ F.loadFont' "SourceSansPro_R" $(makeRelativeToProject "fonts/SourceSansPro_R.svg" >>= embedFile)
-    sansRB = snd $ F.loadFont' "SourceSansPro_RB" $(makeRelativeToProject "fonts/SourceSansPro_RB.svg" >>= embedFile)
-    sansRBI = snd $ F.loadFont' "SourceSansPro_RBI" $(makeRelativeToProject "fonts/SourceSansPro_RBI.svg" >>= embedFile)
-    sansRI = snd $ F.loadFont' "SourceSansPro_RI" $(makeRelativeToProject "fonts/SourceSansPro_RI.svg" >>= embedFile)
+    loadSansSerifFonts :: FontSelector Double
+    loadSansSerifFonts = selectFont
+      where
+        sansR = snd $ F.loadFont' "SourceSansPro_R" $(makeRelativeToProject "fonts/SourceSansPro_R.svg" >>= embedFile)
+        sansRB = snd $ F.loadFont' "SourceSansPro_RB" $(makeRelativeToProject "fonts/SourceSansPro_RB.svg" >>= embedFile)
+        sansRBI = snd $ F.loadFont' "SourceSansPro_RBI" $(makeRelativeToProject "fonts/SourceSansPro_RBI.svg" >>= embedFile)
+        sansRI = snd $ F.loadFont' "SourceSansPro_RI" $(makeRelativeToProject "fonts/SourceSansPro_RI.svg" >>= embedFile)
 
-    selectFont :: B.FontStyle -> F.PreparedFont Double
-    selectFont fs = case (B._font_name fs, B._font_slant fs, B._font_weight fs) of
-        (_, B.FontSlantNormal , B.FontWeightNormal) -> alterFontFamily "sans-serif" sansR
-        (_, B.FontSlantNormal , B.FontWeightBold  ) -> alterFontFamily "sans-serif" sansRB
-        (_, B.FontSlantItalic , B.FontWeightNormal) -> alterFontFamily "sans-serif" sansRI
-        (_, B.FontSlantOblique, B.FontWeightNormal) -> alterFontFamily "sans-serif" sansRI
-        (_, B.FontSlantItalic , B.FontWeightBold  ) -> alterFontFamily "sans-serif" sansRBI
-        (_, B.FontSlantOblique, B.FontWeightBold  ) -> alterFontFamily "sans-serif" sansRBI
-{-# NOINLINE loadSansSerifFonts #-}
+        selectFont :: B.FontStyle -> F.PreparedFont Double
+        selectFont fs = case (B._font_name fs, B._font_slant fs, B._font_weight fs) of
+            (_, B.FontSlantNormal , B.FontWeightNormal) -> alterFontFamily "sans-serif" sansR
+            (_, B.FontSlantNormal , B.FontWeightBold  ) -> alterFontFamily "sans-serif" sansRB
+            (_, B.FontSlantItalic , B.FontWeightNormal) -> alterFontFamily "sans-serif" sansRI
+            (_, B.FontSlantOblique, B.FontWeightNormal) -> alterFontFamily "sans-serif" sansRI
+            (_, B.FontSlantItalic , B.FontWeightBold  ) -> alterFontFamily "sans-serif" sansRBI
+            (_, B.FontSlantOblique, B.FontWeightBold  ) -> alterFontFamily "sans-serif" sansRBI
 
 alterFontFamily :: String -> F.PreparedFont n -> F.PreparedFont n
 alterFontFamily n (fd, om) = (fd { F.fontDataFamily = n }, om)

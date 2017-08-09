@@ -306,8 +306,8 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
 #if MIN_VERSION_base(4,10,0)
         stats <- liftIO Stats.getRTSStats
 
-        let liveBytes =  Stats.gcdetails_live_bytes (Stats.gc stats)
-
+        let liveBytes = Stats.gcdetails_live_bytes (Stats.gc stats)
+                      - Stats.gcdetails_compact_bytes (Stats.gc stats)
         let currMut = Stats.mutator_cpu_ns stats
         let currTot = Stats.cpu_ns stats
 #else
@@ -331,6 +331,8 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
                 | otherwise = 0
 
         -- TODO: create outside the job?
+
+        logInfo "CF Metrics" (liveBytes, productivity)
 
         rs <- liftIO $ AWS.runResourceT $ AWS.runAWS env $ do
 
