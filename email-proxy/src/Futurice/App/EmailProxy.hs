@@ -27,7 +27,7 @@ server ctx = pure "This is email proxy"
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
-    & serverName              .~ "Avatar API"
+    & serverName              .~ "Email Proxy"
     & serverDescription       .~ "Send Emails"
     & serverColour            .~ (Proxy :: Proxy ('FutuAccent 'AF5 'AC2))
     & serverApp emailProxyApi .~ server
