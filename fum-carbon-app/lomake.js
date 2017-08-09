@@ -202,6 +202,9 @@ lomake = (function () {
                     case "LomakeResponseNoop": 
                         modal.close();
                         break;
+                    case "LomakeResponseRedirect":
+                        location.href = response.contents;
+                        break;
                     default:
                         throw new Error("Unknown LomakeResponse " + JSON.stringify(response));
                 }

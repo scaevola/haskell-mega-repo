@@ -5,23 +5,25 @@
 {-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.FUM.Command.CreateEmployee where
 
+import Control.Lens      (has, use)
 import Futurice.Generics
-import Futurice.Lomake
 import Futurice.Prelude
 import Prelude ()
 
 import Futurice.App.FUM.Command.Definition
+import Futurice.App.FUM.Pages.Href
 import Futurice.App.FUM.Types
 
 import qualified Personio
 
 data CreateEmployee (phase :: Phase) = CreateEmployee
-    { _cePersonioId :: !Personio.EmployeeId
-    , _ceLogin      :: !Login
-    , _ceStatus     :: !Status
+    { cePersonioId :: !Personio.EmployeeId
+    , ceLogin      :: !Login
+    , ceStatus     :: !Status
     }
   deriving (Show, Typeable, Generic)
 
+makeLenses ''CreateEmployee
 deriveGeneric ''CreateEmployee
 
 instance phase ~ 'Input => HasLomake (CreateEmployee phase) where
@@ -39,9 +41,26 @@ instance phase ~ 'Internal => FromJSON (CreateEmployee phase) where
     parseJSON = sopParseJSON
 
 instance Command CreateEmployee where
-    commandTag _ = "create-employee"
+    type CommandTag CreateEmployee = "create-employee"
 
-    internalizeCommand _world cmd = pure $ Right $ coerce cmd
+    -- TODO: check that personioId and loginId aren't yet used!
+    internalizeCommand _now cmd = pure $ coerce cmd
 
     -- TODO:
-    applyCommand _cmd world = Right (LomakeResponseNoop, world)
+    applyCommand now cmd = do
+        let login = ceLogin cmd
+        world <- use id
+        when (has (worldEmployees . ix login) world) $
+            throwError $ "Employee with login " ++ show (loginToText login) ++ " already exists"
+
+        worldEmployees . at login ?= Employee
+            { _employeeLogin        = login
+            , _employeePersonioId   = cePersonioId cmd
+            , _employeeStatus       = ceStatus cmd
+            , _employeeEmailAliases = []
+            , _employeeSshKeys      = []
+            , _employeePicture      = Nothing
+            , _employeePasswordExp  = now  -- TODO
+            }
+
+        pure $ LomakeResponseRedirect $ viewEmployeeHrefText login

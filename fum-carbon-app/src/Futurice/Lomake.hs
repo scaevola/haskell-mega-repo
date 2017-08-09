@@ -31,7 +31,6 @@ import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
 import Servant.API                (Link)
-import Web.HttpApiData            (FromHttpApiData (..), ToHttpApiData (..))
 
 -- import Generics.SOP              hiding (FieldName)
 
@@ -153,6 +152,9 @@ lomakeHtml' formOpts fields values =
     go :: NP Field ys -> NP Maybe ys -> StateT (Set Text) (HtmlT m) ()
     go (f :* fs) (x :* xs) = render f x >> go fs xs
     go Nil Nil             = pure ()
+#if __GLASGOW_HASKELL__ < 800
+    go _ _                 = error "panic"
+#endif
 
     render :: forall a. Field a -> Maybe a -> StateT (Set Text) (HtmlT m) ()
     render (TextField opts) value = do

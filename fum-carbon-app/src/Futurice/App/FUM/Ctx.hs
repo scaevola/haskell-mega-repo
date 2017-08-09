@@ -19,22 +19,23 @@ import Futurice.App.FUM.Types
 
 data Ctx = Ctx
     { ctxLogger              :: !Logger
+    , ctxMockUser            :: !(Maybe Login)
     , ctxPersonio            :: !(TVar (IdMap Personio.Employee))
     , ctxPersonioValidations :: !(TVar [Personio.EmployeeValidation])
     , ctxWorld               :: !(TVar World)
     , ctxPostgres            :: !(Pool Postgres.Connection)
     , ctxPRNGs               :: !(Pool (TVar CryptoGen))
-    -- , ctxMockUser    :: !(Maybe FUM.UserName)
     }
 
 newCtx
     :: Logger
+    -> Maybe Login
     -> Postgres.ConnectInfo
     -> IdMap Personio.Employee
     -> [Personio.EmployeeValidation]
     -> World
     -> IO Ctx
-newCtx logger ci es vs w = Ctx logger
+newCtx logger mockUser ci es vs w = Ctx logger mockUser
     <$> newTVarIO es
     <*> newTVarIO vs
     <*> newTVarIO w

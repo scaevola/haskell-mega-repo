@@ -7,11 +7,17 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
 -- | Basic types
-module Futurice.App.FUM.Types.Basic where
+module Futurice.App.FUM.Types.Basic (
+    module FUM.Types.Login,
+    module FUM.Types.GroupName,
+    module Futurice.App.FUM.Types.Basic,
+    ) where
 
 import Futurice.IdMap   (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
+import FUM.Types.Login
+import FUM.Types.GroupName
 
 import Futurice.App.FUM.Types.Identifier
 import Futurice.App.FUM.Types.Status
@@ -20,7 +26,6 @@ import qualified Personio as P
 
 -- TODO:
 type SshKey = Text
-type Login = Text
 -- | Email ending with @futurice.com
 type Email = Text
 -- | Any email
@@ -40,13 +45,13 @@ instance NFData GroupType
 --
 -- Name etc. comes from Personio.
 data Employee = Employee
-    { _employeeId             :: !(Identifier Employee)  -- ^ internal unique identifier
+    { _employeeLogin          :: !Login
     , _employeePersonioId     :: !P.EmployeeId           -- ^ @123@, provides information to names, contract data etc.
     , _employeeStatus         :: !Status                 -- ^ "futurice status", importantly not directly the google status.
     , _employeeEmailAliases   :: ![Email]
     , _employeeSshKeys        :: ![SshKey]
     , _employeePicture        :: !(Maybe Picture)
-    , _employeePasswordExp    :: !UTCTime                -- ^ password expiration date, does LDAP expires?
+    , _employeePasswordExp    :: !UTCTime                -- ^ password expiration date, does LDAP expires? 
 --    , _employeePassword :: FORMAT?       -- ^ will make LDAP server easy, SHA-512
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
@@ -62,8 +67,7 @@ instance NFData CustomerRight
 
 -- | 'Customer's aren't 'Employee's.
 data Customer = Customer
-    { _customerId             :: !(Identifier Customer)
-    , _customerLogin          :: !Login
+    { _customerLogin          :: !Login
     , _customerName           :: !Text
     , _customerSshKeys        :: ![SshKey]
     , _customerEmail          :: !RawEmail
@@ -84,7 +88,7 @@ data Mailbox = Mailbox
 
 -- | Group: email list or access group.
 data Group = Group
-    { _groupId           :: !(Identifier Group)
+    { _groupName         :: !GroupName
     , _groupType         :: !GroupType
     , _groupDescription  :: !Text
     , _groupEmail        :: !(Maybe Email)
@@ -110,24 +114,21 @@ makeLenses ''Mailbox
 -------------------------------------------------------------------------------
 
 instance HasKey Customer where
-    type Key Customer = Identifier Customer
-    key = customerId
+    type Key Customer = Login
+    key = customerLogin
 
 instance HasKey Employee where
-    type Key Employee = Identifier Employee
-    key = employeeId
+    type Key Employee = Login
+    key = employeeLogin
 
 instance HasKey Group where
-    type Key Group = Identifier Group
-    key = groupId
+    type Key Group = GroupName
+    key = groupName
 
 instance HasKey Mailbox where
     type Key Mailbox = Identifier Mailbox
     key = mailboxId
 
-instance HasIdentifier Customer Customer where identifier = key
-instance HasIdentifier Employee Employee where identifier = key
-instance HasIdentifier Group    Group    where identifier = key
 instance HasIdentifier Mailbox  Mailbox  where identifier = key
 
 instance Entity Customer  where entityName _ = "FUM.Customer"
