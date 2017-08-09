@@ -39,7 +39,7 @@ absoluteChartHandler = chartHandler chart
         -> C.PlotFillBetween Day Int
     strip title colour xs = C.def
         & C.plot_fillbetween_title  .~ title
-        & C.plot_fillbetween_style  .~ (C.def & C.fill_color .~ C.opaque colour)
+        & C.plot_fillbetween_style  .~ (C.def & C.fill_color .~ C.withOpacity colour 0.5)
         & C.plot_fillbetween_values .~ xs
 
 -------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ relativeChartHandler = chartHandler chart
         -> C.PlotFillBetween Day Double
     strip title colour xs = C.def
         & C.plot_fillbetween_title  .~ title
-        & C.plot_fillbetween_style  .~ (C.def & C.fill_color .~ C.opaque colour)
+        & C.plot_fillbetween_style  .~ (C.def & C.fill_color .~ C.withOpacity colour 0.5)
         & C.plot_fillbetween_values .~ xs
 
 -------------------------------------------------------------------------------
