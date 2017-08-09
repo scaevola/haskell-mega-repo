@@ -50,7 +50,7 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
         button_
             [ class_ "button"
             , data_ "futu-link-button" $ linkToText
-            $ safeLink checklistApi createEmployeePageEndpoint $ employee ^? identifier
+            $ safeLink checklistApi createEmployeePageEndpoint (employee ^? identifier) Nothing
             ]
             "Create employee sing this employee as a template"
         button_

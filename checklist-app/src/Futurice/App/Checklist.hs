@@ -8,9 +8,11 @@ module Futurice.App.Checklist (defaultMain) where
 
 import Control.Applicative       (liftA3)
 import Control.Concurrent.STM    (atomically, readTVarIO, writeTVar)
+import Control.Lens              (filtered, firstOf)
 import Data.Foldable             (foldl')
 import Data.Pool                 (withResource)
-import Futurice.Integrations     (IntegrationsConfig, runIntegrations)
+import Futurice.Integrations
+       (IntegrationsConfig, MonadPersonio (..), runIntegrations)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Periocron
 import Futurice.Prelude
@@ -39,6 +41,7 @@ import Futurice.App.Checklist.Pages.Error
        (forbiddedPage, notFoundPage)
 import Futurice.App.Checklist.Pages.HelpAppliance
 import Futurice.App.Checklist.Pages.Index
+import Futurice.App.Checklist.Pages.Personio
 import Futurice.App.Checklist.Pages.Report
 import Futurice.App.Checklist.Pages.Task
 import Futurice.App.Checklist.Pages.Tasks
@@ -46,6 +49,8 @@ import Futurice.App.Checklist.Types
 
 import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM
+
+import qualified Personio
 
 -------------------------------------------------------------------------------
 -- Server
@@ -63,6 +68,7 @@ server ctx = indexPageImpl ctx
     :<|> employeePageImpl ctx
     :<|> employeeAuditPageImpl ctx
     :<|> archivePageImpl ctx
+    :<|> personioPageImpl ctx
     :<|> reportPageImpl ctx
     :<|> doneChartImpl ctx
     :<|> applianceHelpImpl ctx
@@ -130,13 +136,21 @@ createEmployeePageImpl
     :: Ctx
     -> Maybe FUM.Login
     -> Maybe (Identifier Employee)
+    -> Maybe Personio.EmployeeId
     -> Handler (HtmlPage "create-employee")
-createEmployeePageImpl ctx fu meid = withAuthUser ctx fu impl
+createEmployeePageImpl ctx fu meid mpeid = withAuthUser ctx fu impl
   where
-    impl world userInfo = pure $ createEmployeePage world userInfo memployee
-      where
-        memployee = meid >>= \eid -> world ^? worldEmployees . ix eid
+    impl world userInfo = do
+        let memployee = meid >>= \eid -> world ^? worldEmployees . ix eid
+        now <- currentTime
+        mpersonio <- fmap join $ for mpeid $ \eid -> do
+            employees <- getPersonioEmployees now ctx
+            -- Note: 'find' would be simpler
+            pure $ firstOf
+                (folded . filtered (\e -> eid == e ^. Personio.employeeId))
+                employees
 
+        pure $ createEmployeePage world userInfo memployee mpersonio
 
 checklistsPageImpl
     :: Ctx
@@ -190,6 +204,16 @@ archivePageImpl
 archivePageImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
     pure $ archivePage world userInfo
 
+personioPageImpl
+    :: Ctx
+    -> Maybe FUM.Login
+    -> Handler (HtmlPage "personio")
+personioPageImpl ctx fu = withAuthUser ctx fu $ \world userInfo -> do
+    now <- currentTime
+    employees <- getPersonioEmployees now ctx
+    pure (personioPage world userInfo now employees)
+
+
 reportPageImpl
     :: Ctx
     -> Maybe FUM.Login
@@ -214,6 +238,18 @@ applianceHelpImpl
     -> Handler (HtmlPage "appliance-help")
 applianceHelpImpl ctx fu = withAuthUser ctx fu $ \world userInfo ->
     pure $ helpAppliancePage world userInfo
+
+-------------------------------------------------------------------------------
+-- Personio helper
+-------------------------------------------------------------------------------
+
+getPersonioEmployees :: MonadIO m => UTCTime -> Ctx -> m [Personio.Employee]
+getPersonioEmployees now ctx = liftIO $ runIntegrations
+    (ctxManager ctx)
+    (ctxLogger ctx)
+    now
+    (ctxIntegrationsCfg ctx)
+    $ personio Personio.PersonioEmployees
 
 -------------------------------------------------------------------------------
 -- Audit
@@ -342,9 +378,10 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverEnvPfx           .~ "CHECKLISTAPP"
 
 makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
-makeCtx Config {..} logger _cache = do
+makeCtx Config {..} lgr _cache = do
     ctx <- newCtx
-        logger
+        lgr
+        cfgIntegrationsCfg
         cfgPostgresConnInfo
         cfgMockUser
         emptyWorld
@@ -357,7 +394,7 @@ makeCtx Config {..} logger _cache = do
     let action = do
             acl <- fetchGroups
                 (ctxManager ctx)
-                logger
+                lgr
                 cfgIntegrationsCfg
                 (cfgFumITGroup, cfgFumHRGroup, cfgFumSupervisorGroup)
             atomically (writeTVar (ctxACL ctx) acl)
@@ -369,7 +406,7 @@ makeCtx Config {..} logger _cache = do
 fetchGroups
     :: Manager
     -> Logger
-    -> IntegrationsConfig Proxy I Proxy Proxy Proxy
+    -> IntegrationsConfig Proxy I Proxy Proxy I
     -> (FUM.GroupName, FUM.GroupName, FUM.GroupName)
     -> IO (Map FUM.Login TaskRole)
 fetchGroups mgr lgr cfg (itGroupName, hrGroupName, supervisorGroupName) = do

@@ -13,7 +13,7 @@ import qualified FUM
 data Config = Config
     { cfgMockUser           :: !(Maybe FUM.Login)
     , cfgPostgresConnInfo   :: !ConnectInfo
-    , cfgIntegrationsCfg    :: !(IntegrationsConfig Proxy I Proxy Proxy Proxy)
+    , cfgIntegrationsCfg    :: !(IntegrationsConfig Proxy I Proxy Proxy I)
     -- ACL Groups
     , cfgFumITGroup         :: !FUM.GroupName
     , cfgFumHRGroup         :: !FUM.GroupName

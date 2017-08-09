@@ -43,6 +43,7 @@ dependencies:
   - lucid
   - mtl
   - periocron
+  - personio-client
   - postgresql-simple
   - QuickCheck
   - recursion-schemes >= 5.0.1

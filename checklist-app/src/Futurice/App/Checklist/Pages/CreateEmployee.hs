@@ -3,24 +3,88 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.CreateEmployee (createEmployeePage) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens              (forOf_, re, to)
 import Data.Aeson                (ToJSON)
 import Data.Aeson.Text           (encodeToLazyText)
 import Data.Set.Lens             (setOf)
+import FUM.Types.Login           (Login)
 import Futurice.Lucid.Foundation
+import Futurice.Prelude
+import Prelude ()
 import Web.HttpApiData           (toQueryParam)
 
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
+import qualified Personio
+
+-- Template
+data Tmpl = Tmpl
+    { tmplFirst        :: !Text
+    , tmplLast         :: !Text
+    , tmplContractType :: !(Maybe ContractType)
+    , tmplOffice       :: !Office
+    , tmplTribe        :: !Tribe
+    , tmplStartingDay  :: !(Maybe Day)
+    , tmplSupervisor   :: !Text
+    , tmplPhone        :: !(Maybe Text)
+    , tmplEmail        :: !(Maybe Text)
+    , tmplLogin        :: !(Maybe Login)
+    , tmplHRNumber     :: !(Maybe Int)
+    }
+
+employeeToTemplate :: Employee -> Tmpl
+employeeToTemplate e = Tmpl
+    { tmplFirst        = e ^. employeeFirstName
+    , tmplLast         = e ^. employeeLastName
+    , tmplContractType = Just $ e ^. employeeContractType
+    , tmplOffice       = e ^. employeeOffice
+    , tmplTribe        = e ^. employeeTribe
+    , tmplStartingDay  = Nothing
+    , tmplSupervisor   = e ^. employeeSupervisor
+    , tmplPhone        = e ^. employeePhone
+    , tmplEmail        = e ^. employeeContactEmail
+    , tmplLogin        = e ^. employeeFUMLogin
+    , tmplHRNumber     = e ^. employeeHRNumber
+    }
+
+personioToTemplate :: Personio.Employee -> Tmpl
+personioToTemplate e = Tmpl
+    { tmplFirst        = e ^. Personio.employeeFirst
+    , tmplLast         = e ^. Personio.employeeLast
+    , tmplContractType = contractType
+    , tmplOffice       = e ^. Personio.employeeOffice
+    , tmplTribe        = e ^. Personio.employeeTribe
+    , tmplStartingDay  = e ^. Personio.employeeHireDate
+    , tmplSupervisor   = "" -- TODO
+    , tmplPhone        = e ^. Personio.employeeWorkPhone
+    , tmplEmail        = Nothing
+    , tmplLogin        = e ^. Personio.employeeLogin
+    , tmplHRNumber     = e ^. Personio.employeeHRNumber
+    }
+  where
+    contractType = case e ^. Personio.employeeEmploymentType of
+        Nothing -> Nothing
+        Just Personio.External -> Just ContractTypeExternal
+        Just Personio.Internal -> case e ^. Personio.employeeContractType of
+            Nothing                      -> Nothing
+            Just Personio.PermanentAllIn -> Just ContractTypePermanent
+            Just Personio.FixedTerm      -> Just ContractTypeFixedTerm
+            Just Personio.Permanent      -> Nothing -- TODO!
+
+-------------------------------------------------------------------------------
+-- Page
+-------------------------------------------------------------------------------
+
 createEmployeePage
     :: World
     -> AuthUser    -- ^ logged in user
     -> Maybe Employee
+    -> Maybe Personio.Employee
     -> HtmlPage "create-employee"
-createEmployeePage world authUser memployee = checklistPage_ ("Create employee") authUser $ do
+createEmployeePage world authUser memployee pemployee = checklistPage_ "Create employee" authUser $ do
+    let tmpl = employeeToTemplate <$> memployee
+            <|> personioToTemplate <$> pemployee
     -- Title
     header "Create employee" []
 
@@ -39,17 +103,17 @@ createEmployeePage world authUser memployee = checklistPage_ ("Create employee")
             "First name"
             input_
                 [ futuId_ "employee-firstname", type_ "text"
-                , value_ $ maybe "" (view employeeFirstName) memployee
+                , value_ $ maybe "" tmplFirst tmpl
                 ]
         row_ $ large_ 12 $ label_ $ do
             "Last name"
             input_
                 [ futuId_ "employee-lastname", type_ "text"
-                , value_ $ maybe "" (view employeeLastName) memployee
+                , value_ $ maybe "" tmplLast tmpl
                 ]
         row_ $ large_ 12 $ label_ $ do
             "Contract"
-            let v = view employeeContractType <$> memployee
+            let v = tmplContractType =<< tmpl
             select_ [ futuId_ "employee-contract-type" ] $ do
                 optionSelected_ (v == Nothing) [ value_ "" ] "-"
                 for_ [ minBound .. maxBound ] $ \x ->
@@ -58,7 +122,7 @@ createEmployeePage world authUser memployee = checklistPage_ ("Create employee")
                         $ toHtml $ x ^. re _ContractType
         row_ $ large_ 12 $ label_ $ do
             "Office"
-            let v = view employeeOffice <$> memployee
+            let v = tmplOffice <$> tmpl
             select_ [ futuId_ "employee-location" ] $ do
                 optionSelected_ (v == Nothing) [ value_ "" ] "-"
                 for_ [ minBound .. maxBound ] $ \x ->
@@ -71,20 +135,25 @@ createEmployeePage world authUser memployee = checklistPage_ ("Create employee")
             input_ [ futuId_ "employee-confirmed", type_ "checkbox" ]
         row_ $ large_ 12 $ label_ $ do
             "Due day"
-            input_ [ futuId_ "employee-starting-day", type_ "date" ]
+            input_
+                [ futuId_ "employee-starting-day"
+                , type_ "date"
+                , value_ $ maybe "" toQueryParam (tmpl >>= tmplStartingDay)
+                ]
         row_ $ large_ 12 $ label_ $ do
             "Supervisor"
             input_
                 [ futuId_ "employee-supervisor", type_ "text"
                 , data_ "futu-values" $ encodeToText supervisors
-                , value_ $ maybe "" (toQueryParam . view employeeSupervisor) memployee
+                , value_ $ maybe "" (toQueryParam . tmplSupervisor) tmpl
                 ]
         row_ $ large_ 12 $ label_ $ do
             "Tribe"
+            let v = tmplTribe <$> tmpl
             select_ [ futuId_ "employee-tribe", type_ "text" ] $ do
-                optionSelected_ False [ value_ "" ] "-"
+                optionSelected_ (v == Nothing) [ value_ "" ] "-"
                 for_ [ minBound .. maxBound ] $ \tribe ->
-                    optionSelected_ False
+                    optionSelected_ (v == Just tribe)
                         [ value_ $ tribeToText tribe ]
                         $ toHtml tribe
         row_ $ large_ 12 $ label_ $ do
@@ -94,30 +163,30 @@ createEmployeePage world authUser memployee = checklistPage_ ("Create employee")
             "Phone"
             input_
                 [ futuId_ "employee-phone", type_ "tel"
-                , value_ $ fromMaybe "" $ memployee >>= view employeePhone
+                , value_ $ fromMaybe "" $ tmpl >>= tmplPhone
                 ]
         row_ $ large_ 12 $ label_ $ do
             "Private email"
             input_
                 [ futuId_ "employee-contact-email", type_ "email"
-                , value_ $ fromMaybe "" $ memployee >>= view employeeContactEmail
+                , value_ $ fromMaybe "" $ tmpl >>= tmplEmail
                 ]
         row_ $ large_ 12 $ label_ $ do
             "FUM handle"
             input_
                 [ futuId_ "employee-fum-login", type_ "text"
-                , value_ $ maybe "" toQueryParam $ memployee >>= view employeeFUMLogin
+                , value_ $ maybe "" toQueryParam $ tmpl >>= tmplLogin
                 ]
         row_ $ large_ 12 $ label_ $ do
             "HR number"
             input_
                 [ futuId_ "employee-hr-number", type_ "text"
-                , value_ $ maybe "" textShow $ memployee >>= view employeeHRNumber
+                , value_ $ maybe "" textShow $ tmpl >>= tmplHRNumber
                 ]
 
         row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
-            button_ [ class_ "button success", data_ "futu-action" "submit" ] $ "Create"
-            button_ [ class_ "button", data_ "futu-action" "reset" ] $ "Reset"
+            button_ [ class_ "button success", data_ "futu-action" "submit" ] "Create"
+            button_ [ class_ "button", data_ "futu-action" "reset" ] "Reset"
   where
     supervisors :: [Text]
     supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . to toQueryParam) world

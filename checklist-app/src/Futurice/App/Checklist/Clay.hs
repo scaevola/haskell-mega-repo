@@ -14,7 +14,7 @@ import qualified Control.Lens as L
 pageParams :: PageParams
 pageParams = defPageParams
     L.& pageCss    .~ [ css ]
-    L.& pageJs     .~ [ $(embedJS "checklist.js") ]
+    L.& pageJs     .~ [ $(makeRelativeToProject "checklist.js" >>= embedJS) ]
     L.& pageJQuery .~ True
 
 css :: Css

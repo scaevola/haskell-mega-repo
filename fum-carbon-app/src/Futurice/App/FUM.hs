@@ -44,16 +44,11 @@ apiServer ctx = personioRequest :<|> rawEmployees :<|> rawValidations
             pure (Personio.SomePersonioRes res (es, vs))
 
     rawEmployees = do
-        today <- currentDay
         es <- liftIO $ readTVarIO $ ctxPersonio ctx
-        pure $ filter (isCurrentEmployee today) $ toList es
+        -- no filtering, all employees
+        pure $ toList es
 
     rawValidations = liftIO $ readTVarIO $ ctxPersonioValidations ctx
-
-    isCurrentEmployee today e =
-        maybe True (today <=) (e ^. Personio.employeeEndDate) &&
-        maybe False (<= today) (e ^. Personio.employeeHireDate)
-
 
 -- TODO: write command handler
 commandServer :: Ctx -> Server FumCarbonCommandApi

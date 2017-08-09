@@ -58,6 +58,7 @@ library
     , lucid
     , mtl
     , periocron
+    , personio-client
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
@@ -98,6 +99,7 @@ library
       Futurice.App.Checklist.Pages.Error
       Futurice.App.Checklist.Pages.HelpAppliance
       Futurice.App.Checklist.Pages.Index
+      Futurice.App.Checklist.Pages.Personio
       Futurice.App.Checklist.Pages.Report
       Futurice.App.Checklist.Pages.Task
       Futurice.App.Checklist.Pages.Tasks
@@ -151,6 +153,7 @@ executable checklist-app-server
     , lucid
     , mtl
     , periocron
+    , personio-client
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
@@ -210,6 +213,7 @@ executable checklist-import
     , lucid
     , mtl
     , periocron
+    , personio-client
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1
@@ -273,6 +277,7 @@ test-suite unit-tests
     , lucid
     , mtl
     , periocron
+    , personio-client
     , postgresql-simple
     , QuickCheck
     , recursion-schemes >= 5.0.1

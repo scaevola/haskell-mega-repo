@@ -16,6 +16,8 @@ import Futurice.App.Checklist.Command (Command)
 import Futurice.App.Checklist.Types
        (Checklist, Employee, Identifier, Office, Task, TaskRole)
 
+import qualified Personio
+
 type ChecklistAPI = IndexPageEndpoint
     -- Collections
     :<|> TasksPageEndpoint
@@ -31,6 +33,8 @@ type ChecklistAPI = IndexPageEndpoint
     :<|> EmployeeAuditPageEndpoint
     -- Archive
     :<|> ArchivePageEndpoint
+    -- Personio
+    :<|> PersonioPageEndpoint
     -- Report(s)
     :<|> ReportPageEndpoint
     :<|> "reports" :> "charts" :> "done.svg" :> SSOUser :> Get '[SVG] (Chart "done")
@@ -88,6 +92,7 @@ type CreateEmployeePageEndpoint =
     "employees" :>
     "create" :>
     QueryParam "copy-employee" (Identifier Employee) :>
+    QueryParam "personio-id" Personio.EmployeeId :>
     Get '[HTML] (HtmlPage "create-employee")
 
 -------------------------------------------------------------------------------
@@ -118,6 +123,15 @@ type EmployeeAuditPageEndpoint =
     Capture "employee-id" (Identifier Employee) :>
     "audit" :>
     Get '[HTML] (HtmlPage "employee-audit")
+
+-------------------------------------------------------------------------------
+-- Personio
+-------------------------------------------------------------------------------
+
+type PersonioPageEndpoint =
+    SSOUser :>
+    "personio" :>
+    Get '[HTML] (HtmlPage "personio")
 
 -------------------------------------------------------------------------------
 -- Archive
@@ -189,6 +203,9 @@ applianceHelpEndpoint = Proxy
 
 archivePageEndpoint :: Proxy ArchivePageEndpoint
 archivePageEndpoint = Proxy
+
+personioPageEndpoint :: Proxy PersonioPageEndpoint
+personioPageEndpoint = Proxy
 
 reportPageEndpoint :: Proxy ReportPageEndpoint
 reportPageEndpoint = Proxy

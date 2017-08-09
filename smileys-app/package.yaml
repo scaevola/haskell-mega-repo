@@ -35,7 +35,6 @@ library:
     - fum-client
     - futurice-foundation
     - futurice-prelude
-    - futurice-reports
     - futurice-servant
     - generics-sop
     - http-client
