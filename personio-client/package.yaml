@@ -23,6 +23,7 @@ dependencies:
   - env-config
   - flowdock-rest
   - fum-types
+  - futurice-constants
   - futurice-prelude
   - futurice-tribes
   - github

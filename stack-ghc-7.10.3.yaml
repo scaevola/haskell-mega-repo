@@ -14,6 +14,7 @@ packages:
 - fum-carbon-app/
 - fum-client/
 - fum-types/
+- futurice-constants/
 - futurice-foundation/
 - futurice-github/
 - futurice-integrations/

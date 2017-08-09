@@ -20,7 +20,8 @@ import qualified Personio
 
 -- Template
 data Tmpl = Tmpl
-    { tmplFirst        :: !Text
+    { tmplPersonioId   :: !(Maybe Personio.EmployeeId)
+    , tmplFirst        :: !Text
     , tmplLast         :: !Text
     , tmplContractType :: !(Maybe ContractType)
     , tmplOffice       :: !Office
@@ -35,7 +36,8 @@ data Tmpl = Tmpl
 
 employeeToTemplate :: Employee -> Tmpl
 employeeToTemplate e = Tmpl
-    { tmplFirst        = e ^. employeeFirstName
+    { tmplPersonioId   = Nothing
+    , tmplFirst        = e ^. employeeFirstName
     , tmplLast         = e ^. employeeLastName
     , tmplContractType = Just $ e ^. employeeContractType
     , tmplOffice       = e ^. employeeOffice
@@ -50,7 +52,8 @@ employeeToTemplate e = Tmpl
 
 personioToTemplate :: Personio.Employee -> Tmpl
 personioToTemplate e = Tmpl
-    { tmplFirst        = e ^. Personio.employeeFirst
+    { tmplPersonioId   = Just $ e ^. Personio.employeeId
+    , tmplFirst        = e ^. Personio.employeeFirst
     , tmplLast         = e ^. Personio.employeeLast
     , tmplContractType = contractType
     , tmplOffice       = e ^. Personio.employeeOffice
@@ -87,6 +90,12 @@ createEmployeePage world authUser memployee pemployee = checklistPage_ "Create e
             <|> personioToTemplate <$> pemployee
     -- Title
     header "Create employee" []
+
+    for_ (tmplPersonioId =<< tmpl) $ \eid -> row_ $ large_ 12 $ do
+        "Using personio employee #"
+        toHtml eid
+        " as template"
+        hr_ []
 
     -- Edit
     row_ $ large_ 12 $ form_ [ futuId_ "employee-create" ] $ do

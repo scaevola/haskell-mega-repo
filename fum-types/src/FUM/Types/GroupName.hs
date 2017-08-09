@@ -10,9 +10,11 @@ module FUM.Types.GroupName (
     InvalidGroupNameFormat (..),
     ) where
 
+import Control.Monad               ((>=>))
 import Data.Aeson.Types
        (FromJSONKey (..), FromJSONKeyFunction (..), ToJSONKey (..),
        toJSONKeyText)
+import Futurice.EnvConfig          (FromEnvVar (..))
 import Futurice.Generics
 import Futurice.Prelude
 import Language.Haskell.TH         (ExpQ)
@@ -139,3 +141,7 @@ instance Postgres.FromField GroupName where
     fromField f mdata = do
         t <- Postgres.fromField f mdata
         either fail pure (parseGroupName' t)
+
+instance FromEnvVar GroupName where
+    fromEnvVar = fromEnvVar >=> parseGroupName
+

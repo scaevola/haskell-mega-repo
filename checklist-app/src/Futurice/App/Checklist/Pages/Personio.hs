@@ -27,6 +27,7 @@ personioPage world authUser now employees0 = checklistPage_ "Import from personi
     -- Table
     row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do
+            th_ "Personio ID"
             th_ "Name"
             th_ "Exists"
             th_ "Login"
@@ -36,6 +37,7 @@ personioPage world authUser now employees0 = checklistPage_ "Import from personi
             th_ "Create"
 
         tbody_ $ for_ employees $ \e -> tr_ $ do
+            td_ $ toHtml $ e ^. Personio.employeeId
             td_ $ toHtml $ (e ^. Personio.employeeFirst) <> " " <> (e ^. Personio.employeeLast)
             td_ $ boolHtml $ any
                 (== e ^. Personio.employeeLogin)

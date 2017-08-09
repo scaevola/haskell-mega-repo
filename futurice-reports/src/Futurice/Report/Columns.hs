@@ -27,8 +27,6 @@ module Futurice.Report.Columns (
     -- * Class
     ToColumns (..),
     DefaultColumns,
-    -- * Helper classes
-    HasFUMPublicURL (..),
     ) where
 
 import Data.Aeson                (encode, pairs, (.=))
@@ -604,17 +602,10 @@ instance ReportValue Bool where
     reportValueType _ = CTBool
     reportValueHtml   = bool "no" "yes"
 
-class HasFUMPublicURL env where
-    fumPublicUrl :: Lens' env Text
-
 instance ReportValue FUM.Login where
     reportValueType _ = CTFumUser
-    -- TODO: fix
-    type ReportValueC FUM.Login = Unit1 -- HasFUMPublicURL
-    reportValueHtml u = toHtml u
-        -- fumPub <- view fumPublicUrl
-        -- let u' = FUM.loginToText u
-        -- a_ [ href_ $ fumPub <> "fum/users/" <> u' ] $ toHtml u'
+    type ReportValueC FUM.Login = Unit1
+    reportValueHtml = toHtml
 
 instance ReportValue a => ReportValue (FD.Identifier a res) where
     type ReportValueC (FD.Identifier a res) = ReportValueC a

@@ -21,7 +21,6 @@ library:
     - bytestring
     - containers
     - flowdock-rest
-    - fum-client
     - futurice-prelude
     - github
     - http-client

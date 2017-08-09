@@ -18,7 +18,7 @@ import Prelude ()
 
 import qualified Data.Swagger                         as Swag
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
-import qualified FUM
+import qualified FUM.Types.Login                      as FUM
 
 import Database.PostgreSQL.Simple.FromField (FromField (..))
 import Database.PostgreSQL.Simple.FromRow   (FromRow (..), field)

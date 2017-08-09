@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 
-name:           fum-types
+name:           futurice-constants
 version:        0
-synopsis:       FUM types
-description:    In other words: @Login@ and @GroupName@ types
+synopsis:       Futurice constants
+description:    Futurice constants
 category:       Web
 homepage:       https://github.com/futurice/haskell-mega-repo#readme
 bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
@@ -30,23 +30,18 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base            >=4.7      && <4.11
-    , aeson
+      base            >=4.7      && <4.10
     , aeson-compat
-    , cassava
     , containers
-    , env-config
-    , futurice-constants
     , futurice-prelude
     , lucid
-    , postgresql-simple
     , QuickCheck
-    , regex-applicative-text
     , swagger2
     , template-haskell
     , text
     , vector
   exposed-modules:
-      FUM.Types.GroupName
-      FUM.Types.Login
+      Futurice.Constants
+  other-modules:
+      Futurice.Constants.Internal
   default-language: Haskell2010

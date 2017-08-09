@@ -37,6 +37,7 @@ library
     , env-config
     , flowdock-rest
     , fum-types
+    , futurice-constants
     , futurice-prelude
     , futurice-tribes
     , github
@@ -78,6 +79,7 @@ test-suite unit-tests
     , env-config
     , flowdock-rest
     , fum-types
+    , futurice-constants
     , futurice-prelude
     , futurice-tribes
     , github
