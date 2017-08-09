@@ -1,26 +1,26 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
 module Futurice.App.Smileys.Logic (
     getSmileys,
     getOwnSmileys,
     postOwnSmileys,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Data.Pool        (withResource)
-import Servant (ServantErr(..), err403)
+import FUM.Types.Login  (Login)
+import Futurice.Prelude
+import Prelude ()
+import Servant          (ServantErr (..), err403)
 
-import Futurice.App.Smileys.Types
 import Futurice.App.Smileys.Ctx
+import Futurice.App.Smileys.Types
 
 import qualified Database.PostgreSQL.Simple as Postgres
-import qualified FUM
 
 getOwnSmileys
     :: (MonadIO m, MonadBaseControl IO m, MonadTime m, MonadError ServantErr m)
     => Ctx
-    -> Maybe FUM.Login
+    -> Maybe Login
     -> Maybe Day
     -> Maybe Day
     -> m [Smileys]
@@ -35,7 +35,7 @@ getSmileys
     => Ctx
     -> Maybe Day
     -> Maybe Day
-    -> Maybe FUM.Login
+    -> Maybe Login
     -> m [Smileys]
 getSmileys ctx start end mFumUsername =
     withResource (ctxPostgresPool ctx) $ \conn -> do
@@ -47,7 +47,7 @@ getSmileysImpl
     => Postgres.Connection
     -> Day
     -> Day
-    -> Maybe FUM.Login
+    -> Maybe Login
     -> m [Smileys]
 getSmileysImpl conn s e Nothing = liftIO $ Postgres.query conn
     "SELECT entries, username, smiley, day FROM smileys.trail WHERE day >= ? AND day <= ?;"
@@ -59,7 +59,7 @@ getSmileysImpl conn s e (Just fumUsername) = liftIO $ Postgres.query conn
 postOwnSmileys
     :: (MonadIO m, MonadBaseControl IO m, MonadError ServantErr m)
     => Ctx
-    -> Maybe FUM.Login
+    -> Maybe Login
     -> PostSmiley
     -> m Res
 postOwnSmileys ctx mfum req =

@@ -32,7 +32,7 @@ library:
     - containers
     - dynmap-cache
     - env-config
-    - fum-client
+    - fum-types
     - futurice-foundation
     - futurice-prelude
     - futurice-servant

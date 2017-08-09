@@ -9,18 +9,17 @@ module Futurice.App.Smileys.API where
 import Futurice.Prelude
 import Prelude ()
 
+import FUM.Types.Login            (Login)
 import Futurice.App.Smileys.Types
 import Futurice.Servant           (SSOUser)
 import Servant
 import Servant.Chart              (Chart, SVG)
 
-import qualified FUM
-
 type SmileysAPI =
     Get '[PlainText] Text
     :<|> SSOUser :> "own" :> ReqBody '[JSON] PostSmiley :> Post '[JSON] Res
     :<|> SSOUser :> "own" :> QueryParam "start-date" Day :> QueryParam "end-date" Day :> Get '[JSON] [Smileys]
-    :<|> "query" :> QueryParam "start-date" Day :> QueryParam "end-date" Day :> QueryParam "user" FUM.Login :> Get '[JSON] [Smileys]
+    :<|> "query" :> QueryParam "start-date" Day :> QueryParam "end-date" Day :> QueryParam "user" Login :> Get '[JSON] [Smileys]
     :<|> "charts" :> "absolute.svg" :> Get '[SVG] (Chart "absolute")
     :<|> "charts" :> "relative.svg" :> Get '[SVG] (Chart "relative")
 

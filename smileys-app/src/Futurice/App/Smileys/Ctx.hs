@@ -8,8 +8,7 @@ import Prelude ()
 
 import Data.Pool                  (Pool)
 import Database.PostgreSQL.Simple (Connection)
-
-import qualified FUM
+import FUM.Types.Login            (Login)
 
 -------------------------------------------------------------------------------
 -- Context
@@ -19,5 +18,5 @@ data Ctx = Ctx
     { ctxPostgresPool :: !(Pool Connection)
     , ctxCache        :: !DynMapCache
     , ctxLogger       :: !Logger
-    , ctxMockUser     :: !(Maybe FUM.Login)
+    , ctxMockUser     :: !(Maybe Login)
     }
