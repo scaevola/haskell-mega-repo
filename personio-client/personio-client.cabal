@@ -32,6 +32,7 @@ library
       aeson
     , aeson-compat
     , base
+    , cassava
     , constraints
     , containers
     , env-config
@@ -74,6 +75,7 @@ test-suite unit-tests
       aeson
     , aeson-compat
     , base
+    , cassava
     , constraints
     , containers
     , env-config

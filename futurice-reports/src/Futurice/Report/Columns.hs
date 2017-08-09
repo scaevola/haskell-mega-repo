@@ -57,6 +57,7 @@ import qualified PlanMill          as PM
 import qualified Chat.Flowdock.REST as FD
 import qualified FUM.Types.Login    as FUM
 import qualified GitHub             as GH
+import qualified Personio
 
 -------------------------------------------------------------------------------
 -- Reader Html
@@ -611,6 +612,10 @@ instance ReportValue a => ReportValue (FD.Identifier a res) where
     type ReportValueC (FD.Identifier a res) = ReportValueC a
     reportValueHtml   = reportValueHtml . FD.getIdentifier
     reportValueType _ = reportValueType (Proxy :: Proxy a)
+
+instance ReportValue Personio.EmployeeId where
+    reportValueType _ = CTText
+    reportValueHtml = toHtml
 
 instance ReportValue (PM.Identifier a) where
     reportValueType _            = CTNumber

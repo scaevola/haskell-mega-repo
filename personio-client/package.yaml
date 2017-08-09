@@ -18,6 +18,7 @@ dependencies:
   - aeson
   - aeson-compat
   - base
+  - cassava
   - constraints
   - containers
   - env-config

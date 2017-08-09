@@ -32,6 +32,7 @@ library:
     - lucid
     - mmorph
     - mtl
+    - personio-client
     - planmill-client
     - servant
     - servant-cassava

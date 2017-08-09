@@ -39,7 +39,8 @@ import qualified Personio
 -------------------------------------------------------------------------------
 
 data PersonioUser = PersonioUser
-    { _personioUserName  :: !Text
+    { _personioId        :: !Personio.EmployeeId
+    , _personioUserName  :: !Text
     , _personioUserLogin :: !FUM.Login
     }
     deriving (Eq, Ord, Show, Typeable, Generic)
@@ -94,8 +95,7 @@ fumPersonioReport
     => m FumPersonioReport
 fumPersonioReport = do
     now <- currentTime
-    today <- currentDay
-    report <- makeReport <$> personioUsers today <*> fumUsers
+    report <- makeReport <$> personioUsers now <*> fumUsers
     return $ Report (ReportGenerated now) report
   where
     fumUsers :: m [FUMUser]
@@ -106,16 +106,16 @@ fumPersonioReport = do
             , _fumUserLogin = u ^. FUM.userName
             }
 
-    personioUsers :: Day -> m [PersonioUser]
-    personioUsers today = mapMaybe mk <$> Personio.personio Personio.PersonioEmployees
+    personioUsers :: UTCTime -> m [PersonioUser]
+    personioUsers now = mapMaybe mk <$> Personio.personio Personio.PersonioEmployees
       where
         mk :: Personio.Employee -> Maybe PersonioUser
         mk e = do
             login <- e ^. Personio.employeeLogin
-            guard $ maybe True (today <=) $ e ^. Personio.employeeEndDate
-            guard $ maybe False (<= today) $ e ^. Personio.employeeHireDate
+            guard (Personio.employeeIsActive now e)
             pure PersonioUser  
-                { _personioUserName  = e ^. Personio.employeeFirst <> " " <> e ^. Personio.employeeLast
+                { _personioId        = e ^. Personio.employeeId
+                , _personioUserName  = e ^. Personio.employeeFirst <> " " <> e ^. Personio.employeeLast
                 , _personioUserLogin = login
                 }
 

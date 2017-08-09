@@ -7,7 +7,7 @@
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE TypeFamilies        #-}
 module Personio.Types (
-    module Personio.Types,
+    module Personio.Types, -- TODO: this exports some unnecessary stuff too.
     module Personio.Types.ContractType,
     module Personio.Types.EmploymentType,
     module Personio.Types.Status,
@@ -43,6 +43,7 @@ import Personio.Types.EmploymentType
 import Personio.Types.Status
 
 import qualified Chat.Flowdock.REST            as FD
+import qualified Data.Csv                      as Csv
 import qualified Data.HashMap.Strict           as HM
 import qualified Data.Swagger                  as Swagger
 import qualified Data.Text                     as T
@@ -94,6 +95,9 @@ instance FromHttpApiData EmployeeId where
 
 instance ToHttpApiData EmployeeId where
     toUrlPiece = newtypeToUrlPiece
+
+instance Csv.ToField EmployeeId where
+    toField (EmployeeId i) = Csv.toField i
 
 _EmployeeId :: Prism' Text EmployeeId
 _EmployeeId = prism' toUrlPiece (either (const Nothing) Just . parseUrlPiece)
@@ -152,6 +156,11 @@ data Employee = Employee
 #endif
     }
   deriving (Eq, Show, Generic)
+
+employeeIsActive :: UTCTime -> Employee -> Bool
+employeeIsActive now e =
+    maybe True (utctDay now <) (_employeeEndDate e)
+    && _employeeStatus e == Active
 
 makeLenses ''Employee
 deriveGeneric ''Employee
