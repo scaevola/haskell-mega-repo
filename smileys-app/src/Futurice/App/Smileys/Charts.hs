@@ -77,7 +77,13 @@ chartHandler
 chartHandler chart ctx = do
     input <- liftIO $ cachedIO (ctxLogger ctx) (ctxCache ctx) 600 (symbolVal (Proxy :: Proxy a)) $
         withResource (ctxPostgresPool ctx) $ \conn ->
-            Postgres.query_ conn "SELECT day, smiley FROM smileys.trail"
+            Postgres.query_ conn $ fromString $ unwords
+                [ "SELECT day, smiley"
+                , "FROM smileys.trail"
+                , "WHERE"
+                , "  (current_timestamp - day + '1 month' :: interval <= '3 months' :: interval)"
+                , "  AND GREATEST(day - created, created - day) < '9 days' :: interval"
+                ]
     pure $ chart $
         Map.fromListWith (<>) $ fmap (second smileyAcc) input
 
