@@ -19,7 +19,7 @@ import Futurice.EnvConfig          (FromEnvVar (..))
 import Futurice.Generics
 import Futurice.Prelude
 import Language.Haskell.TH         (ExpQ)
-import Lucid                       (ToHtml (..), a_, href_)
+import Lucid                       (ToHtml (..), a_, class_, href_)
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', psym)
 
@@ -122,7 +122,8 @@ instance Arbitrary Login where
 instance ToHtml Login where
     toHtmlRaw = toHtml
     toHtml (Login l) =
-        a_ [ href_ $ fumPublicUrl <> "/fum/users/" <> l ] (toHtml l)
+        a_ [ class_ "login" , href_ $ fumPublicUrl <> "/fum/users/" <> l ] $
+          toHtml l
 
 instance ToParamSchema Login where
     toParamSchema _ = mempty

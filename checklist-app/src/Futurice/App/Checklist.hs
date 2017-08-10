@@ -262,11 +262,12 @@ employeeAuditPageImpl
     -> Handler (HtmlPage "employee-audit")
 employeeAuditPageImpl ctx fu eid = withAuthUser ctx fu impl
   where
-    impl world userInfo = case world ^? worldEmployees . ix eid of
-        Nothing -> pure notFoundPage
-        Just employee -> do
-            cmds <- fetchEmployeeCommands ctx employee
-            pure $ employeeAuditPage world userInfo employee cmds
+    impl world userInfo =
+        case world ^? worldEmployees . ix eid <|> world ^? worldArchive . ix eid . _1 of
+            Nothing -> pure notFoundPage
+            Just employee -> do
+                cmds <- fetchEmployeeCommands ctx employee
+                pure $ employeeAuditPage world userInfo employee cmds
 
 -------------------------------------------------------------------------------
 -- Command implementation

@@ -46,6 +46,7 @@ import Futurice.Aeson
        (FromJSONField1, fromJSONField1, object, withBool, withObject, (.!=),
        (.:), (.:?), (.=))
 import Futurice.Generics
+import Futurice.Lucid.Generics
 import Futurice.IsMaybe
 import Futurice.Prelude
 import Prelude ()
@@ -221,6 +222,12 @@ instance
         emptyToNull x
             | x == ""   = Null
             | otherwise = x
+
+instance SOP.All (SOP.Compose FieldToHtml f) EmployeeEditTypes
+    => ToHtml (EmployeeEdit f)
+  where
+    toHtmlRaw = toHtml
+    toHtml = sopToHtml
 
 -------------------------------------------------------------------------------
 -- TaskAddition

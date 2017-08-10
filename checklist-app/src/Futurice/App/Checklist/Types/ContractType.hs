@@ -2,11 +2,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
+-- TODO: use Futurice.Generics.Enum
 module Futurice.App.Checklist.Types.ContractType where
 
-import Data.Aeson.Compat (Value (String), withText)
-import Data.Swagger      (SwaggerType (SwaggerString), enum_, type_)
+import Data.Aeson.Compat         (Value (String), withText)
+import Data.Swagger              (SwaggerType (SwaggerString), enum_, type_)
 import Futurice.Generics
+import Futurice.Lucid.Foundation hiding (type_)
+import Futurice.Lucid.Generics   (FieldToHtml)
 import Futurice.Prelude
 import Prelude ()
 
@@ -45,6 +48,12 @@ contractTypeFromText t = Map.lookup (T.toLower t) m
 
 _ContractType :: Prism' Text ContractType
 _ContractType = prism' contractTypeToText contractTypeFromText
+
+instance ToHtml ContractType where
+    toHtmlRaw = toHtml
+    toHtml = toHtml . contractTypeToText
+
+instance FieldToHtml ContractType
 
 instance ToParamSchema ContractType where
     toParamSchema _ = mempty

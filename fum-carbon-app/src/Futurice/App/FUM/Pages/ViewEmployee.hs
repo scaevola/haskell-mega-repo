@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.FUM.Pages.ViewEmployee (viewEmployeePage) where
 
+import Control.Lens (to)
 import Futurice.Prelude
 import Prelude ()
 
@@ -16,6 +17,31 @@ viewEmployeePage
     -> HtmlPage "view-employee"
 viewEmployeePage auth _world e = fumPage_ "Employee" auth $ do
     -- Title
-    fumHeader_ "Employee" [] -- TODO: name
+    fumHeader_ "Employee" [e ^? employeeLogin . to loginToText ]
 
-    toHtml $ show e
+    fullRow_ "PICTURE TODO"
+
+    fullRow_ $ table_ $ tbody_ $ do
+        vertRow_ "Name" "TODO"
+        vertRow_ "Login" $ toHtml $ e ^. employeeLogin
+        vertRow_ "Personio ID" $ toHtml $ e ^. employeePersonioId
+        vertRow_ "Status" $ toHtml $ e ^. employeeStatus
+
+    fullRow_ "TODO: information from Personio"
+
+    subheader_ "Email addresses"
+    fullRow_ "TODO"
+    fullRow_ "Add alias: TODO"
+
+    subheader_ "SSH Keys"
+    fullRow_ "TODO"
+
+    subheader_ "Groups"
+    fullRow_ "TODO"
+
+    subheader_ "Password"
+    fullRow_ $ do
+        "Expires at "
+        toHtml $ formatHumanHelsinkiTime $ e ^. employeePasswordExp
+
+        "Change TODO"

@@ -6,7 +6,9 @@ module Futurice.App.Checklist.Pages.Archive (archivePage) where
 import Prelude ()
 import Futurice.Prelude
 import Futurice.Lucid.Foundation
+import Servant.Utils.Links (safeLink)
 
+import Futurice.App.Checklist.API
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
@@ -31,6 +33,7 @@ archivePage world authUser@(_, viewerRole) = checklistPage_ "Employees" authUser
             th_ [title_ "Confirmed - contract signed"] "Confirmed"
             viewerItemsHeader viewerRole
             th_ [title_ "Task items todo/done"]        "Tasks"
+            th_                                        "Audit"
         tbody_ $ for_ employees $ \(employee, TodoCounter (Counter i j) perRole ) -> tr_ $ do
             td_ $ contractTypeHtml $ employee ^. employeeContractType
             td_ $ locationHtml (Nothing :: Maybe Checklist) $ employee ^. employeeOffice
@@ -42,3 +45,4 @@ archivePage world authUser@(_, viewerRole) = checklistPage_ "Employees" authUser
                 Counter a b -> do
                     td_ $ toHtml (show a) *> "/" *> toHtml (show b)
                     td_ $ toHtml (show i) *> "/" *> toHtml (show j)
+            td_ $ a_ [ href_ $ linkToText $ safeLink checklistApi employeeAuditPageEndpoint (employee ^. identifier) ] "Audit log"

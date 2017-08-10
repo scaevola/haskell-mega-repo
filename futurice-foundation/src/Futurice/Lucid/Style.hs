@@ -24,3 +24,7 @@ css = do
     h3 ? do
         fontSize (pt 13)
         fontWeight bold
+    ".login" ?
+        color "#46289A"
+    ".personio" ?
+        color "#005A4B"

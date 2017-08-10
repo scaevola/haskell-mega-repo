@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.17.0.
+-- This file has been generated from package.yaml by hpack version 0.17.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -32,7 +32,11 @@ library
       base                  >=4.7   && <4.10
     , clay
     , file-embed
+    , fum-types
     , futurice-prelude
+    , futurice-tribes
+    , generics-sop
+    , generics-sop-lens
     , language-javascript >= 0.6.0.8 && <0.7
     , lens
     , lucid
@@ -46,5 +50,6 @@ library
       Futurice.JavaScript
       Futurice.JavaScript.TH
       Futurice.Lucid.Foundation
+      Futurice.Lucid.Generics
       Futurice.Lucid.Style
   default-language: Haskell2010
