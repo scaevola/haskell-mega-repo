@@ -14,6 +14,7 @@ module Futurice.Lucid.Foundation (
     row_,
     large_,
     largemed_,
+    fullRow_,
     -- * Table
     table_,
     vertRow_,
@@ -81,6 +82,9 @@ large_ n = termWith "div_"
 largemed_ :: Monad m => Int -> HtmlT m () -> HtmlT m ()
 largemed_ n = div_
     [ class_ $ "columns large-" <> textShow n <> " medium-" <> textShow n ]
+
+fullRow_ :: Monad m => HtmlT m () -> HtmlT m ()
+fullRow_ = row_ . large_ 12
 
 -------------------------------------------------------------------------------
 -- Table
