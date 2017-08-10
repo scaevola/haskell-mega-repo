@@ -44,6 +44,8 @@ instance NFData GroupType
 -- | Employee: person
 --
 -- Name etc. comes from Personio.
+--
+-- /TODO:/ store name?
 data Employee = Employee
     { _employeeLogin          :: !Login
     , _employeePersonioId     :: !P.EmployeeId           -- ^ @123@, provides information to names, contract data etc.

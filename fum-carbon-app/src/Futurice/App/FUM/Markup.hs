@@ -9,6 +9,8 @@ module Futurice.App.FUM.Markup (
     -- * Form
     futuId_,
     futuLinkButton_,
+    -- * Login
+    loginToHtml,
     -- * Re-export
     module Futurice.App.FUM.Pages.Href,
     module Futurice.Lucid.Foundation,
@@ -62,7 +64,7 @@ fumHeader_
     => Text          -- ^ default title
     -> [Maybe Text]  -- ^ title parts
     -> HtmlT m ()
-fumHeader_ title titleParts' = row_ $ large_ 12 $ header_ $ h1_ $ toHtml $
+fumHeader_ title titleParts' = fullRow_ $ header_ $ h1_ $ toHtml $
     if null titleParts
         then title
         else T.intercalate " - " titleParts
@@ -73,7 +75,7 @@ subheader_
     :: Monad m
     => Text
     -> HtmlT m ()
-subheader_ title = row_ $ large_ 12 $ h2_ $ toHtml title
+subheader_ title = fullRow_ $ h2_ $ toHtml title
 
 -------------------------------------------------------------------------------
 -- Forms
@@ -91,3 +93,10 @@ futuLinkButton_ (Attribute _ href) = button_
 
 -- futuForm_ :: Monad m => Text -> [Attribute] -> HtmlT m () -> HtmlT m ()
 -- futuForm_ i attrs = row_ . large_ 12 . form_ (futuId_ i : attrs)
+
+-------------------------------------------------------------------------------
+-- Login
+-------------------------------------------------------------------------------
+
+loginToHtml :: Monad m => Login -> HtmlT m ()
+loginToHtml l = a_ [ viewEmployeeHref_ l ] $ toHtml $ loginToText l
