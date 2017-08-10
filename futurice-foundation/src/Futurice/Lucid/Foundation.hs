@@ -14,6 +14,9 @@ module Futurice.Lucid.Foundation (
     row_,
     large_,
     largemed_,
+    -- * Table
+    table_,
+    vertRow_,
     -- * Form
     optionSelected_,
     checkbox_,
@@ -44,7 +47,7 @@ import Futurice.Lucid.Style   (css)
 import Futurice.JavaScript
 import Futurice.JavaScript.TH
 import GHC.TypeLits           (KnownSymbol, Symbol, symbolVal)
-import Lucid                  hiding (for_)
+import Lucid                  hiding (for_, table_)
 import Servant.Swagger.UI.Internal (mkRecursiveEmbedded)
 import Network.Wai.Application.Static (embeddedSettings, staticApp)
 import Servant (Server, Raw)
@@ -62,21 +65,44 @@ attrfor_ = L.for_
 forWith_ :: (Foldable t, Applicative f) => f () -> t a ->  (a -> f b) -> f ()
 forWith_ sep xs f = foldr g (pure ()) xs
   where
-    g = \a b -> f a *> sep *> b
+    g a b = f a *> sep *> b
 
 -------------------------------------------------------------------------------
 -- Grid
 -------------------------------------------------------------------------------
 
 row_ :: Term arg result => arg -> result
-row_ = termWith "div" [ class_ "row" ]
+row_ = termWith "div" [ class_ "row " ]
 
-large_ :: Monad m => Int -> HtmlT m () -> HtmlT m ()
-large_ n = div_ [class_ $ fromString $ "columns large-" ++ show n ]
+large_ :: Term arg result => Int -> arg -> result
+large_ n = termWith "div_"
+    [ class_ $ fromString $ "columns large-" ++ show n ++ " " ]
 
 largemed_ :: Monad m => Int -> HtmlT m () -> HtmlT m ()
 largemed_ n = div_
     [ class_ $ "columns large-" <> textShow n <> " medium-" <> textShow n ]
+
+-------------------------------------------------------------------------------
+-- Table
+-------------------------------------------------------------------------------
+
+table_ :: Term arg result => arg ->  result
+table_ = termWith "table" [ class_ "hover" ]
+
+-- | Row in a vertical table.
+--
+-- @
+-- +------+--------+
+-- | key1 | value1 |
+-- +------+--------|
+-- | key2 | value2 |
+-- +------+--------+
+-- @
+--
+vertRow_ :: Monad m => Text -> HtmlT m () -> HtmlT m ()
+vertRow_ title h = tr_ $ do
+    th_ [ style_ "white-space: nowrap" ] (toHtml title)
+    td_ [ style_ "width: 100%" ] h
 
 -------------------------------------------------------------------------------
 -- Form

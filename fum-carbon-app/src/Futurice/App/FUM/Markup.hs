@@ -10,7 +10,7 @@ module Futurice.App.FUM.Markup (
     futuId_,
     futuLinkButton_,
     -- * Re-export
-    module Futurice.App.FUM.Markup.Href,
+    module Futurice.App.FUM.Pages.Href,
     module Futurice.Lucid.Foundation,
     ) where
 
@@ -20,16 +20,14 @@ import Futurice.Prelude
 import Lucid.Base                (Attribute (..))
 import Prelude ()
 
-import Futurice.App.FUM.Markup.Href hiding (linkToText)
+import Futurice.App.FUM.Pages.Href hiding (linkToText)
+import Futurice.App.FUM.Types
 
 import qualified Data.Text as T
 
 -------------------------------------------------------------------------------
 -- Navigation
 -------------------------------------------------------------------------------
-
--- | TODO
-type AuthUser = ()
 
 fumPage_ :: Text -> AuthUser -> Html () -> HtmlPage sym
 fumPage_ title authUser body =
@@ -42,22 +40,22 @@ fumPage_ title authUser body =
 
 -- http://foundation.zurb.com/sites/docs/top-bar.html
 navigation :: Monad m => AuthUser -> HtmlT m ()
-navigation () = do
-    div_ [ class_ "top-bar" ] $ do
-        div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "dropdown menu" ] $ do
-            li_ [ class_ "menu-text"] $
-                a_ [ indexPageHref_ ] $ do
-                    "FUM"
-                    sup_ "6"
-            li_ $ a_ [ id_ "futu-reload-indicator", href_ "#", style_ "display: none", title_ "You made changes, refresh page to show" ]  "1"
-            li_ $ a_ [ href_ "#" ] "Employees"
-            li_ $ a_ [ href_ "#" ] "Groups"
-            li_ $ a_ [ href_ "#" ] "Mailboxes"
-            li_ $ a_ [ href_ "#" ] "Customers"
-        div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
-            li_ [ class_ "menu-text" ] $ do
-                "Hello "
-                "guest"  -- TODO: make SSO self-work
+navigation (login, _) = div_ [ class_ "top-bar" ] $ do
+    div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "dropdown menu" ] $ do
+        li_ [ class_ "menu-text"] $
+            a_ [ indexPageHref_ ] $ do
+                "FUM"
+                sup_ "6"
+                " - beta"
+        li_ $ a_ [ id_ "futu-reload-indicator", href_ "#", style_ "display: none", title_ "You made changes, refresh page to show" ]  "1"
+        li_ $ a_ [ listEmployeesHref_ ] "Employees"
+        li_ $ a_ [ href_ "#" ] "Groups"
+        li_ $ a_ [ href_ "#" ] "Mailboxes"
+        li_ $ a_ [ href_ "#" ] "Customers"
+    div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
+        li_ [ class_ "menu-text" ] $ do
+            "Hello "
+            toHtml $ loginToText login
 
 fumHeader_
     :: Monad m

@@ -9,15 +9,16 @@ import Futurice.Prelude
 import Futurice.IdMap (IdMap)
 
 import Futurice.App.FUM.Markup
-import Futurice.App.FUM.Types hiding (employeeId)
+import Futurice.App.FUM.Types
 
 import qualified Personio
 
 indexPage
-    :: World                    -- ^ the world
+    :: AuthUser
+    -> World                    -- ^ the world
     -> IdMap Personio.Employee  -- ^ employees
     -> HtmlPage "indexpage"
-indexPage _world es = fumPage_ "FUM" () $ do
+indexPage auth _world es = fumPage_ "FUM" auth $ do
     subheader_ "Personio users"
     row_ $ large_ 12 $ table_ $ do
         thead_ $ tr_ $ do
@@ -33,7 +34,7 @@ indexPage _world es = fumPage_ "FUM" () $ do
             th_ "status"
             th_ "create"
         tbody_ $ for_ es $ \Personio.Employee {..} -> tr_ $ do
-            td_ $ toHtml $ show _employeeId
+            td_ $ toHtml _employeeId
             td_ $ toHtml _employeeFirst
             td_ $ toHtml _employeeLast
             td_ $ traverse_ toHtml _employeeLogin

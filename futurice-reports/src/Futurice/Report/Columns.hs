@@ -221,7 +221,7 @@ instance
                         button_ [ class_ "button warning futu-report-reset"] $ "Reset controls"
 
             -- Pregenerated data, so we see something, even the data fails
-            row_ $ large_ 12 $ table_ [class_ "futu-report hover"] $ do
+            row_ $ large_ 12 $ table_ [class_ "futu-report"] $ do
                 thead_ $ do
                     tr_ $ for_ colNames $ \(colName, _) -> th_ $ toHtml colName
                     -- Quick controls

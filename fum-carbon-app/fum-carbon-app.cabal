@@ -42,6 +42,7 @@ library
     , distributive
     , DRBG
     , env-config
+    , fail
     , fum-types
     , futurice-foundation
     , futurice-prelude
@@ -51,6 +52,7 @@ library
     , http-api-data
     , lattices
     , lens
+    , log-base
     , lucid
     , mtl
     , periocron
@@ -72,21 +74,29 @@ library
     , text
     , time
     , trifecta
+    , unordered-containers
     , uuid
     , uuid-types
   exposed-modules:
       Futurice.App.FUM
       Futurice.App.FUM.Ack
       Futurice.App.FUM.API
+      Futurice.App.FUM.API.Pages
       Futurice.App.FUM.Clay
       Futurice.App.FUM.Command
+      Futurice.App.FUM.Command.CreateEmployee
+      Futurice.App.FUM.Command.Definition
       Futurice.App.FUM.Config
       Futurice.App.FUM.Ctx
-      Futurice.App.FUM.Logic
+      Futurice.App.FUM.Machine
       Futurice.App.FUM.Markup
-      Futurice.App.FUM.Markup.Href
       Futurice.App.FUM.Pages.CreateEmployee
+      Futurice.App.FUM.Pages.Error
+      Futurice.App.FUM.Pages.Href
       Futurice.App.FUM.Pages.Index
+      Futurice.App.FUM.Pages.ListEmployees
+      Futurice.App.FUM.Pages.Server
+      Futurice.App.FUM.Pages.ViewEmployee
       Futurice.App.FUM.Report.Validation
       Futurice.App.FUM.Types
       Futurice.App.FUM.Types.Basic
@@ -94,7 +104,6 @@ library
       Futurice.App.FUM.Types.Status
       Futurice.App.FUM.Types.World
       Futurice.Lomake
-      Futurice.MonadTrans
   default-language: Haskell2010
 
 executable fum-carbon-server
@@ -119,6 +128,7 @@ executable fum-carbon-server
     , distributive
     , DRBG
     , env-config
+    , fail
     , fum-types
     , futurice-foundation
     , futurice-prelude
@@ -128,6 +138,7 @@ executable fum-carbon-server
     , http-api-data
     , lattices
     , lens
+    , log-base
     , lucid
     , mtl
     , periocron
@@ -149,6 +160,7 @@ executable fum-carbon-server
     , text
     , time
     , trifecta
+    , unordered-containers
     , uuid
     , uuid-types
     , fum-carbon-app
@@ -177,6 +189,7 @@ test-suite unit-tests
     , distributive
     , DRBG
     , env-config
+    , fail
     , fum-types
     , futurice-foundation
     , futurice-prelude
@@ -186,6 +199,7 @@ test-suite unit-tests
     , http-api-data
     , lattices
     , lens
+    , log-base
     , lucid
     , mtl
     , periocron
@@ -207,6 +221,7 @@ test-suite unit-tests
     , text
     , time
     , trifecta
+    , unordered-containers
     , uuid
     , uuid-types
     , tasty

@@ -27,6 +27,7 @@ dependencies:
   - distributive
   - DRBG
   - env-config
+  - fail
   - fum-types
   - futurice-foundation
   - futurice-prelude
@@ -36,6 +37,7 @@ dependencies:
   - http-api-data
   - lattices
   - lens
+  - log-base
   - lucid
   - mtl
   - periocron
@@ -57,6 +59,7 @@ dependencies:
   - text
   - time
   - trifecta
+  - unordered-containers
   - uuid
   - uuid-types
 
