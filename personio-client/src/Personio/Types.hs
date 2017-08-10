@@ -34,7 +34,7 @@ import Futurice.IdMap              (HasKey (..))
 import Futurice.Office
 import Futurice.Prelude
 import Futurice.Tribe
-import Lucid                       (ToHtml (..), a_, href_)
+import Lucid                       (ToHtml (..), a_, class_, href_)
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
@@ -81,7 +81,8 @@ instance ToHtml EmployeeId where
     toHtmlRaw = toHtml
     toHtml (EmployeeId i) = do
         let t = textShow i
-        a_ [ href_ $ personioPublicUrl <> "/staff/details/" <> t ] $ toHtml t
+        a_ [ class_ "personio", href_ $ personioPublicUrl <> "/staff/details/" <> t ] $
+            toHtml t
 
 -- | We could use 'GeneralizedNewtypeDeriving', but we don't (yet?).
 instance ToParamSchema EmployeeId where

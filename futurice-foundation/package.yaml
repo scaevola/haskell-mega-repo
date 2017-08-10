@@ -19,7 +19,11 @@ library:
     - base                  >=4.7   && <4.10
     - clay
     - file-embed
+    - fum-types
     - futurice-prelude
+    - futurice-tribes
+    - generics-sop
+    - generics-sop-lens
     - language-javascript >= 0.6.0.8 && <0.7 # For embedJS
     - lens
     - lucid
