@@ -47,7 +47,7 @@ data Distr = Distr
     { _distrMean   :: !Double
     , _distrStddev :: !Double
     }
-  deriving Show
+  deriving (Eq, Show)
 
 instance Semigroup Distr where
     Distr a b <> Distr a' b' = Distr (a +  a') (b + b')
@@ -81,9 +81,13 @@ ppNode pfx n@(Node title ts ns) = titleDoc
     titleDoc = pfxDoc PP.<+> ppDistr (fold n) PP.<+> PP.bold (PP.string title)
 
 ppTask :: Task Distr -> PP.Doc
-ppTask (Task title d) = PP.string "-"
+ppTask (Task title d) = colorize $ PP.string "-"
     PP.<+> ppDistr d
     PP.<+> PP.string title
+  where
+    colorize
+        | d == mempty = PP.dullblue
+        | otherwise   = id
 
 ppDistr :: Distr ->  PP.Doc
 ppDistr (Distr u sd) =
@@ -116,14 +120,27 @@ taskParser :: Tri.Parser (Task Estimate)
 taskParser = do
     _ <- Tri.char '-'
     spParser
-    b <- intParser
-    _ <- Tri.char ':'
-    n <- intParser
-    _ <- Tri.char ':'
-    w <- intParser
-    spParser
-    title <- restOfLine
-    pure (Task title (Estimate b n w))
+    done <|> todo
+  where
+    todo = do
+        est <- estimate
+        title <- restOfLine
+        pure (Task title est)
+
+    done = do
+        _ <- Tri.char '~'
+        _ <- estimate
+        title <- restOfLine
+        pure (Task (filter (/= '~') title) (Estimate 0 0 0))
+
+    estimate = do
+        b <- intParser
+        _ <- Tri.char ':'
+        n <- intParser
+        _ <- Tri.char ':'
+        w <- intParser
+        spParser
+        pure (Estimate b n w)
 
 intParser :: Tri.Parser Int
 intParser = foldl' (\x y -> x * 10 + y) 0 <$> some (digitToInt <$> Tri.digit)
@@ -136,7 +153,9 @@ nlParser :: Tri.Parser ()
 nlParser = void (Tri.char '\n')
 
 restOfLine :: Tri.Parser String
-restOfLine = many (Tri.noneOf "\n") <* Tri.skipSome nlParser
+restOfLine = many (Tri.noneOf "\n")
+    <* nlParser
+    <* Tri.skipMany (nlParser <|> commentParser)
 
 commentParser :: Tri.Parser ()
-commentParser = void (Tri.char '>' >> restOfLine)
+commentParser = void $ Tri.char '>' *> restOfLine
