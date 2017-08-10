@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.MegaRepoTool (defaultMain) where
 
 import Futurice.Prelude
@@ -6,8 +6,9 @@ import Prelude ()
 
 import qualified Options.Applicative as O
 
-import Futurice.App.MegaRepoTool.Command.ListSnapshotDependencies
 import Futurice.App.MegaRepoTool.Command.BuildDocker
+import Futurice.App.MegaRepoTool.Command.ListSnapshotDependencies
+import Futurice.App.MegaRepoTool.Estimator
 import Futurice.App.MegaRepoTool.Scripts
 import Futurice.App.MegaRepoTool.Stats
 
@@ -16,7 +17,7 @@ textArgument :: IsString s => O.Mod O.ArgumentFields String -> O.Parser s
 textArgument m = fromString <$> O.strArgument m
 
 data Cmd
-    = ListSnapshotDependencies 
+    = ListSnapshotDependencies
     | BuildDocker [AppName]
     | Action (IO ())
 
@@ -36,6 +37,10 @@ dotOptions = pure $ Action dotScript
 statsOptions :: O.Parser Cmd
 statsOptions =  pure $ Action stats
 
+estimatorOptions :: O.Parser Cmd
+estimatorOptions = fmap Action $ estimator
+    <$> textArgument (mconcat [ O.metavar ":file", O.help "TODO File" ])
+
 optsParser :: O.Parser Cmd
 optsParser = O.subparser $ mconcat
     [ cmdParser "build-docker" buildDockerOptions "Build docker images"
@@ -43,6 +48,7 @@ optsParser = O.subparser $ mconcat
     , cmdParser "packdeps" packdepsOptions "Run packdeps, i.e. check that dependency bounds allow newest versions"
     , cmdParser "dot" dotOptions "Update dependency graph image"
     , cmdParser "stats" statsOptions "Display some rough stats"
+    , cmdParser "estimator" estimatorOptions "Calculate estimates"
     ]
   where
     cmdParser :: String -> O.Parser Cmd -> String -> O.Mod O.CommandFields Cmd
