@@ -10,6 +10,7 @@ module Futurice.Tribe (
     defaultTribe,
     ) where
 
+import Control.Monad           ((>=>))
 import Futurice.Generics
 import Futurice.Office
 import Futurice.Prelude
@@ -19,6 +20,7 @@ import Lucid                   (ToHtml (..))
 import Prelude ()
 
 import qualified Data.Aeson.Compat as Aeson
+import qualified Data.Csv          as Csv
 import qualified Data.Map          as Map
 import qualified Data.Swagger      as Swagger
 import qualified Data.Text         as T
@@ -144,6 +146,13 @@ instance ToJSON Tribe where
 
 instance FromJSON Tribe where
     parseJSON = Aeson.withText "Tribe" $
+        either (fail . view unpacked) pure . tribeFromTextE
+
+instance Csv.ToField Tribe where
+    toField = Csv.toField . tribeToText
+
+instance Csv.FromField Tribe where
+    parseField = Csv.parseField >=>
         either (fail . view unpacked) pure . tribeFromTextE
 
 instance FromHttpApiData Tribe where

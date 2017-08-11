@@ -17,6 +17,8 @@ import Futurice.Prelude
 import Lucid                  (ToHtml (..))
 import Prelude ()
 
+import qualified Data.Csv as Csv
+
 data Office
     = OffHelsinki
     | OffTampere
@@ -84,3 +86,8 @@ instance FromHttpApiData Office where
 instance ToHttpApiData Office where
     toUrlPiece = enumToUrlPiece ei
 
+instance Csv.ToField Office where
+    toField = enumCsvToField ei
+
+instance Csv.FromField Office where
+    parseField = enumCsvParseField ei

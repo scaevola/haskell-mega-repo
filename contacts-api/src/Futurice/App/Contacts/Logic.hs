@@ -20,7 +20,6 @@ module Futurice.App.Contacts.Logic (
 import Data.RFC5051          (compareUnicode)
 import Futurice.Integrations
 import Futurice.Prelude
-import Futurice.Tribe
 import Prelude ()
 
 import qualified Data.HashMap.Strict as HM
@@ -39,6 +38,10 @@ import Futurice.App.Contacts.Types.Tri (lessSure)
 
 compareUnicodeText :: Text -> Text -> Ordering
 compareUnicodeText = compareUnicode `on` T.unpack
+
+-- | Default avatar.
+noImage :: Text
+noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
 
 -- | Get contacts data
 contacts
@@ -77,43 +80,18 @@ employeeToContact e = Contact
     , contactName       = e ^. Personio.employeeFirst <> " " <> e ^. Personio.employeeLast
     , contactEmail      = e ^. Personio.employeeEmail
     , contactPhones     = catMaybes [e ^. Personio.employeeWorkPhone, e ^. Personio.employeeHomePhone]
-    , contactTitle      = Just "title todo"
+    , contactTitle      = e ^. Personio.employeePosition
     , contactThumb      = noImage -- from FUM
     , contactImage      = noImage -- from FUM
-    , contactFlowdock   = maybe Unknown
-                                (Sure . (\uid -> ContactFD (fromIntegral $ FD.getIdentifier uid) "-" noImage))
-                                $ e ^. Personio.employeeFlowdock
-    , contactGithub     = maybe Unknown 
-                                (Sure . flip (ContactGH . ghProfileLink) noImage) 
-                                $ e ^. Personio.employeeGithub
-    , contactTeam       = Just (tribeToText $ e ^. Personio.employeeTribe)
-    -- , contactOffice
-    , contactCompetence = Just "competence todo"
+    , contactFlowdock   = mcase (e ^. Personio.employeeFlowdock) Unknown $
+        Sure . (\uid -> ContactFD (fromIntegral $ FD.getIdentifier uid) "-" noImage)
+    , contactGithub     = mcase (e ^. Personio.employeeGithub) Unknown $
+        Sure . flip (ContactGH . GH.untagName) noImage
+    , contactTeam       = e ^. Personio.employeeTribe
+    , contactOffice     = e ^. Personio.employeeOffice
+    , contactCompetence = e ^. Personio.employeeRole
+    , contactExternal   = Just Personio.External == e ^. Personio.employeeEmploymentType
     }
-  where
-    noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
-    ghProfileLink = T.append githubPrefix . GH.untagName 
-      where
-        githubPrefix = "https://github.com/"
-
-_userToContact :: FUM.User -> Contact Text
-_userToContact FUM.User{..} = Contact
-    { contactLogin      = _userName
-    , contactFirst      = _userFirst
-    , contactName       = _userFirst <> " " <> _userLast
-    , contactEmail      = S.fromMaybe defaultEmail _userEmail
-    , contactPhones     = S.catMaybes [_userPhone1, _userPhone2]
-    , contactTitle      = _userTitle ^. lazy
-    , contactThumb      = S.fromMaybe noImage _userThumbUrl
-    , contactImage      = S.fromMaybe noImage _userImageUrl
-    , contactFlowdock   = S.maybe Unknown (Sure . (\uid -> ContactFD uid "-" noImage)) _userFlowdock
-    , contactGithub     = S.maybe Unknown (Sure . flip ContactGH noImage) _userGithub
-    , contactTeam       = Nothing
-    , contactCompetence = Nothing
-    }
-  where
-    noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
-    defaultEmail = FUM.loginToText _userName <> "@futurice.com"
 
 githubDetailedMembers
     :: ( MonadGitHub m
@@ -138,15 +116,12 @@ addFUMInfo fum = fmap add
         pair x = (FUM._userName x, x)
 
     add :: Contact Text -> Contact Text
-    add c = 
-        case user (contactLogin c) of
-            Nothing -> c
-            Just u  -> c{ contactThumb = S.fromMaybe noImage $ FUM._userThumbUrl u
-                        , contactImage = S.fromMaybe noImage $ FUM._userImageUrl u
-                        }
-      where
-        user login = HM.lookup login loginMap
-        noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
+    add c = case HM.lookup (contactLogin c) loginMap of
+        Nothing -> c
+        Just u  -> c
+            { contactThumb = S.fromMaybe noImage $ FUM._userThumbUrl u
+            , contactImage = S.fromMaybe noImage $ FUM._userImageUrl u
+            }
 
 addGithubInfo
     :: (Functor f, Foldable g)
@@ -226,6 +201,13 @@ addFlowdockInfo us = fmap add
         byName  = maybe Unknown (Unsure . f) (HM.lookup name nameMap)
 
         f :: u -> ContactFD Text
-        f u = ContactFD (fromIntegral $ FD.getIdentifier $ u ^. FD.userId)
-                        (u ^. FD.userNick)
-                        (u ^. FD.userAvatar)
+        f u = ContactFD
+            { cfdId     = fromIntegral $ FD.getIdentifier $ u ^. FD.userId
+            , cfdNick   = truncateNick $ u ^. FD.userNick
+            , cfdAvatar = u ^. FD.userAvatar
+            }
+
+        truncateNick :: Text -> Text
+        truncateNick t
+            | T.length t >= 20 = T.take 17 t <> "..."
+            | otherwise        = t

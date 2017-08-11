@@ -2,9 +2,9 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE RecordWildCards       #-}
 module Futurice.App.Contacts.Types (
     Tri(..),
     ContactFD(..),
@@ -12,12 +12,14 @@ module Futurice.App.Contacts.Types (
     Contact(..),
     ) where
 
-import Prelude ()
-import Futurice.Prelude
+import Data.Csv                        (ToField (..))
 import Futurice.App.Contacts.Types.Tri
 import Futurice.Generics
 import Futurice.IsMaybe
-import Data.Csv (ToField (..))
+import Futurice.Office
+import Futurice.Prelude
+import Futurice.Tribe
+import Prelude ()
 
 import qualified FUM
 
@@ -73,8 +75,10 @@ data Contact avatar = Contact
     , contactImage      :: !Text
     , contactFlowdock   :: !(Tri (ContactFD avatar))
     , contactGithub     :: !(Tri (ContactGH avatar))
-    , contactTeam       :: !(Maybe Text)
-    , contactCompetence :: !(Maybe Text)
+    , contactTeam       :: !Tribe
+    , contactOffice     :: !Office
+    , contactCompetence :: !Text
+    , contactExternal   :: !Bool
     }
   deriving
     ( Eq, Ord, Show, Generic, Typeable
