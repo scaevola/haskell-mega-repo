@@ -48,3 +48,8 @@
 
 - 3:5:7 Full sync
 - 3:5:7 Incremental "instant" sync for e.g. password changes
+
+## Transactor
+
+- 1:2:2 Transactor thread
+- 1:2:2 Persistence
