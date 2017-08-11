@@ -152,6 +152,7 @@ data Employee = Employee
     , _employeeEmploymentType :: !(Maybe EmploymentType)
     , _employeeContractType   :: !(Maybe ContractType)
     , _employeeHomePhone      :: !(Maybe Text)
+    , _employeePosition       :: !(Maybe Text)  -- ^ aka "title", /TODO/: make own type and non-Maybe.
 #ifdef PERSONIO_DEBUG
     , _employeeRest           :: !(HashMap Text Attribute)
 #endif
@@ -192,7 +193,7 @@ parseAttribute obj attrName = case HM.lookup attrName obj of
     Just (Attribute _ v) -> parseJSON v <?> Key attrName
 
 parseDynamicAttribute :: FromJSON a => HashMap Text Attribute -> Text -> Parser a
-parseDynamicAttribute obj k = (dynamicAttributes obj) .: k
+parseDynamicAttribute obj k = dynamicAttributes obj .: k
   where
     dynamicAttributes :: HashMap Text Attribute -> HashMap Text Value
     dynamicAttributes o = flip mapHM o $ \aKey (Attribute l v) ->
@@ -237,6 +238,7 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseAttribute obj "employment_type"
         <*> optional (parseDynamicAttribute obj "Contract type")
         <*> parseDynamicAttribute obj "Home phone"
+        <*> parseAttribute obj "position"
 #ifdef PERSONIO_DEBUG
         <*> pure obj -- for employeeRest field
 #endif

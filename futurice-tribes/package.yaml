@@ -24,6 +24,7 @@ default-extensions:
 dependencies:
   - base            >=4.7      && <4.10
   - aeson-compat
+  - cassava
   - containers
   - futurice-prelude
   - lucid
