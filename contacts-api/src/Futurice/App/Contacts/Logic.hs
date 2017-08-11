@@ -20,20 +20,18 @@ module Futurice.App.Contacts.Logic (
 import Data.RFC5051          (compareUnicode)
 import Futurice.Integrations
 import Futurice.Prelude
+import Futurice.Tribe
 import Prelude ()
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Maybe.Strict   as S
 import qualified Data.Text           as T
-import qualified Data.Vector         as V
 
 -- Data definition
 import qualified Chat.Flowdock.REST as FD
 import qualified FUM
 import qualified GitHub             as GH
 import qualified Personio
-import qualified PlanMill           as PM
-import qualified PlanMill.Queries   as PMQ
 
 -- Contacts modules
 import Futurice.App.Contacts.Types
@@ -44,55 +42,62 @@ compareUnicodeText = compareUnicode `on` T.unpack
 
 -- | Get contacts data
 contacts
-    :: ( MonadFlowdock m, MonadGitHub m, MonadFUM m, MonadPlanMillQuery m
-       , MonadReader env m
+    :: ( MonadFlowdock m, MonadGitHub m, MonadFUM m, Personio.MonadPersonio m
+       , MonadTime m, MonadReader env m
        , HasGithubOrgName env, HasFUMEmployeeListName env, HasFlowdockOrgName env
        )
     => m [Contact Text]
 contacts = contacts'
-    <$> fumEmployeeList
+    <$> currentTime
+    <*> Personio.personio Personio.PersonioEmployees
+    <*> fumEmployeeList
     <*> githubDetailedMembers
     <*> flowdockOrganisation
-    <*> fumPlanmillCompetenceMap
-    <*> fumPlanmillTeamMap
 
 -- | The pure, data mangling part of 'contacts'
 contacts'
-    :: Vector FUM.User
+    :: UTCTime
+    -> [Personio.Employee]
+    -> Vector FUM.User
     -> Vector GH.User
     -> FD.Organisation
-    -> HashMap FUM.Login (Maybe Text)
-    -> HashMap FUM.Login (Maybe Text)
     -> [Contact Text]
-contacts' users githubMembers flowdockOrg competenceMap teamMap =
-    let users' = filter ((==FUM.StatusActive) . view FUM.userStatus) $ V.toList users
-        res0 = map userToContact users'
+contacts' now employees users githubMembers flowdockOrg =
+    let employees' = filter (Personio.employeeIsActive now) employees
+        res0 = map employeeToContact employees'
         res1 = addGithubInfo githubMembers res0
         res2 = addFlowdockInfo (flowdockOrg ^. FD.orgUsers) res1
-        res3 = addPlanmillInfo competenceMap teamMap res2
+        res3 = addFUMInfo users res2
     in sortBy (compareUnicodeText `on` contactName) res3
 
-_employeeToContact :: Personio.Employee -> Contact Text
-_employeeToContact e = Contact
+employeeToContact :: Personio.Employee -> Contact Text
+employeeToContact e = Contact
     { contactLogin      = fromMaybe $(FUM.mkLogin "xxxx") $ e ^. Personio.employeeLogin
     , contactFirst      = e ^. Personio.employeeFirst
     , contactName       = e ^. Personio.employeeFirst <> " " <> e ^. Personio.employeeLast
     , contactEmail      = e ^. Personio.employeeEmail
-    , contactPhones     = [] -- e ^. Personio.employeePhone -- TODO: multiple phones
+    , contactPhones     = catMaybes [e ^. Personio.employeeWorkPhone, e ^. Personio.employeeHomePhone]
     , contactTitle      = Just "title todo"
     , contactThumb      = noImage -- from FUM
     , contactImage      = noImage -- from FUM
-    , contactFlowdock   = Unknown -- TODO
-    , contactGithub     = Unknown -- TODO
-    , contactTeam       = Nothing -- e ^. Personio.employeeTribe
+    , contactFlowdock   = maybe Unknown
+                                (Sure . (\uid -> ContactFD (fromIntegral $ FD.getIdentifier uid) "-" noImage))
+                                $ e ^. Personio.employeeFlowdock
+    , contactGithub     = maybe Unknown 
+                                (Sure . flip (ContactGH . ghProfileLink) noImage) 
+                                $ e ^. Personio.employeeGithub
+    , contactTeam       = Just (tribeToText $ e ^. Personio.employeeTribe)
     -- , contactOffice
     , contactCompetence = Just "competence todo"
     }
   where
     noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
+    ghProfileLink = T.append githubPrefix . GH.untagName 
+      where
+        githubPrefix = "https://github.com/"
 
-userToContact :: FUM.User -> Contact Text
-userToContact FUM.User{..} = Contact
+_userToContact :: FUM.User -> Contact Text
+_userToContact FUM.User{..} = Contact
     { contactLogin      = _userName
     , contactFirst      = _userFirst
     , contactName       = _userFirst <> " " <> _userLast
@@ -120,24 +125,28 @@ githubDetailedMembers = pure mempty {- do
     traverse (githubReq . GH.userInfoForR . GH.simpleUserLogin) githubMembers
     -}
 
-fumPlanmillTeamMap
-    :: forall m env.
-       ( MonadPlanMillQuery m, MonadFUM m
-       , MonadReader env m, HasFUMEmployeeListName env
-       )
-    => m (HashMap FUM.Login (Maybe Text))
-fumPlanmillTeamMap = fumPlanmillMap >>= traverse (f . snd)
+addFUMInfo
+    :: (Functor f, Foldable g)
+    => g FUM.User -> f (Contact Text) -> f (Contact Text)
+addFUMInfo fum = fmap add
   where
-    f :: PM.User -> m (Maybe Text)
-    f u = PM.tName <$$> traverse PMQ.team (PM.uTeam u)
+    fum' = toList fum
 
-fumPlanmillCompetenceMap
-    :: forall m env.
-       ( MonadPlanMillQuery m, MonadFUM m
-       , MonadReader env m, HasFUMEmployeeListName env
-       )
-    => m (HashMap FUM.Login (Maybe Text))
-fumPlanmillCompetenceMap = PM.uCompetence . snd  <$$> fumPlanmillMap
+    loginMap :: HM.HashMap FUM.Login FUM.User
+    loginMap = HM.fromList (map pair fum')
+      where
+        pair x = (FUM._userName x, x)
+
+    add :: Contact Text -> Contact Text
+    add c = 
+        case user (contactLogin c) of
+            Nothing -> c
+            Just u  -> c{ contactThumb = S.fromMaybe noImage $ FUM._userThumbUrl u
+                        , contactImage = S.fromMaybe noImage $ FUM._userImageUrl u
+                        }
+      where
+        user login = HM.lookup login loginMap
+        noImage = "https://avatars0.githubusercontent.com/u/852157?v=3&s=30"
 
 addGithubInfo
     :: (Functor f, Foldable g)
@@ -220,19 +229,3 @@ addFlowdockInfo us = fmap add
         f u = ContactFD (fromIntegral $ FD.getIdentifier $ u ^. FD.userId)
                         (u ^. FD.userNick)
                         (u ^. FD.userAvatar)
-
-addPlanmillInfo
-    :: Functor f
-    => HashMap FUM.Login (Maybe Text)
-    -> HashMap FUM.Login (Maybe Text)
-    -> f (Contact a)
-    -> f (Contact a)
-addPlanmillInfo competenceMap teamMap = fmap f
-  where
-    f :: Contact a -> Contact a
-    f c = c
-        { contactTeam       = join $ HM.lookup login teamMap
-        , contactCompetence = join $ HM.lookup login competenceMap
-        }
-      where
-        login = contactLogin c

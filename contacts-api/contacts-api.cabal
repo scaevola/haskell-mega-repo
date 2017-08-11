@@ -52,6 +52,7 @@ library
     , futurice-integrations
     , futurice-prelude
     , futurice-servant
+    , futurice-tribes
     , github
     , github
     , hashable
@@ -82,6 +83,7 @@ library
     , swagger2
     , tagged
     , text
+    , time
     , transformers
     , transformers-compat
     , unordered-containers
