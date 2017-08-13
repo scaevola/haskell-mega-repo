@@ -5,7 +5,8 @@
 {-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.FUM.Command.CreateEmployee where
 
-import Control.Lens      (has, use)
+import Control.Lens      (preuse)
+import Data.Maybe        (isJust)
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
@@ -49,8 +50,8 @@ instance Command CreateEmployee where
     -- TODO:
     applyCommand now cmd = do
         let login = ceLogin cmd
-        world <- use id
-        when (has (worldEmployees . ix login) world) $
+
+        whenM (fmap isJust $ preuse $ worldEmployees . ix login) $
             throwError $ "Employee with login " ++ show (loginToText login) ++ " already exists"
 
         worldEmployees . at login ?= Employee
