@@ -44,6 +44,7 @@ import GHC.TypeLits    (KnownSymbol)
 data Cmd
     = CmdMe
     | CmdUsers
+    | CmdTeams
     | CmdUser PM.UserId
     | CmdUserMany PM.UserId Int
     | CmdTimereports PM.UserId (PM.Interval Day)
@@ -129,6 +130,11 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
         putPretty x
     CmdUsers -> do
         x <- PM.planmillAction PM.users
+        putPretty $ if optsShowAll opts
+            then x ^.. folded
+            else x ^.. taking 10 traverse
+    CmdTeams -> do
+        x <- PM.planmillAction PM.teams
         putPretty $ if optsShowAll opts
             then x ^.. folded
             else x ^.. taking 10 traverse
