@@ -129,6 +129,34 @@
       "label": "Vacation day balance",
       "value": 0
     },
+    "dynamic_27160": {
+      "label": "Monthly fixed salary 100%",
+      "value": 0
+    },
+    "dynamic_27161": {
+      "label": "Monthly variable salary 100%",
+      "value": 0
+    },
+    "dynamic_27162": {
+      "label": "Hourly salary x 100",
+      "value": 0
+    },
+    "dynamic_27169": {
+      "label": "Salary currency",
+      "value": ""
+    },
+    "dynamic_27164": {
+      "label": "(SE) Occupational pension %",
+      "value": 0
+    },
+    "dynamic_27166": {
+      "label": "(SE) Holidays",
+      "value": 0
+    },
+    "dynamic_27168": {
+      "label": "(SE) Personal number",
+      "value": ""
+    },
     "dynamic_27163": {
       "label": "Work phone",
       "value": "+123 5678910"
@@ -222,7 +250,15 @@
       "value": ""
     },
     "dynamic_72970": {
-      "label": "Expat bonus",
+      "label": "Expat monthly bonus 100%",
+      "value": ""
+    },
+    "dynamic_72971": {
+      "label": "Expat housing allowance",
+      "value": ""
+    },
+    "dynamic_72972": {
+      "label": "Expat bonus and allowance currency",
       "value": ""
     },
     "dynamic_66601": {
@@ -266,11 +302,15 @@
       "value": ""
     },
     "dynamic_72946": {
-      "label": "Local / Expat",
-      "value": "local"
+      "label": "Expat",
+      "value": "No"
     },
     "dynamic_72949": {
-      "label": "End of expat assignment",
+      "label": "End of assignment",
+      "value": ""
+    },
+    "dynamic_72950": {
+      "label": "Start of assignment",
       "value": ""
     },
     "dynamic_72943": {
@@ -278,8 +318,24 @@
       "value": "SomeTribe"
     },
     "dynamic_72916": {
-      "label": "Home address",
-      "value": "Otakaari 1, Espoo"
+      "label": "Home street address",
+      "value": "Otakaari 1"
+    },
+    "dynamic_72917": {
+      "label": "Home postal code",
+      "value": "02150"
+    },
+    "dynamic_72918": {
+      "label": "Home city",
+      "value": "Espoo"
+    },
+    "dynamic_72920": {
+      "label": "Home country",
+      "value": "Finland"
+    },
+    "dynamic_72921": {
+      "label": "Private email",
+      "value": "eskokarvinen85@suomi24.fi"
     },
     "dynamic_72934": {
       "label": "Health insurance",
@@ -292,6 +348,18 @@
     "dynamic_72936": {
       "label": "Home phone",
       "value": "+123 5678910"
+    },
+    "dynamic_72938": {
+      "label": "Private phone",
+      "value": "+123 5678910"
+    },
+    "dynamic_72939": {
+      "label": "Emergency contact phone",
+      "value": "+123 5678910"
+    },
+    "dynamic_72941": {
+      "label": "(GB) National Insurance Number",
+      "value": ""
     }
   }
 }

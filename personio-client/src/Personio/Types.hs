@@ -10,13 +10,14 @@ module Personio.Types (
     module Personio.Types, -- TODO: this exports some unnecessary stuff too.
     module Personio.Types.ContractType,
     module Personio.Types.EmploymentType,
+    module Personio.Types.PersonalIdValidations,
     module Personio.Types.Status,
     ) where
 
 -- Uncomment to get attribute hashmap
 -- #define PERSONIO_DEBUG 1
 
-import Control.Monad.Writer        (WriterT, execWriterT)
+import Control.Monad.Writer        (WriterT, execWriterT, unless)
 import Data.Aeson.Compat
 import Data.Aeson.Internal         (JSONPathElement (Key), (<?>))
 import Data.Aeson.Types
@@ -40,6 +41,7 @@ import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
 import Personio.Types.ContractType
 import Personio.Types.EmploymentType
+import Personio.Types.PersonalIdValidations
 import Personio.Types.Status
 
 import qualified Chat.Flowdock.REST            as FD
@@ -444,21 +446,56 @@ instance Configure Cfg where
 -------------------------------------------------------------------------------
 
 data ValidationMessage
-    = TribeMissing
-    | EmailMissing
+    = CareerPathLevelMissing
+    | ContractTypeMissing
     | CostCenterMissing
     | CostCenterMultiple [Text]
-    | GithubInvalid Text
-    | OfficeMissing
-    | RoleMissing
-    | WorkPhoneMissing
-    | IbanInvalid
-    | LoginInvalid Text
+    | DEIDInvalid
+    | DESVInvalid
+    | EmailInvalid Text
+    | EmergencyContactPhoneInvalid Text
     | EmploymentTypeMissing
+    | EndOfExpatAssignmentMissing
+    | ExpatBonusAndAllowanceCurrencyMissing
+    | ExpatMissing
+    | ExternalMonthlyVariableSalary
+    | FirstNameMissing
+    | FISSNInvalid
     | FixedTermEndDateMissing
-    | PermanentExternal
-    | HomePhoneInvalid
     | FlowdockInvalid
+    | GBNINOInvalid
+    | GenderMissing
+    | GithubInvalid Text
+    | HireDateMissing
+    | HomeCityMissing
+    | HomeCountryMissing
+    | HomePhoneInvalid Text
+    | HomeStreetAddressMissing
+    | HomeTribeInvalid Text
+    | HoursInvalid Scientific
+    | HRNumberInvalid Scientific
+    | IbanInvalid
+    | IdentificationNumberMissing
+    | LastNameMissing
+    | LoginInvalid Text
+    | NationalityMissing
+    | OfficeMissing
+    | PermanentExternal
+    | PositionMissing
+    | PrivateEmailInvalid Text
+    | PrivatePhoneInvalid Text
+    | RoleMissing
+    | SalaryCurrencyInvalid Text
+    | SalaryInvalid Text
+    | SEHolidaysInvalid Scientific
+    | SEPensionInvalid Scientific
+    | SEPersonalIdInvalid
+    | StartOfExpatAssignmentMissing
+    | SupervisorMissing
+    | TribeMissing
+    | WorkPermitEndsMissing
+    | WorkPermitMissing
+    | WorkPhoneMissing
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 
@@ -510,34 +547,66 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 
     validate :: HashMap Text Attribute -> Parser [ValidationMessage]
     validate obj = execWriterT $ sequenceA_
-        [ githubValidate
-        , costCenterValidate
-        , ibanValidate
-        , loginValidate
-        , fixedEndDateValidate
-        , externalContractValidate
-        , employmentTypeValidate
-        , homePhoneValidate
-        , flowdockValidate
-        , attributeMissing "email" EmailMissing
+        [ attributeMissing "first_name" FirstNameMissing
+        , attributeMissing "gender" GenderMissing
+        , attributeMissing "hire_date" HireDateMissing
+        , attributeMissing "last_name" LastNameMissing
+        , attributeMissing "position" PositionMissing
         , attributeObjectMissing "department" TribeMissing
         , attributeObjectMissing "office" OfficeMissing
-        , dynamicAttributeMissing "Work phone" WorkPhoneMissing
+        , costCenterValidate
+        , dynamicAttributeMissing "Contract type" ContractTypeMissing
+        , dynamicAttributeMissing "Expat" ExpatMissing
+        , dynamicAttributeMissing "Home city" HomeCityMissing
+        , dynamicAttributeMissing "Home country" HomeCountryMissing
+        , dynamicAttributeMissing "Home street address" HomeStreetAddressMissing
         , dynamicAttributeMissing "Primary role" RoleMissing
+        , dynamicAttributeMissing "Work phone" WorkPhoneMissing
+        , emailValidate
+        , employmentTypeValidate
+        , expatBonusAndAllowanceCurrencyValidate
+        , expatValidate
+        , externalContractValidate
+        , fixedEndDateValidate
+        , flowdockValidate
+        , githubValidate
+        , homePhoneValidate
+        , homeTribeValidate
+        , hoursValidate
+        , hrNumberValidate
+        , ibanValidate
+        , identificationNumberMissing
+        , internalValidations
+        , loginValidate
+        , monthlyVariableSalaryValidate
+        , phoneValidate "Emergency contact phone" EmergencyContactPhoneInvalid
+        , phoneValidate "Private phone" PrivatePhoneInvalid
+        , privateEmailValidate
+        , supervisorValidate
+        , withValidatorValidate "(DE) ID number" DEIDInvalid isValidDeID
+        , withValidatorValidate "(DE) Social security number (SV)" DESVInvalid isValidDeSV
+        , withValidatorValidate "(FI) Social Security Number" FISSNInvalid isValidFinSSN
+        , withValidatorValidate "(GB) National Insurance Number" GBNINOInvalid isValidGbNINO
+        , withValidatorValidate "(SE) Personal number" SEPersonalIdInvalid isValidSwePIN
+        , workPermitEndsMissing
         ]
       where
-        githubValidate :: WriterT [ValidationMessage] Parser ()
-        githubValidate = do
-            githubText <- lift (parseDynamicAttribute obj "Github")
-            case match (githubRegexp <|> pure "") githubText of
-                Nothing -> tell [GithubInvalid githubText]
-                Just _ -> pure ()
+        emailRegexp = some anySym *> string "@" *> some anySym *> string "." *> some anySym
 
-        isSomeText :: Text -> Maybe Text
-        isSomeText = match (T.pack <$> some anySym :: RE' Text)
+        phoneRegexp = string "+" *> (T.pack <$> some (psym (`elem` allowedChars)))
+          where
+            allowedChars = ' ':'-':['0'..'9']
+
+        salarySet :: Value -> Bool
+        salarySet (Number s) = s > 0
+        salarySet _          = False
+
+        isSomeText :: Value -> Maybe Text
+        isSomeText (String v) = match (T.pack <$> some anySym :: RE' Text) v
+        isSomeText _          = Nothing
 
         checkAttributeName :: Text -> ValidationMessage -> WriterT [ValidationMessage] Parser ()
-        checkAttributeName val msg = case isSomeText val of
+        checkAttributeName val msg = case isSomeText (String val) of
             Nothing -> tell [msg]
             Just _  -> pure ()
 
@@ -568,9 +637,24 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         dynamicAttributeMissing attrName errMsg = do
             attribute <- lift (parseDynamicAttribute obj attrName)
             case attribute of
+                Null     -> tell [errMsg]
                 Array _  -> tell [errMsg]
                 String a -> checkAttributeName a errMsg
                 a        -> lift (typeMismatch (show attrName) a)
+
+        phoneValidate :: Text -> (Text -> ValidationMessage) ->  WriterT [ValidationMessage] Parser ()
+        phoneValidate aName errMsg = do
+            phone <- lift (parseDynamicAttribute obj aName)
+            case match phoneRegexp phone of
+                Just _ -> pure ()
+                Nothing -> tell [errMsg phone]
+
+        githubValidate :: WriterT [ValidationMessage] Parser ()
+        githubValidate = do
+            githubText <- lift (parseDynamicAttribute obj "Github")
+            case match (githubRegexp <|> pure "") githubText of
+                Nothing -> tell [GithubInvalid githubText]
+                Just _ -> pure ()
 
         costCenterValidate :: WriterT [ValidationMessage] Parser ()
         costCenterValidate = do
@@ -632,11 +716,8 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         homePhoneValidate = do
             hPhone <- lift (parseDynamicAttribute obj "Home phone")
             case match (phoneRegexp <|> pure "") hPhone of
-                Nothing -> tell [HomePhoneInvalid]
+                Nothing -> tell [HomePhoneInvalid hPhone]
                 Just _  -> pure ()
-          where
-            phoneRegexp = string "+" *> (T.pack <$> some (psym (`elem` allowedChars)))
-            allowedChars = ' ':'-':['0'..'9']
 
         flowdockValidate :: WriterT [ValidationMessage] Parser ()
         flowdockValidate = do
@@ -644,6 +725,180 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
             case match (flowdockRegexp <|> empty) fdockText of
                 Nothing -> tell [FlowdockInvalid]
                 Just _  -> pure ()
+
+        emailValidate :: WriterT [ValidationMessage] Parser ()
+        emailValidate = do
+            email <- lift (parseAttribute obj "email")
+            case match emailRegexp email of
+                Nothing -> tell [EmailInvalid email]
+                Just _  -> pure ()
+
+        supervisorValidate :: WriterT [ValidationMessage] Parser ()
+        supervisorValidate = do
+            position <- lift (parseAttribute obj "position")
+            case match noSuperRegexp position of
+                Nothing -> attributeObjectMissing "supervisor" SupervisorMissing
+                Just _  -> pure ()
+          where
+            noSuperRegexp = string "CEO"
+
+        hoursValidate :: WriterT [ValidationMessage] Parser ()
+        hoursValidate = do
+            hours <- lift (parseAttribute obj "weekly_working_hours")
+            case toNum hours of
+                Just n  -> if n > 0
+                    then pure ()
+                    else tell [HoursInvalid n]
+                Nothing -> lift (typeMismatch "weekly_working_hours" hours)
+          where
+            toNum :: Value -> Maybe Scientific
+            toNum (String v) = readMaybe $ T.unpack v
+            toNum _          = Nothing
+
+        workPermitEndsMissing :: WriterT [ValidationMessage] Parser ()
+        workPermitEndsMissing = do
+            pType <- lift (parseDynamicAttribute obj "Work permit")
+            if T.toLower pType == "temporary"
+                then dynamicAttributeMissing "Work permit ends on" WorkPermitEndsMissing
+                else pure ()
+
+        internalValidations :: WriterT [ValidationMessage] Parser ()
+        internalValidations = do
+            eType <- lift (parseAttribute obj "employment_type")
+            case employmentTypeFromText eType of
+                Just Internal -> do
+                    dynamicAttributeMissing "Nationality" NationalityMissing
+                    dynamicAttributeMissing "Work permit" WorkPermitMissing
+                    dynamicAttributeMissing "Career path level" CareerPathLevelMissing
+                    salaryCurrencyValidate
+                    sweValidations
+                    salaryValidate
+                _             -> pure ()
+          where
+            salaryCurrencyValidate = do
+                currency <- lift (parseDynamicAttribute obj "Salary currency")
+                case currency of
+                    String cur -> if isJust (currencyRegExp cur)
+                                      then pure ()
+                                      else tell [SalaryCurrencyInvalid cur]
+                    _          -> lift (typeMismatch "Salary currency" currency)
+              where
+                currencyRegExp = match (string "EUR" <|> string "GBP" <|> string "SEK")
+
+            sweValidations = do
+                nat <- lift (parseDynamicAttribute obj "Nationality")
+                case nat of
+                    String n -> when (T.toLower n == "sweden") $ do
+                                    validatePension
+                                    validateHolidays
+                    _        -> lift (typeMismatch "Nationality" nat)
+
+            validatePension = do
+                pension <- lift (parseDynamicAttribute obj "(SE) Occupational pension %")
+                case pension of
+                    Number p -> if p >= 0
+                        then pure ()
+                        else tell [SEPensionInvalid p]
+                    _        -> lift (typeMismatch "(SE) Occupational pension %" pension)
+
+            validateHolidays = do
+                hDays <- lift (parseDynamicAttribute obj "(SE) Holidays")
+                case hDays of
+                    Number h -> if h > 0
+                        then pure ()
+                        else tell [SEHolidaysInvalid h]
+                    _        -> lift (typeMismatch "(SE) Holidays" hDays)
+
+        privateEmailValidate :: WriterT [ValidationMessage] Parser ()
+        privateEmailValidate = do
+            pMail <- lift (parseDynamicAttribute obj "Private email")
+            case match emailRegexp pMail of
+                Just _  -> pure ()
+                Nothing -> tell [PrivateEmailInvalid pMail]
+
+        expatValidate :: WriterT [ValidationMessage] Parser ()
+        expatValidate = do
+            expat <- lift (parseDynamicAttribute obj "Expat")
+            if String expat == "Yes"
+                then do
+                    dynamicAttributeMissing "Start of assignment" StartOfExpatAssignmentMissing
+                    dynamicAttributeMissing "End of assignment" EndOfExpatAssignmentMissing
+                else pure ()
+
+        homeTribeValidate :: WriterT [ValidationMessage] Parser()
+        homeTribeValidate = do
+            hTribe <- lift (parseDynamicAttribute obj "Home tribe")
+            case tribeFromText hTribe of
+                Just _  -> pure ()
+                Nothing -> tell [HomeTribeInvalid hTribe]
+
+        expatBonusAndAllowanceCurrencyValidate :: WriterT [ValidationMessage] Parser ()
+        expatBonusAndAllowanceCurrencyValidate = do
+            eBonus <- lift (parseDynamicAttribute obj "Expat monthly bonus 100%")
+            eAllow <- lift (parseDynamicAttribute obj "Expat housing allowance")
+            case (isSomeText eBonus, isSomeText eAllow) of
+                (Nothing, Nothing) -> pure ()
+                _                  -> dynamicAttributeMissing
+                                          "Expat bonus and allowance currency"
+                                          ExpatBonusAndAllowanceCurrencyMissing
+
+        salaryValidate :: WriterT [ValidationMessage] Parser ()
+        salaryValidate = do
+            monthlyS <- lift (parseDynamicAttribute obj "Monthly fixed salary 100%")
+            hourlyS <- lift (parseDynamicAttribute obj "Hourly salary x 100")
+            if xor (salarySet monthlyS) (salarySet hourlyS)
+                then pure ()
+                else tell [SalaryInvalid (msg monthlyS hourlyS)]
+          where
+            xor a b = (not a && b) || (a && not b)
+
+            msg m h = T.pack $
+                concat [ "monthly fixed: "
+                       , show $ salarySet m
+                       , ", hourly: "
+                       , show $ salarySet h]
+
+        monthlyVariableSalaryValidate :: WriterT [ValidationMessage] Parser ()
+        monthlyVariableSalaryValidate = do
+            eType <- lift (parseAttribute obj "employment_type")
+            case employmentTypeFromText eType of
+                Just External -> variableSalaryNotSet
+                _             -> pure ()
+          where
+            variableSalaryNotSet = do
+                variableS <- lift (parseDynamicAttribute obj "Monthly variable salary 100%")
+                if salarySet variableS
+                    then tell [ExternalMonthlyVariableSalary]
+                    else pure ()
+
+        hrNumberValidate :: WriterT [ValidationMessage] Parser ()
+        hrNumberValidate = do
+            hrNum <- lift (parseDynamicAttribute obj "HR number")
+            case hrNum of
+                Number v -> if v > 0
+                    then pure ()
+                    else tell [HRNumberInvalid v]
+                _        -> lift (typeMismatch "HRNumber" hrNum)
+
+        withValidatorValidate :: Text -> ValidationMessage -> (Text -> Bool) -> WriterT [ValidationMessage] Parser ()
+        withValidatorValidate attrN valMsg validation = do
+            pId <- lift (parseDynamicAttribute obj attrN)
+            case pId of
+                String i -> if not $ T.null i
+                    then unless (validation i) $ tell [valMsg]
+                    else pure ()
+                _        -> lift (typeMismatch (T.unpack attrN) pId)
+
+        identificationNumberMissing :: WriterT [ValidationMessage] Parser ()
+        identificationNumberMissing = do
+            fiSSN <- lift (parseDynamicAttribute obj "(FI) Social Security Number")
+            deSSN <- lift (parseDynamicAttribute obj "(DE) Social security number (SV)")
+            gbNIN <- lift (parseDynamicAttribute obj "(GB) National Insurance Number")
+            sePIN <- lift (parseDynamicAttribute obj "(SE) Personal number")
+            if (length . catMaybes $ map isSomeText [fiSSN, deSSN, gbNIN, sePIN] ) > 0
+                then pure ()
+                else tell [IdentificationNumberMissing]
+
 
 -- | Validate IBAN.
 --
