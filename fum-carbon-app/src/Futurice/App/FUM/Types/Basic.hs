@@ -94,12 +94,11 @@ data Group = Group
     { _groupName         :: !GroupName
     , _groupType         :: !GroupType
     , _groupDescription  :: !Text
-    , _groupEmail        :: !(Maybe Email)
-    , _groupEmailAliaes  :: ![Email]
+    , _groupEmailAliases :: ![Email]
     -- Graph wiring:
     , _groupEditor       :: !(Set (Identifier Group))  -- ^ if 'null', editors are members of the group
-    , _groupEmployees    :: !(Set (Identifier Employee))
-    , _groupCustomers    :: !(Set (Identifier Customer))
+    , _groupEmployees    :: !(Set Login)
+    , _groupCustomers    :: !(Set Login)
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 
