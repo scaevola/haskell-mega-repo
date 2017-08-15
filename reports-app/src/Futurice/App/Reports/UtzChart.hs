@@ -4,7 +4,7 @@ module Futurice.App.Reports.UtzChart (utzChart) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens                (Getter, to, (.=))
+import Control.Lens                ((.=))
 import Data.Time.Calendar.WeekDate (toWeekDate)
 import Futurice.Integrations
 import Futurice.Monoid             (Average (..))
@@ -78,7 +78,7 @@ billableStatus _ 3       = EntryTypeNotBillable
 billableStatus _ _       = EntryTypeBillable
 
 reportUtilizationAvg :: Getter PM.Timereport (Average Double)
-reportUtilizationAvg = to $ \tr ->
+reportUtilizationAvg = getter $ \tr ->
     let NDT hours = ndtConvert' (PM.trAmount tr) :: NDT 'Hours Double
     in case billableStatus (PM.trProject tr) (PM.trBillableStatus tr) of
         EntryTypeBillable    -> Average hours 100

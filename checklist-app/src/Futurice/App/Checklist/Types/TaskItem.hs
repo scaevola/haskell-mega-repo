@@ -33,12 +33,12 @@ annTaskItemTodo :: AnnTaskItem
 annTaskItemTodo = AnnTaskItemTodo ""
 
 annTaskItemComment :: Lens' AnnTaskItem Text
-annTaskItemComment = lens getter setter
+annTaskItemComment = lens g s
   where
-    getter (AnnTaskItemDone t _ _) = t
-    getter (AnnTaskItemTodo t)     = t
-    setter (AnnTaskItemDone _ x y) t = AnnTaskItemDone t x y
-    setter (AnnTaskItemTodo _)     t = AnnTaskItemTodo t
+    g (AnnTaskItemDone t _ _) = t
+    g (AnnTaskItemTodo t)     = t
+    s (AnnTaskItemDone _ x y) t = AnnTaskItemDone t x y
+    s (AnnTaskItemTodo _)     t = AnnTaskItemTodo t
 
 makePrisms ''AnnTaskItem
 

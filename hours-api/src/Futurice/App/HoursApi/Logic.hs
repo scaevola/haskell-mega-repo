@@ -14,7 +14,7 @@ module Futurice.App.HoursApi.Logic (
     entryDeleteEndpoint,
     ) where
 
-import Control.Lens              (maximumOf, to, (<&>))
+import Control.Lens              (maximumOf, (<&>))
 import Futurice.Monoid           (Average (..))
 import Futurice.Prelude
 import Futurice.Time             (NDT (..), TimeUnit (..))
@@ -125,7 +125,7 @@ hoursResponse interval = do
         }
   where
     mkHolidayNames :: Foldable f => f H.Capacity -> Map Day DayType
-    mkHolidayNames = toMapOf (folded . to mk . folded . ifolded)
+    mkHolidayNames = toMapOf (folded . getter mk . folded . ifolded)
       where
         mk :: H.Capacity -> Maybe (Day, DayType)
         mk c
@@ -177,7 +177,7 @@ reportableProjects = do
     -- Tasks per project
     let tasksPerProject :: Map PM.ProjectId (NonEmpty PM.TaskId)
         tasksPerProject = Map.fromListWith (<>) $
-            reportable ^.. folded . to reportableAcc
+            reportable ^.. folded . getter reportableAcc
 
     projects <- for (Map.toList tasksPerProject) $ uncurry $ \pid tids -> do
         project <- H.project pid

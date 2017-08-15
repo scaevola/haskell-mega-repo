@@ -27,7 +27,7 @@ module Futurice.App.Checklist.Types.World (
 import Prelude ()
 import Futurice.Prelude
 import Control.DeepSeq  (force)
-import Control.Lens     (Getter, contains, filtered, ifiltered, to, (<&>))
+import Control.Lens     (contains, filtered, ifiltered, (<&>))
 import Data.Functor.Rep (Representable (..))
 import Futurice.Office
 import Futurice.Graph   (Graph)
@@ -91,14 +91,14 @@ worldArchive f (World es ts ls is arc _) = f arc <&>
     \x -> mkWorld es (Graph.toIdMap ts) ls is x
 
 worldTaskItems' :: Getter World (Map (Identifier Task) (Map (Identifier Employee) AnnTaskItem))
-worldTaskItems' = to _worldTaskItems'
+worldTaskItems' = getter _worldTaskItems'
 
 worldTasksSorted :: TaskRole -> Getter World [Task]
-worldTasksSorted tr = to $ \world ->
+worldTasksSorted tr = getter $ \world ->
     sortOn ((tr /=) . view taskRole) $ Graph.revTopSort (world ^. worldTasks)
 
 worldTasksSortedByName :: Getter World [Task]
-worldTasksSortedByName = to $ \world -> sortOn (view taskName) (world ^.. worldTasks . folded)
+worldTasksSortedByName = getter $ \world -> sortOn (view taskName) (world ^.. worldTasks . folded)
 
 emptyWorld :: World
 emptyWorld = mkWorld mempty mempty mempty mempty mempty

@@ -30,7 +30,7 @@ import Futurice.Prelude
 import Futurice.CryptoRandom
 
 import Control.Concurrent.MVar.Lifted (MVar, modifyMVar, newMVar)
-import Control.Lens                   (ASetter', to)
+import Control.Lens                   (ASetter')
 import Control.Monad.CryptoRandom     (ContainsGenError, GenError)
 import Control.Monad.Http             (MonadHttp (..))
 import Data.Aeson                     (Value (Object), object)
@@ -207,7 +207,7 @@ instance (MonadBase IO m, MonadTime m, HasLoggerEnv r) => MonadLog (PureT e r m)
 
 instance (H.HasHttpManager r, MonadBase IO m) => MonadHttp (PureT e r m) where
     httpLbs req = do
-        mgr <- view (to H.getHttpManager)
+        mgr <- view (getter H.getHttpManager)
         liftBase $ H.httpLbs req mgr
 
 -------------------------------------------------------------------------------

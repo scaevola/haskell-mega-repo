@@ -75,7 +75,7 @@ author (FD.Author n e a) = Author n e a
 extractContribution :: FD.Discussion -> Maybe Contribution
 extractContribution discussion = constructor $ Contribution
     (fromMaybe 0 hours)
-    (discussion ^. FD.discussionAuthor . to author)
+    (discussion ^. FD.discussionAuthor . getter author)
     subject
     github
   where

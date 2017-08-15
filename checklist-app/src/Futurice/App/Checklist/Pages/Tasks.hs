@@ -4,7 +4,7 @@ module Futurice.App.Checklist.Pages.Tasks (tasksPage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (filtered, foldMapOf, forOf_, has, re, to)
+import Control.Lens              (filtered, foldMapOf, forOf_, has, re)
 import Futurice.Lucid.Foundation
 import Text.Printf               (printf)
 
@@ -53,7 +53,7 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
                     option_ [ value_ "" ] $ "Show all"
                     for_ (world ^.. worldLists . folded) $ \cl ->
                         optionSelected_ (Just cl == mlist)
-                            [ value_ $ cl ^. identifier . to identifierToText ]
+                            [ value_ $ cl ^. identifier . getter identifierToText ]
                             $ cl ^. nameHtml
             largemed_ 1 $ label_ $ do
                 toHtmlRaw ("&nbsp;" :: Text)
@@ -75,7 +75,7 @@ tasksPage world authUser@(_fu, _viewerRole) mrole mlist =
                 td_ $ taskLink task
                 td_ [ style_ "max-width: 20em;" ] $ small_ $ toHtml $ task ^. taskInfo
                 td_ $ roleHtml mlist $ task ^. taskRole
-                td_ $ forOf_ (taskPrereqs . folded . to (\tid' -> world ^. worldTasks . at tid') . _Just) task $ \prereqTask -> do
+                td_ $ forOf_ (taskPrereqs . folded . getter (\tid' -> world ^. worldTasks . at tid') . _Just) task $ \prereqTask -> do
                     taskLink prereqTask
                     br_ []
                 td_ $ a_ [ indexPageHref Nothing mlist (Just tid) defaultShowAll False ] $

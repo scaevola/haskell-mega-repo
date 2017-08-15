@@ -33,7 +33,7 @@ module PlanMill.Queries (
 
 import PlanMill.Internal.Prelude
 
-import Control.Lens    (alongside, to, withIndex)
+import Control.Lens    (alongside, withIndex)
 import Data.Constraint (Dict (..))
 import Data.Reflection (reifySymbol)
 import GHC.TypeLits    (KnownSymbol, symbolVal)
@@ -93,7 +93,7 @@ allEnumerationValues pe pf = mk <$> enumerationForField pe pf
     mk :: Maybe SomeEnumDesc -> Map (EnumValue entity field) Text
     mk Nothing = mempty
     mk (Just (MkSomeEnumDesc (EnumDesc im))) = toMapOf
-        (ifolded . withIndex . alongside (to EnumValue) id . ifolded)
+        (ifolded . withIndex . alongside (getter EnumValue) id . ifolded)
         im
 
 enumerationForField

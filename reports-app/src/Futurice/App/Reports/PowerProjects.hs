@@ -23,7 +23,6 @@ import Futurice.Integrations
 import Futurice.Report.Columns
 import Data.Vector.Lens (vector)
 import Data.Set.Lens (setOf)
-import Control.Lens (to)
 
 import qualified PlanMill            as PM
 import qualified PlanMill.Queries    as PMQ
@@ -100,7 +99,7 @@ powerProjectsReport = do
     --
     -- "Benefit": we will have only the accounts with projects
     --
-    let aids = toList (setOf (folded . to PM.pAccount . folded) ps)
+    let aids = toList (setOf (folded . getter PM.pAccount . folded) ps)
     as <- traverse PMQ.account aids 
     pure $ PowerProjectsReport
         { powerProjects = toPower <$> ps

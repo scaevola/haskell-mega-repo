@@ -3,7 +3,7 @@ module Futurice.App.Checklist.Charts.Done (doneChart) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens     (ifoldMapOf, to, (.=))
+import Control.Lens     (ifoldMapOf, (.=))
 import Servant.Chart    (Chart (..))
 
 import qualified Graphics.Rendering.Chart.Easy as C
@@ -47,8 +47,8 @@ doneChart world _today _ = Chart . C.toRenderable $ do
 
     rawPoints :: [(Day, TodoCounter)]
     rawPoints =
-        (world ^.. worldEmployees . folded . to mkPoint)
-        ++ (world ^.. worldArchive . folded . to mkArchivedPoint)
+        (world ^.. worldEmployees . folded . getter mkPoint)
+        ++ (world ^.. worldArchive . folded . getter mkArchivedPoint)
 
     mkAllPoint :: (Day, TodoCounter) -> (Day, C.Percent)
     mkAllPoint (d, TodoCounter (Counter i j) _) =

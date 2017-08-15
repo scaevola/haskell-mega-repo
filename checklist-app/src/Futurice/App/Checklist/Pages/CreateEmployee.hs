@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Checklist.Pages.CreateEmployee (createEmployeePage) where
 
-import Control.Lens              (forOf_, re, to)
+import Control.Lens              (forOf_, re)
 import Data.Aeson                (ToJSON)
 import Data.Aeson.Text           (encodeToLazyText)
 import Data.Set.Lens             (setOf)
@@ -198,7 +198,7 @@ createEmployeePage world authUser memployee pemployee = checklistPage_ "Create e
             button_ [ class_ "button", data_ "futu-action" "reset" ] "Reset"
   where
     supervisors :: [Text]
-    supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . to toQueryParam) world
+    supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . getter toQueryParam) world
 
 encodeToText :: ToJSON a => a -> Text
 encodeToText = view strict . encodeToLazyText

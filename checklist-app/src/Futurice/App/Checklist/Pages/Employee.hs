@@ -5,7 +5,7 @@ module Futurice.App.Checklist.Pages.Employee (employeePage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (forOf_, re, to)
+import Control.Lens              (forOf_, re)
 import Data.Aeson                (ToJSON)
 import Data.Aeson.Text           (encodeToLazyText)
 import Data.Set.Lens             (setOf)
@@ -153,7 +153,7 @@ employeePage world authUser employee = checklistPage_ (view nameText employee) a
     mlist = world ^? worldLists . ix (employee ^. employeeChecklist)
 
     supervisors :: [Text]
-    supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . to toQueryParam) world
+    supervisors = toList $ setOf (worldEmployees . folded . employeeSupervisor . getter toQueryParam) world
 
 encodeToText :: ToJSON a => a -> Text
 encodeToText = view strict . encodeToLazyText

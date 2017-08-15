@@ -16,10 +16,12 @@
 - 1:2:2 Adding mail aliases
 - 1:2:2 Password change
 - 1:2:2 SSH keys processing
+- 1:1:1 view tweak: github, flowdock, internal/external, contractEndDate
 
 # Groups
 
 - 1:2:4 Views
+- 1:1:3 Special groups
 - 1:1:2 CreateGroup command
 - 1:1:2 EditGroup command
 - 1:1:2 AddEmployeeToGroup
@@ -41,7 +43,7 @@
 
 ## Event stream
 
-- 2:2:4 Provide internal way to process events. Needed for incremental
+- ~2:2:4 Provide internal way to process events. Needed for incremental~
 - 1:1:2 Websocket interface
 
 ## LDAP Integration
@@ -51,5 +53,5 @@
 
 ## Transactor
 
-- 1:2:2 Transactor thread
+- ~1:2:2 Transactor thread~
 - 1:2:2 Persistence

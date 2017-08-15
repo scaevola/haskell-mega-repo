@@ -4,7 +4,7 @@ module Futurice.App.Checklist.Pages.Checklist (checklistPage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (filtered, foldMapOf, forOf_, has, to)
+import Control.Lens              (filtered, foldMapOf, forOf_, has)
 import Data.Time                 (diffDays)
 import Futurice.Lucid.Foundation
 
@@ -82,7 +82,7 @@ checklistPage world today authUser checklist = checklistPage_ (view nameText che
                 td_ $ taskLink task
                 td_ [ style_ "max-width: 20em;" ] $ small_ $ toHtml $ task ^. taskInfo
                 td_ $ roleHtml mlist (task ^. taskRole)
-                td_ $ forOf_ (taskPrereqs . folded . to (\tid' -> world ^. worldTasks . at tid') . _Just) task $ \prereqTask -> do
+                td_ $ forOf_ (taskPrereqs . folded . getter (\tid' -> world ^. worldTasks . at tid') . _Just) task $ \prereqTask -> do
                     let prereqTid = prereqTask ^. identifier
                     for_ (checklist ^? checklistTasks . ix prereqTid) $ \_ -> do
                         taskLink prereqTask

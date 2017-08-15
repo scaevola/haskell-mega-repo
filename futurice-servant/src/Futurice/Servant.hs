@@ -63,7 +63,6 @@ module Futurice.Servant (
 
 import Control.Concurrent.STM
        (TVar, atomically, newTVarIO, swapTVar)
-import Control.Lens                         (LensLike)
 import Control.Monad.Catch                  (fromException, handleAll)
 import Data.Constraint                      (Dict (..))
 import Data.Swagger                         hiding (port)

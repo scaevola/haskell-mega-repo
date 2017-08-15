@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.Smileys.Charts where
 
-import Control.Lens     (to, (.=), (^@..))
+import Control.Lens     ((.=), (^@..))
 import Data.Pool        (withResource)
 import Futurice.Cache   (cachedIO)
 import Futurice.Prelude
@@ -30,9 +30,9 @@ absoluteChartHandler = chartHandler chart
         C.layout_x_axis . C.laxis_title .= "day"
         C.layout_y_axis . C.laxis_title .= "smileys count"
 
-        C.plot $ pure $ strip ":(" C.red    $ values ^@.. ifolded . to firstStrip
-        C.plot $ pure $ strip ":|" C.yellow $ values ^@.. ifolded . to secondStrip
-        C.plot $ pure $ strip ":)" C.blue   $ values ^@.. ifolded . to thirdStrip
+        C.plot $ pure $ strip ":(" C.red    $ values ^@.. ifolded . getter firstStrip
+        C.plot $ pure $ strip ":|" C.yellow $ values ^@.. ifolded . getter secondStrip
+        C.plot $ pure $ strip ":)" C.blue   $ values ^@.. ifolded . getter thirdStrip
 
     strip
         :: String -> C.Colour Double -> [(Day, (Int, Int))]
@@ -54,9 +54,9 @@ relativeChartHandler = chartHandler chart
         C.layout_x_axis . C.laxis_title .= "day"
         C.layout_y_axis . C.laxis_title .= "smileys %"
 
-        C.plot $ pure $ strip ":(" C.red    $ values ^@.. ifolded . to firstStripR
-        C.plot $ pure $ strip ":|" C.yellow $ values ^@.. ifolded . to secondStripR
-        C.plot $ pure $ strip ":)" C.blue   $ values ^@.. ifolded . to thirdStripR
+        C.plot $ pure $ strip ":(" C.red    $ values ^@.. ifolded . getter firstStripR
+        C.plot $ pure $ strip ":|" C.yellow $ values ^@.. ifolded . getter secondStripR
+        C.plot $ pure $ strip ":)" C.blue   $ values ^@.. ifolded . getter thirdStripR
 
     strip
         :: String -> C.Colour Double -> [(Day, (Double, Double))]

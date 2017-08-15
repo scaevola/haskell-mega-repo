@@ -14,7 +14,7 @@ module Futurice.App.HoursApi.Types where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (Getter, foldOf, imap, sumOf, to)
+import Control.Lens              (foldOf, imap, sumOf)
 import Data.Aeson                (Value (..), withText)
 import Data.Aeson.Types          (typeMismatch)
 import Data.Fixed                (Centi)
@@ -89,7 +89,7 @@ data Entry = Entry
   deriving (Eq, Show, Typeable, Generic)
 
 entryUtilizationAvg :: Getter Entry (Maybe (Average Float))
-entryUtilizationAvg = to $ \entry ->
+entryUtilizationAvg = getter $ \entry ->
     let NDT hours = _entryHours entry in case _entryBillable entry of
         EntryTypeBillable    -> Just $ Average (realToFrac hours) 100
         EntryTypeNotBillable -> Just $ Average (realToFrac hours) 0
