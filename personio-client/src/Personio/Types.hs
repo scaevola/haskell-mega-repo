@@ -16,6 +16,7 @@ module Personio.Types (
 -- Uncomment to get attribute hashmap
 -- #define PERSONIO_DEBUG 1
 
+import Control.Lens                (Getter, to)
 import Control.Monad.Writer        (WriterT, execWriterT)
 import Data.Aeson.Compat
 import Data.Aeson.Internal         (JSONPathElement (Key), (<?>))
@@ -166,6 +167,10 @@ employeeIsActive now e =
 
 makeLenses ''Employee
 deriveGeneric ''Employee
+
+-- | @first last@
+employeeFullname :: Getter Employee Text
+employeeFullname = to $ \e -> _employeeFirst e <> " " <> _employeeLast e
 
 instance NFData Employee
 

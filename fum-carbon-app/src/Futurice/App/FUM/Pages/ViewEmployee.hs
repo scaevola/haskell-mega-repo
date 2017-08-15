@@ -22,7 +22,7 @@ viewEmployeePage auth _world e = fumPage_ "Employee" auth $ do
     fullRow_ "PICTURE TODO"
 
     fullRow_ $ table_ $ tbody_ $ do
-        vertRow_ "Name" "TODO"
+        vertRow_ "Name" $ toHtml $ e ^. employeeName
         vertRow_ "Login" $ toHtml $ e ^. employeeLogin
         vertRow_ "Personio ID" $ toHtml $ e ^. employeePersonioId
         vertRow_ "Status" $ toHtml $ e ^. employeeStatus

@@ -40,4 +40,5 @@ createEmployeePage auth _world _es e = fumPage_ "Create employee" auth $ do
         Just (e ^. Personio.employeeId) :*
         (e ^. Personio.employeeLogin) :*
         Nothing :*
+        (e ^? Personio.employeeFullname) :*
         Nil

@@ -48,12 +48,13 @@ instance NFData GroupType
 -- /TODO:/ store name?
 data Employee = Employee
     { _employeeLogin          :: !Login
-    , _employeePersonioId     :: !P.EmployeeId           -- ^ @123@, provides information to names, contract data etc.
-    , _employeeStatus         :: !Status                 -- ^ "futurice status", importantly not directly the google status.
+    , _employeePersonioId     :: !P.EmployeeId     -- ^ @123@, provides information to names, contract data etc.
+    , _employeeStatus         :: !Status           -- ^ "futurice status", importantly not directly the google status.
+    , _employeeName           :: !Text             -- ^ name, periodically sync'd from personio
     , _employeeEmailAliases   :: ![Email]
     , _employeeSshKeys        :: ![SshKey]
     , _employeePicture        :: !(Maybe Picture)
-    , _employeePasswordExp    :: !UTCTime                -- ^ password expiration date, does LDAP expires? 
+    , _employeePasswordExp    :: !UTCTime          -- ^ password expiration date, does LDAP expires? 
 --    , _employeePassword :: FORMAT?       -- ^ will make LDAP server easy, SHA-512
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
