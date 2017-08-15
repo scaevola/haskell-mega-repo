@@ -4,24 +4,24 @@
 {-# LANGUAGE RecordWildCards   #-}
 module Futurice.App.FUM (defaultMain) where
 
-import Control.Concurrent.STM     (atomically, readTVarIO, writeTVar)
-import Control.Monad.State.Strict (runStateT)
+import Control.Concurrent.STM         (atomically, writeTVar)
 import Futurice.Lomake
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
-import Log.Monad                  (mapLogT)
 import Prelude ()
 import Servant
 
 import Futurice.App.FUM.API
+import Futurice.App.FUM.Auth
 import Futurice.App.FUM.Command
 import Futurice.App.FUM.Config
-import Futurice.App.FUM.Machine
 import Futurice.App.FUM.Ctx
+import Futurice.App.FUM.Machine
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Pages.Server
 import Futurice.App.FUM.Report.Validation
+import Futurice.App.FUM.Transactor
 import Futurice.App.FUM.Types
 
 import qualified Futurice.IdMap as IdMap
@@ -34,18 +34,17 @@ import qualified Personio
 cmdServer
     :: forall cmd. Command cmd
     => Ctx -> Server (CommandEndpoint cmd)
-cmdServer ctx (LomakeRequest cmdInput) = runLogT "command" (ctxLogger ctx) $ do
-    now <- currentTime
-    world <- liftIO $ readTVarIO (ctxWorld ctx)
-    cmdInternal' <- mapLogT liftIO $ runExceptT $ runReaderT (internalizeCommand now cmdInput) world
-    cmdInternal <- either (error "immplement me") pure cmdInternal'
-    logTrace ("command " <> commandTag (Proxy :: Proxy cmd)) cmdInternal
-    case runStateT (applyCommand now cmdInternal) world of
-        Right (res, world') -> do
-            -- TODO: persist
-            liftIO $ atomically $ writeTVar (ctxWorld ctx) world'
-            pure res
-        Left err -> fail err -- TODO: return LomakeResponseError
+cmdServer ctx mlogin (LomakeRequest cmdInput) = runLogT "command" (ctxLogger ctx) $ do
+    withAuthUser' (error "lomake error") ctx mlogin $ \(login, _) world _ -> do
+        now <- currentTime
+        cmdInternal' <- hoist liftIO $ runExceptT $
+            runReaderT (internalizeCommand now login cmdInput) world
+        cmdInternal <- either (error "implement me") pure cmdInternal'
+
+        res <- hoist liftIO $ transact ctx now login (someCommand cmdInternal)
+        case res of
+            Right res' -> pure res'
+            Left err   -> fail err
 
 commandServer :: Ctx -> Server FumCarbonCommandApi
 commandServer ctx = cmdServer ctx

@@ -45,10 +45,10 @@ instance Command CreateEmployee where
     type CommandTag CreateEmployee = "create-employee"
 
     -- TODO: check that personioId and loginId aren't yet used!
-    internalizeCommand _now cmd = pure $ coerce cmd
+    internalizeCommand _now _login cmd = pure $ coerce cmd
 
     -- TODO:
-    applyCommand now cmd = do
+    applyCommand now _login cmd = do
         let login = ceLogin cmd
 
         whenM (fmap isJust $ preuse $ worldEmployees . ix login) $

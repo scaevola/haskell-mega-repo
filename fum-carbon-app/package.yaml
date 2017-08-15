@@ -37,7 +37,7 @@ dependencies:
   - http-api-data
   - lattices
   - lens
-  - log-base
+  - lifted-base
   - lucid
   - mtl
   - periocron
