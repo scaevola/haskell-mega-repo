@@ -2,10 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.FUM.Pages.Server (pagesServer) where
 
-import Control.Concurrent.STM (atomically, readTVar)
 import Futurice.Prelude
 import Prelude ()
-import Servant                ((:<|>) (..), Handler, Server)
+import Servant          ((:<|>) (..), Handler, Server)
 
 import Futurice.App.FUM.API.Pages
 import Futurice.App.FUM.Ctx
@@ -19,6 +18,7 @@ import Futurice.App.FUM.Types
 import qualified Futurice.IdMap as IdMap
 import qualified Personio
 
+import Futurice.App.FUM.Auth
 import Futurice.App.FUM.Pages.Error
 
 pagesServer :: Ctx -> Server FumCarbonPagesApi
@@ -58,9 +58,9 @@ viewEmployeePageImpl
     -> Maybe Login
     -> Login
     -> Handler (HtmlPage "view-employee")
-viewEmployeePageImpl ctx fu login = withAuthUser ctx fu $ \auth world _es ->
+viewEmployeePageImpl ctx fu login = withAuthUser ctx fu $ \auth world personio ->
     case world ^? worldEmployees . ix login of
-        Just e  -> pure $ viewEmployeePage auth world e
+        Just e  -> pure $ viewEmployeePage auth world personio e
         Nothing -> pure $ notFoundPage auth $
             "Cannot find user " <> loginToText login
 
@@ -83,18 +83,3 @@ withAuthUser
     -> Handler (HtmlPage a)
 withAuthUser ctx mfu f = runLogT "page" (ctxLogger ctx) $
     withAuthUser' forbiddenPage ctx mfu (\fu w es -> lift $ f fu w es)
-
-withAuthUser'
-    :: a                           -- ^ Response to unauthenticated users
-    -> Ctx
-    -> Maybe Login
-    -> (AuthUser -> World -> IdMap.IdMap Personio.Employee -> LogT Handler a)
-    -> LogT Handler a
-withAuthUser' def ctx mfu f = case mfu <|> ctxMockUser ctx of
-    Nothing -> pure def
-    Just fu -> do
-        (world, es) <- liftIO $ atomically $ (,)
-             <$> readTVar (ctxWorld ctx)
-             <*> readTVar (ctxPersonio ctx)
-        -- TODO: check!
-        f (fu, RightsIT) world es

@@ -25,12 +25,14 @@ listEmployeesPage auth world = fumPage_ "Employees" auth $ do
     fullRow_ $ table_ $ do
         thead_ $ tr_ $ do
             th_ "Login"
+            th_ "Name"
             th_ "Personio ID"
             th_ "Status"
 
         tbody_ $ forOf_ (sortedOnOf (view employeeLogin) $ worldEmployees . folded) world $ \e -> tr_ $ do
             -- TODO: name
             td_ $ loginToHtml $ e ^. employeeLogin
+            td_ $ toHtml $ e ^. employeeName
             td_ $ toHtml $ e ^. employeePersonioId
             td_ $ toHtml $ e ^. employeeStatus
 

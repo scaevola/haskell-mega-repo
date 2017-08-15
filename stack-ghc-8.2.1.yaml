@@ -71,6 +71,7 @@ extra-deps:
 - focus-0.1.5.2
 - http-media-0.6.4
 - list-t-1.0.0.1
+- log-base-0.7.2.0
 - monadcryptorandom-0.7.1
 - rfc5051-0.1.0.3
 - servant-0.11

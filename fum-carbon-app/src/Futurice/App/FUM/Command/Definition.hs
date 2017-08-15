@@ -18,6 +18,7 @@ import Futurice.Generics
 import Futurice.Lomake
 import Futurice.Lucid.Foundation  (HtmlT)
 import Futurice.Prelude
+import Futurice.Servant           (SSOUser)
 import GHC.TypeLits               (KnownSymbol, Symbol, symbolVal)
 import Prelude ()
 import Servant.API
@@ -57,6 +58,7 @@ class
     -- @
     internalizeCommand
         :: UTCTime     -- ^ now
+        -> Login       -- ^ submitter of the command
         -> cmd 'Input  -- ^ input command
         -> ReaderT World (ExceptT String (LogT IO)) (cmd 'Internal) -- ^ we can do IO and fail.
 
@@ -64,13 +66,14 @@ class
     --
     -- /Note:/ we can fail in this phase too.
     -- However fail conditions should be rare and treated as fatal.
-    --
     applyCommand
         :: UTCTime        -- ^ now
+        -> Login          -- ^ submitter of the command
         -> cmd 'Internal  -- ^ command
         -> StateT World (Either String) LomakeResponse
 
 type CommandEndpoint (cmd :: Phase -> *) = CommandTag cmd
+    :> SSOUser
     :> ReqBody '[JSON] (LomakeRequest (cmd 'Input))
     :> Post '[JSON] LomakeResponse
 

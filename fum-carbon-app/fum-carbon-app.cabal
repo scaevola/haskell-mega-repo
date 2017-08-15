@@ -52,7 +52,7 @@ library
     , http-api-data
     , lattices
     , lens
-    , log-base
+    , lifted-base
     , lucid
     , mtl
     , periocron
@@ -82,6 +82,7 @@ library
       Futurice.App.FUM.Ack
       Futurice.App.FUM.API
       Futurice.App.FUM.API.Pages
+      Futurice.App.FUM.Auth
       Futurice.App.FUM.Clay
       Futurice.App.FUM.Command
       Futurice.App.FUM.Command.CreateEmployee
@@ -98,6 +99,7 @@ library
       Futurice.App.FUM.Pages.Server
       Futurice.App.FUM.Pages.ViewEmployee
       Futurice.App.FUM.Report.Validation
+      Futurice.App.FUM.Transactor
       Futurice.App.FUM.Types
       Futurice.App.FUM.Types.Basic
       Futurice.App.FUM.Types.Identifier
@@ -138,7 +140,7 @@ executable fum-carbon-server
     , http-api-data
     , lattices
     , lens
-    , log-base
+    , lifted-base
     , lucid
     , mtl
     , periocron
@@ -199,7 +201,7 @@ test-suite unit-tests
     , http-api-data
     , lattices
     , lens
-    , log-base
+    , lifted-base
     , lucid
     , mtl
     , periocron

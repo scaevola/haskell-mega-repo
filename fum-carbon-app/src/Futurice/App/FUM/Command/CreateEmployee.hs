@@ -21,6 +21,8 @@ data CreateEmployee (phase :: Phase) = CreateEmployee
     { cePersonioId :: !Personio.EmployeeId
     , ceLogin      :: !Login
     , ceStatus     :: !Status
+    , ceName       :: !Text
+    , ceEmail      :: !Text
     }
   deriving (Show, Typeable, Generic)
 
@@ -32,6 +34,8 @@ instance phase ~ 'Input => HasLomake (CreateEmployee phase) where
         hiddenField "personioId" :*
         hiddenField "login" :*
         enumField "status" :*
+        hiddenField "name" :*
+        hiddenField "email" :*
         Nil
 
 instance phase ~ 'Internal => ToJSON (CreateEmployee phase) where
@@ -45,10 +49,10 @@ instance Command CreateEmployee where
     type CommandTag CreateEmployee = "create-employee"
 
     -- TODO: check that personioId and loginId aren't yet used!
-    internalizeCommand _now cmd = pure $ coerce cmd
+    internalizeCommand _now _login cmd = pure $ coerce cmd
 
     -- TODO:
-    applyCommand now cmd = do
+    applyCommand now _login cmd = do
         let login = ceLogin cmd
 
         whenM (fmap isJust $ preuse $ worldEmployees . ix login) $
@@ -58,7 +62,8 @@ instance Command CreateEmployee where
             { _employeeLogin        = login
             , _employeePersonioId   = cePersonioId cmd
             , _employeeStatus       = ceStatus cmd
-            , _employeeEmailAliases = []
+            , _employeeName         = ceName cmd
+            , _employeeEmailAliases = [ ceEmail cmd ]
             , _employeeSshKeys      = []
             , _employeePicture      = Nothing
             , _employeePasswordExp  = now  -- TODO
