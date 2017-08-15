@@ -58,9 +58,9 @@ viewEmployeePageImpl
     -> Maybe Login
     -> Login
     -> Handler (HtmlPage "view-employee")
-viewEmployeePageImpl ctx fu login = withAuthUser ctx fu $ \auth world _es ->
+viewEmployeePageImpl ctx fu login = withAuthUser ctx fu $ \auth world personio ->
     case world ^? worldEmployees . ix login of
-        Just e  -> pure $ viewEmployeePage auth world e
+        Just e  -> pure $ viewEmployeePage auth world personio e
         Nothing -> pure $ notFoundPage auth $
             "Cannot find user " <> loginToText login
 

@@ -22,6 +22,7 @@ data CreateEmployee (phase :: Phase) = CreateEmployee
     , ceLogin      :: !Login
     , ceStatus     :: !Status
     , ceName       :: !Text
+    , ceEmail      :: !Text
     }
   deriving (Show, Typeable, Generic)
 
@@ -34,6 +35,7 @@ instance phase ~ 'Input => HasLomake (CreateEmployee phase) where
         hiddenField "login" :*
         enumField "status" :*
         hiddenField "name" :*
+        hiddenField "email" :*
         Nil
 
 instance phase ~ 'Internal => ToJSON (CreateEmployee phase) where
@@ -61,7 +63,7 @@ instance Command CreateEmployee where
             , _employeePersonioId   = cePersonioId cmd
             , _employeeStatus       = ceStatus cmd
             , _employeeName         = ceName cmd
-            , _employeeEmailAliases = []
+            , _employeeEmailAliases = [ ceEmail cmd ]
             , _employeeSshKeys      = []
             , _employeePicture      = Nothing
             , _employeePasswordExp  = now  -- TODO

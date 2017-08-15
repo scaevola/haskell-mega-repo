@@ -30,6 +30,8 @@ createEmployeePage auth _world _es e = fumPage_ "Create employee" auth $ do
             toHtml $ e ^. Personio.employeeId
         vertRow_ "Login" $
             traverse_ toHtml $ e ^. Personio.employeeLogin
+        vertRow_ "Email" $
+            toHtml $ e ^. Personio.employeeEmail
         vertRow_ "Hiring date" $
             maybe "-" (toHtml . show) $ e ^. Personio.employeeHireDate
         vertRow_ "Contract end date" $
@@ -41,4 +43,5 @@ createEmployeePage auth _world _es e = fumPage_ "Create employee" auth $ do
         (e ^. Personio.employeeLogin) :*
         Nothing :*
         (e ^? Personio.employeeFullname) :*
+        (e ^? Personio.employeeEmail) :*
         Nil
