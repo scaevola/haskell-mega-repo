@@ -12,7 +12,7 @@ module Futurice.App.HoursApi.Monad (
     runHours,
     ) where
 
-import Control.Lens              (Getting, filtered, firstOf, sumOf, to)
+import Control.Lens              (Getting, filtered, firstOf, sumOf)
 import Data.Aeson.Compat         (FromJSON)
 import Data.Constraint
 import Data.Fixed                (Centi)
@@ -153,8 +153,8 @@ instance MonadTime Hours where
 
 instance MonadHours Hours where
     profilePictureUrl = Hours $ view envProfilePicture
-    profileFirstName = Hours $ view (envPmUser . to PM.uFirstName)
-    profileLastName = Hours $ view (envPmUser . to PM.uLastName)
+    profileFirstName = Hours $ view (envPmUser . getter PM.uFirstName)
+    profileLastName = Hours $ view (envPmUser . getter PM.uLastName)
 
     vacationRemaining = do
         pmUid <- viewHours (envPmUser . PM.identifier)
@@ -162,7 +162,7 @@ instance MonadHours Hours where
         -- https://github.com/planmill/api/issues/12
         let wh = 7.5 :: NDT 'Time.Hours Centi
         vs <- cachedPlanmillAction (PM.userVacations pmUid)
-        let holidaysLeft = sumOf (folded . to PM.vacationDaysRemaining . to ndtConvert') vs
+        let holidaysLeft = sumOf (folded . getter PM.vacationDaysRemaining . getter ndtConvert') vs
         -- I wish we could do units properly.
         pure $ NDT $ ndtDivide holidaysLeft wh
 
@@ -172,10 +172,10 @@ instance MonadHours Hours where
             planmillAction (PM.userTimeBalance pmUid)
 
     workingHours = do
-        cid <- viewHours (envPmUser . to PM.uCalendars)
+        cid <- viewHours (envPmUser . getter PM.uCalendars)
         calendars <- PMQ.capacitycalendars
         let hours = firstOf
-                (folded . filtered (\c -> cid == Just (c ^. PM.identifier)) . to PM.ccDefaultDailyWorktime . folded)
+                (folded . filtered (\c -> cid == Just (c ^. PM.identifier)) . getter PM.ccDefaultDailyWorktime . folded)
                 calendars
         pure (maybe 7.7 ndtConvert' hours)
 
@@ -186,16 +186,16 @@ instance MonadHours Hours where
       where
         mk :: PM.ReportableAssignment -> ReportableAssignment
         mk ra = ReportableAssignment
-            { _raProjectId = ra ^. to PM.raProject
-            , _raTaskId    = ra ^. to PM.raTask
-            , _raFinish    = ra ^. to PM.raTaskFinish
+            { _raProjectId = ra ^. getter PM.raProject
+            , _raTaskId    = ra ^. getter PM.raTask
+            , _raFinish    = ra ^. getter PM.raTaskFinish
             }
 
     project pid = do
         p <- withFallback (PMQ.project pid) (PM.project pid)
         pure Project
             { _projectId     = p ^. PM.identifier
-            , _projectName   = p ^. to PM.pName
+            , _projectName   = p ^. getter PM.pName
             , _projectClosed = isAbsence p
               -- TODO: closed if it's absence, but maybe be closed othersie
             , _projectAbsence = isAbsence p

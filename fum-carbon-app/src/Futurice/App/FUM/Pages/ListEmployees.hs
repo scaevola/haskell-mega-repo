@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.FUM.Pages.ListEmployees (listEmployeesPage) where
 
-import Control.Lens     (Getting, LensLike', forOf_, hasn't)
+import Control.Lens     (Getting, forOf_, hasn't)
 import Futurice.Prelude
 import Prelude ()
 

@@ -5,7 +5,7 @@ module Futurice.App.Checklist.Pages.CreateTask (createTaskPage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (forOf_, lengthOf, re, to)
+import Control.Lens              (forOf_, lengthOf, re)
 import Futurice.Lucid.Foundation
 
 import Futurice.App.Checklist.Markup
@@ -88,7 +88,7 @@ createTaskPage world authUser = checklistPage_ ("Create task") authUser $ do
         option_ [ value_ "" ] $ "-"
         for_ (world ^.. worldLists . folded) $ \cl ->
             optionSelected_ False
-                [ value_ $ cl ^. identifier . to identifierToText ]
+                [ value_ $ cl ^. identifier . getter identifierToText ]
                 $ cl ^. nameHtml
 
     checklistAppliance :: Monad m => Text -> HtmlT m ()

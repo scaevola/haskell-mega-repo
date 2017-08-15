@@ -21,7 +21,6 @@ module Futurice.App.Reports.FumFlowdock (
 import Prelude ()
 import Futurice.Prelude
 import Control.Arrow           ((&&&))
-import Control.Lens            (to)
 import Data.List               (partition)
 import Futurice.Generics
 import Futurice.Integrations
@@ -113,7 +112,7 @@ fumFlowdockReport = do
   where
     fumKey :: FUM.User -> Key
     fumKey u = Key
-        (u ^? FUM.userFlowdock . lazy . _Just . to (FD.mkIdentifier . fromIntegral))
+        (u ^? FUM.userFlowdock . lazy . _Just . getter (FD.mkIdentifier . fromIntegral))
         (u ^.FUM.userFirst <> " " <> u ^. FUM.userLast)
         (fromMaybe ((FUM.loginToText $ u ^. FUM.userName) <> "@futurice.com") $ u ^. FUM.userEmail . lazy)
 
@@ -124,7 +123,7 @@ fumFlowdockReport = do
     mkFum u = FUMUser
         { _fumUserName    = u ^. FUM.userFirst <> " " <> u ^. FUM.userLast
         , _fumUserLogin   = u ^. FUM.userName
-        , _fumFlowdockUid = u ^? FUM.userFlowdock . lazy . _Just . to (FD.mkIdentifier . fromIntegral)
+        , _fumFlowdockUid = u ^? FUM.userFlowdock . lazy . _Just . getter (FD.mkIdentifier . fromIntegral)
         }
 
     mkFD :: FD.OrgUser -> FlowdockUser

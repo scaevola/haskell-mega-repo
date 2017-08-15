@@ -19,7 +19,6 @@ module Futurice.App.Reports.FumPlanmill (
     FUMUser (..),
     ) where
 
-import Control.Lens                (to)
 import Futurice.Generics
 import Futurice.Integrations
 import Futurice.Prelude
@@ -128,9 +127,9 @@ fumPlanmillReport = do
     makeReport enums fs pms = toList (align fs' pms')
       where
         fs' :: Map FUM.Login FUMUser
-        fs'  = toMapOf (folded . to (toFUMUser enums). ifolded) fs
+        fs'  = toMapOf (folded . getter (toFUMUser enums). ifolded) fs
         pms' :: Map FUM.Login PlanmillUser
-        pms' = toMapOf (folded . to (toPMUser enums) . ifolded) pms
+        pms' = toMapOf (folded . getter (toPMUser enums) . ifolded) pms
 
     metric :: These FUMUser PlanmillUser -> Int
     -- in fum and pm, but inactive in PM

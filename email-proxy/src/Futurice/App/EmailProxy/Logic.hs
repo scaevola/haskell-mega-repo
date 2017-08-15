@@ -8,8 +8,6 @@ import Futurice.App.EmailProxy.Config
 import Futurice.App.EmailProxy.Ctx
 import Futurice.App.EmailProxy.Types
 
-import Control.Lens (to)
-
 import qualified Data.ByteString.Base64 as B64
 import           Data.Digest.Pure.SHA
 import qualified Data.List.NonEmpty     as NE
@@ -53,7 +51,7 @@ sendSES ctx req = do
             & H.urlEncodedBody
                  [ ("Action", "SendEmail")
                  , ("Source", encodeUtf8 $ req ^. reqFrom)
-                 , ("Destination.ToAddresses.member.1", encodeUtf8 $ req ^. reqTo . to NE.head)
+                 , ("Destination.ToAddresses.member.1", encodeUtf8 $ req ^. reqTo . getter NE.head)
                  , ("Message.Subject.Data", encodeUtf8 $ req ^. reqSubject)
                  , ("Message.Body.Text.Data", encodeUtf8 $ req ^. reqBody)
                  ]
@@ -75,6 +73,6 @@ sendSES ctx req = do
 
 sendEmail :: (MonadIO m, MonadLog m) => Ctx -> Req -> m Res
 sendEmail ctx req = do
-    logInfo_ $ "Sending Email to: " <> req ^. reqTo . to NE.head
+    logInfo_ $ "Sending Email to: " <> req ^. reqTo . getter NE.head
     r <- sendSES ctx req
     pure $ r

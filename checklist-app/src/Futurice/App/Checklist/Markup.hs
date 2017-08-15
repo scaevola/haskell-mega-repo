@@ -45,7 +45,7 @@ module Futurice.App.Checklist.Markup (
     defaultShowAll,
     ) where
 
-import Control.Lens        (Getter, has, non, re, to, _Wrapped)
+import Control.Lens        (has, non, re, _Wrapped)
 import Futurice.Prelude
 import Prelude ()
 import Servant.Utils.Links (Link, safeLink)
@@ -132,7 +132,7 @@ nameText :: HasName a => Getter a Text
 nameText = name . _Wrapped
 
 nameHtml :: (HasName a, Monad m) => Getter a (HtmlT m ())
-nameHtml = nameText . to toHtml
+nameHtml = nameText . getter toHtml
 
 -------------------------------------------------------------------------------
 -- Hrefs
@@ -294,9 +294,9 @@ taskCheckbox_ world employee task = do
     megaid :: Text
     megaid =
         "task-checkbox-" <>
-        employee ^. identifier . uuid . to UUID.toText <>
+        employee ^. identifier . uuid . getter UUID.toText <>
         "_" <>
-        task ^. identifier . uuid . to UUID.toText
+        task ^. identifier . uuid . getter UUID.toText
 
 taskCommentInput_ :: Monad m => World -> Employee -> Task -> HtmlT m ()
 taskCommentInput_ world employee task

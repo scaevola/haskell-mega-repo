@@ -6,7 +6,7 @@ module Futurice.App.Checklist.Pages.Index (indexPage) where
 import Prelude ()
 import Futurice.Prelude
 import Control.Lens
-       (filtered, has, hasn't, ifoldMapOf, only, re, to, united)
+       (filtered, has, hasn't, ifoldMapOf, only, re, united)
 import Data.Time                 (addDays, diffDays)
 import Futurice.Lucid.Foundation
 
@@ -70,7 +70,7 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showDone showO
                     option_ [ value_ "" ] $ "Show all"
                     for_ (world ^.. worldLists . folded) $ \cl ->
                         optionSelected_ (Just cl == mlist)
-                            [ value_ $ cl ^. identifier . to identifierToText ]
+                            [ value_ $ cl ^. identifier . getter identifierToText ]
                             $ cl ^. nameHtml
             largemed_ 4 $ label_ $ do
                 "Task"
@@ -79,7 +79,7 @@ indexPage world today authUser@(_fu, viewerRole) mloc mlist mtask showDone showO
                     for_ (world ^.. worldTasksSortedByName . folded) $ \task ->
                         when (taskInChecklist task mlist) $
                             optionSelected_ (mtask ^? _Just . identifier == Just (task ^. identifier))
-                                [ value_ $ task ^. identifier . to identifierToText ] $ do
+                                [ value_ $ task ^. identifier . getter identifierToText ] $ do
                                     task ^. nameHtml
                                     " "
                                     countEmployeesWithTask world task employees2

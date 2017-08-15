@@ -5,7 +5,6 @@ module Futurice.App.Checklist.Pages.Report (reportPage) where
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens              (to)
 import Futurice.Lucid.Foundation
 import Web.HttpApiData           (toQueryParam)
 
@@ -41,7 +40,7 @@ reportPage world authUser mcid fday tday = checklistPage_ "Employees" authUser $
                 for_ (world ^.. worldLists . folded) $ \cl -> do
                     let cid = cl ^. identifier
                     optionSelected_ (Just cid == mcid)
-                        [ value_ $ cid ^. to identifierToText ]
+                        [ value_ $ cid ^. getter identifierToText ]
                         $ cl ^. nameHtml
         largemed_ 3 $ label_ $ do
             "Starting after"

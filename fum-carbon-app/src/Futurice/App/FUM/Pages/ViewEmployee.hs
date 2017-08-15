@@ -3,7 +3,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.FUM.Pages.ViewEmployee (viewEmployeePage) where
 
-import Control.Lens (to)
 import Futurice.Prelude
 import Futurice.IdMap (IdMap)
 import Prelude ()
@@ -21,7 +20,7 @@ viewEmployeePage
     -> HtmlPage "view-employee"
 viewEmployeePage auth _world personio e = fumPage_ "Employee" auth $ do
     -- Title
-    fumHeader_ "Employee" [e ^? employeeLogin . to loginToText ]
+    fumHeader_ "Employee" [e ^? employeeLogin . getter loginToText ]
 
     fullRow_ "PICTURE TODO"
 

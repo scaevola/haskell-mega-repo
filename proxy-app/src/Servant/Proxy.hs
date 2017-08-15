@@ -21,7 +21,6 @@ module Servant.Proxy (
 
 import Prelude ()
 import Futurice.Prelude
-import Control.Lens               (LensLike')
 import Servant
 import Servant.Client
 

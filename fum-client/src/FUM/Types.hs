@@ -11,7 +11,6 @@ module FUM.Types (
     module FUM.Types.GroupName,
     ) where
 
-import Control.Lens        (Getter, to)
 import Data.Aeson.Compat
 import FUM.Types.GroupName
 import FUM.Types.Login
@@ -198,7 +197,7 @@ instance FromJSON User where
         <*> v .:?? "hr_number"
 
 userFullName :: Getter User Text
-userFullName = to $ \u -> u ^. userFirst <> " " <> u ^. userLast
+userFullName = getter $ \u -> u ^. userFirst <> " " <> u ^. userLast
 
 -------------------------------------------------------------------------------
 -- Group

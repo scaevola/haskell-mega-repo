@@ -9,7 +9,6 @@
 -- | Basic types
 module Futurice.App.Checklist.Types.Basic where
 
-import Control.Lens       (Getter, to)
 import Futurice.Arbitrary (arbitraryAdjective, arbitraryNoun, arbitraryVerb)
 import Futurice.Generics
 import Futurice.Graph     (IsNode (..))
@@ -154,9 +153,9 @@ class    HasName a         where name :: Getter a (Name a)
 instance HasName Task      where name = taskName
 instance HasName Checklist where name = checklistName
 instance HasName Employee  where
-    name = to impl
+    name = getter impl
       where
-        impl e= Name $ _employeeFirstName e <> " " <> _employeeLastName e
+        impl e = Name $ _employeeFirstName e <> " " <> _employeeLastName e
 
 class ArbitraryName a where
     arbitraryName :: QC.Gen (Name a)
