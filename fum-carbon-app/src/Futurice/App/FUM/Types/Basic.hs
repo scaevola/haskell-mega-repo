@@ -13,11 +13,12 @@ module Futurice.App.FUM.Types.Basic (
     module Futurice.App.FUM.Types.Basic,
     ) where
 
-import Futurice.IdMap   (HasKey (..))
+import FUM.Types.GroupName
+import FUM.Types.Login
+import Futurice.IdMap            (HasKey (..))
+import Futurice.Lucid.Foundation (ToHtml (..))
 import Futurice.Prelude
 import Prelude ()
-import FUM.Types.Login
-import FUM.Types.GroupName
 
 import Futurice.App.FUM.Types.Identifier
 import Futurice.App.FUM.Types.Status
@@ -34,12 +35,16 @@ type RawEmail = Text
 type Picture = Text
 
 data GroupType
-    = GroupTypeNormal
+    = GroupTypeAccess
     | GroupTypeProject
     | GroupTypeServer
   deriving (Eq, Ord, Show, Typeable, Generic, Enum, Bounded)
 
 instance NFData GroupType
+
+instance  ToHtml GroupType where
+    toHtmlRaw = toHtml
+    toHtml = toHtml . show
 
 -- | Employee: person
 --
@@ -54,7 +59,7 @@ data Employee = Employee
     , _employeeEmailAliases   :: ![Email]
     , _employeeSshKeys        :: ![SshKey]
     , _employeePicture        :: !(Maybe Picture)
-    , _employeePasswordExp    :: !UTCTime          -- ^ password expiration date, does LDAP expires? 
+    , _employeePasswordExp    :: !UTCTime          -- ^ password expiration date, does LDAP expires?
 --    , _employeePassword :: FORMAT?       -- ^ will make LDAP server easy, SHA-512
     }
   deriving (Eq, Ord, Show, Typeable, Generic)

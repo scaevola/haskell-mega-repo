@@ -96,6 +96,7 @@ library
       Futurice.App.FUM.Pages.Href
       Futurice.App.FUM.Pages.Index
       Futurice.App.FUM.Pages.ListEmployees
+      Futurice.App.FUM.Pages.ListGroups
       Futurice.App.FUM.Pages.Server
       Futurice.App.FUM.Pages.ViewEmployee
       Futurice.App.FUM.Report.Validation

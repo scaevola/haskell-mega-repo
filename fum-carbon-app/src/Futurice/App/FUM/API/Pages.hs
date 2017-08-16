@@ -18,6 +18,8 @@ type FumCarbonPagesApi = IndexPageEndpoint
     :<|> ListEmployeesPageEndpoint
     :<|> ViewEmployeePageEndpoint
     :<|> CreateEmployeePageEndpoint
+    -- Groups
+    :<|> ListGroupsPageEndpoint
 
 fumCarbonPagesApi :: Proxy FumCarbonPagesApi
 fumCarbonPagesApi = Proxy
@@ -62,3 +64,15 @@ type ViewEmployeePageEndpoint =
 
 viewEmployeePageEndpoint :: Proxy ViewEmployeePageEndpoint
 viewEmployeePageEndpoint = Proxy
+
+-------------------------------------------------------------------------------
+-- Groups
+-------------------------------------------------------------------------------
+
+type ListGroupsPageEndpoint =
+    "groups" :>
+    SSOUser :>
+    Get '[HTML] (HtmlPage "list-groups")
+
+listGroupsPageEndpoint :: Proxy ListGroupsPageEndpoint
+listGroupsPageEndpoint = Proxy

@@ -12,6 +12,7 @@ import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Pages.CreateEmployee
 import Futurice.App.FUM.Pages.Index
 import Futurice.App.FUM.Pages.ListEmployees
+import Futurice.App.FUM.Pages.ListGroups
 import Futurice.App.FUM.Pages.ViewEmployee
 import Futurice.App.FUM.Types
 
@@ -26,6 +27,7 @@ pagesServer ctx = indexPageImpl ctx
     :<|> listEmployeesPageImpl ctx
     :<|> viewEmployeePageImpl ctx
     :<|> createEmployeePageImpl ctx
+    :<|> listGroupsPageImpl ctx
 
 -------------------------------------------------------------------------------
 -- Index
@@ -70,6 +72,17 @@ listEmployeesPageImpl
     -> Handler (HtmlPage "list-employees")
 listEmployeesPageImpl ctx mfu = withAuthUser ctx mfu $ \auth world _es ->
     pure $ listEmployeesPage auth world
+
+-------------------------------------------------------------------------------
+-- Groups
+-------------------------------------------------------------------------------
+
+listGroupsPageImpl
+    :: Ctx
+    -> Maybe Login
+    -> Handler (HtmlPage "list-groups")
+listGroupsPageImpl ctx mfu = withAuthUser ctx mfu $ \auth world _es ->
+    pure $ listGroupsPage auth world
 
 -------------------------------------------------------------------------------
 -- Auth

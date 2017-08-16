@@ -51,7 +51,7 @@ navigation (login, _) = div_ [ class_ "top-bar" ] $ do
                 " - beta"
         li_ $ a_ [ id_ "futu-reload-indicator", href_ "#", style_ "display: none", title_ "You made changes, refresh page to show" ]  "1"
         li_ $ a_ [ listEmployeesHref_ ] "Employees"
-        li_ $ a_ [ href_ "#" ] "Groups"
+        li_ $ a_ [ listGroupsHref_ ] "Groups"
         li_ $ a_ [ href_ "#" ] "Mailboxes"
         li_ $ a_ [ href_ "#" ] "Customers"
     div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $

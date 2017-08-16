@@ -45,6 +45,14 @@ viewEmployeeHrefText login = linkToText $ safeLink fumCarbonPagesApi
     login
 
 -------------------------------------------------------------------------------
+-- Groups
+-------------------------------------------------------------------------------
+
+listGroupsHref_ :: Attribute
+listGroupsHref_ = href_ $ linkToText $ safeLink fumCarbonPagesApi
+    listGroupsPageEndpoint
+
+-------------------------------------------------------------------------------
 -- Internals
 -------------------------------------------------------------------------------
 
