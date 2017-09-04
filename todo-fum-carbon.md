@@ -22,7 +22,7 @@
 
 - 1:2:4 Views
 - 1:1:3 Special groups
-- 1:1:2 CreateGroup command
+- ~1:1:2 CreateGroup command~
 - 1:1:2 EditGroup command
 - 1:1:2 AddEmployeeToGroup
 - 2:3:4 group edititng acl
@@ -55,3 +55,7 @@
 
 - ~1:2:2 Transactor thread~
 - 1:2:2 Persistence
+
+# Personio -> PlanMill
+
+- 10:15:20 Raw estimate
