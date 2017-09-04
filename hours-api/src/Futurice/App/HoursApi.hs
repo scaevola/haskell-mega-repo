@@ -8,12 +8,12 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.HoursApi (defaultMain) where
 
-import Control.Concurrent.STM  (newTVarIO, readTVarIO)
+import Control.Concurrent.STM (newTVarIO, readTVarIO)
 import Futurice.Integrations
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
-import Network.HTTP.Client     (managerConnCount)
+import Network.HTTP.Client    (managerConnCount)
 import Prelude ()
 import Servant
 
@@ -23,10 +23,10 @@ import Futurice.App.HoursApi.Ctx
 import Futurice.App.HoursApi.Logic
        (entryDeleteEndpoint, entryEditEndpoint, entryEndpoint, hoursEndpoint,
        projectEndpoint, userEndpoint)
-import Futurice.App.HoursApi.Monad (Hours, runHours)
+import Futurice.App.HoursApi.Monad  (Hours, runHours)
 
-import qualified PlanMill.Worker     as PM
 import qualified FUM
+import qualified PlanMill.Worker as PM
 
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours api"
@@ -45,8 +45,14 @@ authorisedUser
 authorisedUser ctx mfum action =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
         pmData <- liftIO $ readTVarIO $ ctxFumPlanmillMap ctx
-        (fumUser, pmUser) <- maybe (throwError err403) pure $ pmData ^. at fumUsername
+        (fumUser, pmUser) <- maybe (unauthorised fumUsername) pure $ pmData ^. at fumUsername
         runHours ctx pmUser (fromMaybe "" $ fumUser ^. FUM.userThumbUrl . lazy) action
+  where
+    unauthorised :: FUM.Login -> Handler a
+    unauthorised login = do
+        runLogT "auth" (ctxLogger ctx) $
+            logAttention ("Unauthorised user " <> FUM.loginToText login) login
+        throwError err403
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig

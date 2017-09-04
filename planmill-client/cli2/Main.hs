@@ -48,6 +48,7 @@ data Cmd
     | CmdUser PM.UserId
     | CmdUserMany PM.UserId Int
     | CmdTimereports PM.UserId (PM.Interval Day)
+    | CmdTimereport PM.TimereportId
     | CmdReportableAssignments PM.UserId
     | CmdTask PM.TaskId
     | CmdMeta Text
@@ -173,6 +174,9 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
             else x ^.. taking 10 traverse
     CmdTask tid -> do
         x <- PM.planmillAction $ PM.task tid
+        putPretty x
+    CmdTimereport trid -> do
+        x <- PM.planmillAction $ PM.timereport trid
         putPretty x
     CmdMeta path  -> do
         x <- PM.planmillAction $ PM.planMillGet path
