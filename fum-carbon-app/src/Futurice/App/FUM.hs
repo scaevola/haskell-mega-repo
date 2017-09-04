@@ -48,6 +48,7 @@ cmdServer ctx mlogin (LomakeRequest cmdInput) = runLogT "command" (ctxLogger ctx
 
 commandServer :: Ctx -> Server FumCarbonCommandApi
 commandServer ctx = cmdServer ctx
+    :<|> cmdServer ctx
 
 server :: Ctx -> Server FumCarbonApi
 server ctx = pagesServer ctx

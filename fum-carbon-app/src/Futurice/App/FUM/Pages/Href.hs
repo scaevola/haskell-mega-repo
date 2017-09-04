@@ -4,12 +4,13 @@ module Futurice.App.FUM.Pages.Href (
     module Futurice.App.FUM.Pages.Href,
     ) where
 
+import FUM.Types.GroupName       (GroupName)
+import FUM.Types.Login           (Login)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Prelude ()
 import Servant.Utils.Links       (Link, safeLink)
 import Web.HttpApiData           (toUrlPiece)
-import FUM.Types.Login           (Login)
 
 import Futurice.App.FUM.API.Pages
 
@@ -31,11 +32,6 @@ listEmployeesHref_ :: Attribute
 listEmployeesHref_ = href_ $ linkToText $ safeLink fumCarbonPagesApi
     listEmployeesPageEndpoint
 
-createEmployeeHref_ :: Personio.EmployeeId -> Attribute
-createEmployeeHref_ eid = href_ $ linkToText $ safeLink fumCarbonPagesApi
-    createEmployeePageEndpoint
-    eid
-
 viewEmployeeHref_ :: Login -> Attribute
 viewEmployeeHref_ = href_ . viewEmployeeHrefText
 
@@ -43,6 +39,31 @@ viewEmployeeHrefText :: Login -> Text
 viewEmployeeHrefText login = linkToText $ safeLink fumCarbonPagesApi
     viewEmployeePageEndpoint
     login
+
+createEmployeeHref_ :: Personio.EmployeeId -> Attribute
+createEmployeeHref_ eid = href_ $ linkToText $ safeLink fumCarbonPagesApi
+    createEmployeePageEndpoint
+    eid
+
+-------------------------------------------------------------------------------
+-- Groups
+-------------------------------------------------------------------------------
+
+listGroupsHref_ :: Attribute
+listGroupsHref_ = href_ $ linkToText $ safeLink fumCarbonPagesApi
+    listGroupsPageEndpoint
+
+viewGroupHref_ :: GroupName -> Attribute
+viewGroupHref_ = href_ . viewGroupHrefText
+
+viewGroupHrefText :: GroupName -> Text
+viewGroupHrefText gn = linkToText $ safeLink fumCarbonPagesApi
+    viewGroupPageEndpoint
+    gn
+
+createGroupHref_ :: Attribute
+createGroupHref_ = href_ $ linkToText $ safeLink fumCarbonPagesApi
+    createGroupPageEndpoint
 
 -------------------------------------------------------------------------------
 -- Internals
