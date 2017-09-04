@@ -64,7 +64,7 @@ instance FromJSON Timereport where
     parseJSON = withObject "Timereport" $ \obj -> Timereport
         <$> obj .: "id"
         <*> obj .: "task"
-        <*> obj .: "amount"
+        <*> obj .:? "amount" .!= 0  -- sometimes amount can be Null :/
         <*> obj .: "billableStatus"
         <*> obj .:? "billingComment"
         <*> (getParsedAsText <$$> obj .:? "comment")
