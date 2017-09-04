@@ -1,10 +1,11 @@
-{-# LANGUAGE DataKinds      #-}
-{-# LANGUAGE TypeOperators  #-}
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeOperators #-}
 module Futurice.App.FUM.API.Pages where
 
 import Futurice.Prelude
 import Prelude ()
 
+import FUM.Types.GroupName       (GroupName)
 import FUM.Types.Login           (Login)
 import Futurice.Lucid.Foundation (HtmlPage)
 import Futurice.Servant          (SSOUser)
@@ -20,6 +21,8 @@ type FumCarbonPagesApi = IndexPageEndpoint
     :<|> CreateEmployeePageEndpoint
     -- Groups
     :<|> ListGroupsPageEndpoint
+    :<|> ViewGroupPageEndpoint
+    :<|> CreateGroupPageEndpoint
 
 fumCarbonPagesApi :: Proxy FumCarbonPagesApi
 fumCarbonPagesApi = Proxy
@@ -39,15 +42,6 @@ indexPageEndpoint = Proxy
 -- Employee
 -------------------------------------------------------------------------------
 
-type CreateEmployeePageEndpoint =
-    "employees" :> "create" :>
-    SSOUser :>
-    Capture "personio-id" Personio.EmployeeId :>
-    Get '[HTML] (HtmlPage "create-employee")
-
-createEmployeePageEndpoint :: Proxy CreateEmployeePageEndpoint
-createEmployeePageEndpoint = Proxy
-
 type ListEmployeesPageEndpoint =
     "employees" :>
     SSOUser :>
@@ -65,6 +59,15 @@ type ViewEmployeePageEndpoint =
 viewEmployeePageEndpoint :: Proxy ViewEmployeePageEndpoint
 viewEmployeePageEndpoint = Proxy
 
+type CreateEmployeePageEndpoint =
+    "employees" :> "create" :>
+    SSOUser :>
+    Capture "personio-id" Personio.EmployeeId :>
+    Get '[HTML] (HtmlPage "create-employee")
+
+createEmployeePageEndpoint :: Proxy CreateEmployeePageEndpoint
+createEmployeePageEndpoint = Proxy
+
 -------------------------------------------------------------------------------
 -- Groups
 -------------------------------------------------------------------------------
@@ -76,3 +79,20 @@ type ListGroupsPageEndpoint =
 
 listGroupsPageEndpoint :: Proxy ListGroupsPageEndpoint
 listGroupsPageEndpoint = Proxy
+
+type ViewGroupPageEndpoint =
+    "group" :>
+    SSOUser :>
+    Capture "group-name" GroupName :>
+    Get '[HTML] (HtmlPage "view-group")
+
+viewGroupPageEndpoint :: Proxy ViewGroupPageEndpoint
+viewGroupPageEndpoint = Proxy
+
+type CreateGroupPageEndpoint =
+    "groups" :> "create" :>
+    SSOUser :>
+    Get '[HTML] (HtmlPage "create-group")
+
+createGroupPageEndpoint :: Proxy CreateGroupPageEndpoint
+createGroupPageEndpoint = Proxy
