@@ -27,6 +27,7 @@ type FumCarbonApi = FumCarbonPagesApi
 
 type FumCarbonCommandApi =
     CommandEndpoint CreateEmployee
+    :<|> CommandEndpoint CreateGroup
 
 type FumCarbonMachineApi =
     "personio-request" :> ReqBody '[JSON] Personio.SomePersonioReq :> Post '[JSON] Personio.SomePersonioRes

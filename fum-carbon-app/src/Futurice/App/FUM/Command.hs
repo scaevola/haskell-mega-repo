@@ -7,11 +7,13 @@ module Futurice.App.FUM.Command (
     withSomeCommand,
     module Futurice.App.FUM.Command.Definition,
     module Futurice.App.FUM.Command.CreateEmployee,
+    module Futurice.App.FUM.Command.CreateGroup,
     ) where
 
 import Prelude ()
 
 import Futurice.App.FUM.Command.CreateEmployee
+import Futurice.App.FUM.Command.CreateGroup
 import Futurice.App.FUM.Command.Definition
 
 -- | Existential command, union of all commands.

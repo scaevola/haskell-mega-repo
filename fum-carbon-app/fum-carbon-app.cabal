@@ -33,6 +33,7 @@ library
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , cassava
     , Chart
     , clay
     , constraints
@@ -86,6 +87,7 @@ library
       Futurice.App.FUM.Clay
       Futurice.App.FUM.Command
       Futurice.App.FUM.Command.CreateEmployee
+      Futurice.App.FUM.Command.CreateGroup
       Futurice.App.FUM.Command.Definition
       Futurice.App.FUM.Config
       Futurice.App.FUM.Ctx
@@ -105,6 +107,7 @@ library
       Futurice.App.FUM.Transactor
       Futurice.App.FUM.Types
       Futurice.App.FUM.Types.Basic
+      Futurice.App.FUM.Types.GroupType
       Futurice.App.FUM.Types.Identifier
       Futurice.App.FUM.Types.Status
       Futurice.App.FUM.Types.World
@@ -124,6 +127,7 @@ executable fum-carbon-server
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , cassava
     , Chart
     , clay
     , constraints
@@ -185,6 +189,7 @@ test-suite unit-tests
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , cassava
     , Chart
     , clay
     , constraints

@@ -15,11 +15,11 @@ module Futurice.App.FUM.Types.Basic (
 
 import FUM.Types.GroupName
 import FUM.Types.Login
-import Futurice.IdMap            (HasKey (..))
-import Futurice.Lucid.Foundation (ToHtml (..))
+import Futurice.IdMap      (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
 
+import Futurice.App.FUM.Types.GroupType
 import Futurice.App.FUM.Types.Identifier
 import Futurice.App.FUM.Types.Status
 
@@ -33,18 +33,6 @@ type Email = Text
 type RawEmail = Text
 -- | We always have /some/ picture of the employee.
 type Picture = Text
-
-data GroupType
-    = GroupTypeAccess
-    | GroupTypeProject
-    | GroupTypeServer
-  deriving (Eq, Ord, Show, Typeable, Generic, Enum, Bounded)
-
-instance NFData GroupType
-
-instance  ToHtml GroupType where
-    toHtmlRaw = toHtml
-    toHtml = toHtml . show
 
 -- | Employee: person
 --

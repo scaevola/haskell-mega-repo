@@ -19,7 +19,7 @@ listGroupsPage auth world = fumPage_ "Groups" auth $ do
     fumHeader_ "Groups" []
 
     fullRow_ $
-        futuLinkButton_ (href_ "#") "Create group"
+        futuLinkButton_ createGroupHref_ "Create group"
 
     when (hasn't (worldGroups . folded) world) $
         row_ $ large_ 12 [ class_ "callout warning" ] $

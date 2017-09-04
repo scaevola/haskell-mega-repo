@@ -18,6 +18,7 @@ dependencies:
   - ansi-pretty
   - ansi-wl-pprint
   - async
+  - cassava
   - Chart
   - clay
   - constraints
