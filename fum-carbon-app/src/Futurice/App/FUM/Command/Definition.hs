@@ -13,12 +13,12 @@ module Futurice.App.FUM.Command.Definition (
     module Futurice.App.FUM.Command.Definition,
     ) where
 
-import Control.Monad.State.Strict (StateT)
 import Futurice.Generics
 import Futurice.Lomake
 import Futurice.Lucid.Foundation  (HtmlT)
 import Futurice.Prelude
 import Futurice.Servant           (SSOUser)
+import Futurice.Stricter (StricterT)
 import GHC.TypeLits               (KnownSymbol, Symbol, symbolVal)
 import Prelude ()
 import Servant.API
@@ -70,7 +70,7 @@ class
         :: UTCTime        -- ^ now
         -> Login          -- ^ submitter of the command
         -> cmd 'Internal  -- ^ command
-        -> StateT World (Either String) LomakeResponse
+        -> StricterT World (Either String) LomakeResponse
 
 type CommandEndpoint (cmd :: Phase -> *) = CommandTag cmd
     :> SSOUser

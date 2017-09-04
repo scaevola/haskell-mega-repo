@@ -1,14 +1,15 @@
 module Futurice.App.FUM.Transactor where
 
-import Futurice.Prelude
-import Prelude ()
-import Control.Concurrent.STM (atomically, readTVar, writeTVar, writeTChan)
 import Control.Concurrent.MVar.Lifted (withMVar)
-import Control.Monad.State.Strict (runStateT)
+import Control.Concurrent.STM
+       (atomically, readTVar, writeTChan, writeTVar)
+import Futurice.Prelude
+import Futurice.Stricter              (runStricterT)
+import Prelude ()
 
+import Futurice.App.FUM.Command
 import Futurice.App.FUM.Ctx
 import Futurice.App.FUM.Types
-import Futurice.App.FUM.Command
 
 -- | Write command to 'ctxCommandChananel', and wait for the reply.
 --
@@ -25,7 +26,7 @@ transact ctx now login scmd =
     withMVar (ctxTransactorMVar ctx) $ \_  -> do
         -- logTrace ("command " <> commandTag (Proxy :: Proxy cmd)) cmd
         world <- liftIO $ atomically $ readTVar (ctxWorld ctx)
-        case runStateT (applyCommand now login cmd) world of
+        case runStricterT (applyCommand now login cmd) world of
             Right (res, world') -> do
                 -- TODO: persist
                 liftIO $ atomically $ do
