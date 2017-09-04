@@ -1,12 +1,12 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE KindSignatures    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.FUM.Command.CreateGroup where
 
--- import Control.Lens      (preuse)
--- import Data.Maybe        (isJust)
+import Data.Maybe        (isJust)
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
@@ -14,6 +14,8 @@ import Prelude ()
 import Futurice.App.FUM.Command.Definition
 import Futurice.App.FUM.Pages.Href
 import Futurice.App.FUM.Types
+
+import qualified Data.Set as Set
 
 data CreateGroup (phase :: Phase) = CreateGroup
     { cgName :: !GroupName
@@ -41,12 +43,29 @@ instance phase ~ 'Internal => FromJSON (CreateGroup phase) where
 instance Command CreateGroup where
     type CommandTag CreateGroup = "create-group"
 
-    -- TODO: check that group name is unique
-    internalizeCommand _now _login cmd = pure $ coerce cmd
+    internalizeCommand _now _login cmd = do
+        validate cmd
+        pure $ coerce cmd
 
-    -- TODO:
-    applyCommand _now _login cmd = do
-        let name = cgName cmd 
-        -- TODO: check that group name is unique
+    applyCommand _now login cmd = do
+        validate cmd
 
-        pure $ LomakeResponseRedirect $ viewGroupHrefText name
+        let name = cgName cmd
+        worldGroups . at name ?= Group
+            { _groupName         = name
+            , _groupType         = cgType cmd
+            , _groupDescription  = "" -- TODO
+            , _groupEmailAliases = []
+            , _groupEditor       = mempty
+            , _groupEmployees    = Set.singleton login  -- creator is in the group
+            , _groupCustomers    = mempty
+            }
+
+        pure $ LomakeResponseRedirect $ viewGroupHrefText $ name
+
+-- TODO: move validate to the 'Command' class
+validate :: (MonadReader World m, MonadError String m) => CreateGroup phase -> m ()
+validate cmd = do
+    let name = cgName cmd
+    whenM (fmap isJust $ preview $ worldGroups . ix name) $
+        throwError $ "Group with name " ++ show (groupNameToText name) ++ " already exists"
