@@ -80,7 +80,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                 -}
                 -- Update timereports
                 , mkJob "update timereports" (updateAllTimereports ctx)
-                  $ shifted (5 * 60) $ every $ 45 * 60 -- TODO: see how often it should be run
+                  $ shifted (5 * 60) $ every $ 30 * 60 -- TODO: see how often it should be run
 
                 , mkJob "update without timereports" (updateWithoutTimereports ctx)
                   $ shifted (10 * 60) $ every $ 2 * 60 * 60
