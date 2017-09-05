@@ -91,7 +91,7 @@ fullRow_ = row_ . large_ 12
 -------------------------------------------------------------------------------
 
 table_ :: Term arg result => arg ->  result
-table_ = termWith "table" [ class_ "hover" ]
+table_ = termWith "table" [ class_ "hover " ]
 
 -- | Row in a vertical table.
 --
