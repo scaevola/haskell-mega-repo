@@ -23,7 +23,7 @@ library:
     - ScopedTypeVariables
   source-dirs: src
   dependencies:
-    - base               >=4.7     && <4.10
+    - base               >=4.7     && <4.11
     - aeson              >=0.11    && <1.3
     - base-compat        >=0.9.1   && <0.10
     - bytestring         >=0.10.4  && <0.11
