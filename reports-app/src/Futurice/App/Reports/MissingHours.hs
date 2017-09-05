@@ -112,6 +112,9 @@ instance ToHtml MissingHoursParams where
         dd_ "Interval"
         dt_ $ toHtmlRaw $ show _mhpFromDay <> " &mdash; " <> show _mhpToDay
 
+        dd_ "Note"
+        dt_ $ i_ "PlanMill data is updated at night around 03:00."
+
 -------------------------------------------------------------------------------
 -- Logic
 -------------------------------------------------------------------------------

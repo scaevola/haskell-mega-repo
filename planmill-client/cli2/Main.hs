@@ -131,6 +131,7 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
         putPretty x
     CmdUsers -> do
         x <- PM.planmillAction PM.users
+        putPretty $ "Result size: " <> textShow (length x)
         putPretty $ if optsShowAll opts
             then x ^.. folded
             else x ^.. taking 10 traverse

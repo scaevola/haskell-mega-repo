@@ -255,7 +255,7 @@ instance MonadHours Hours where
             { PM.ntrTask    = tr ^. newTimereportTaskId
             , PM.ntrStart   = tr ^. newTimereportDay
             , PM.ntrAmount  = fmap truncate $ ndtConvert $ tr ^. newTimereportAmount
-            , PM.ntrComment = tr ^. newTimereportComment
+            , PM.ntrComment = nonEmptyComment $ tr ^. newTimereportComment
             , PM.ntrUser    = pmUid
             }
 
@@ -268,7 +268,7 @@ instance MonadHours Hours where
             , PM.etrTask    = tr ^. newTimereportTaskId
             , PM.etrStart   = tr ^. newTimereportDay
             , PM.etrAmount  = fmap truncate $ ndtConvert $ tr ^. newTimereportAmount
-            , PM.etrComment = tr ^. newTimereportComment
+            , PM.etrComment = nonEmptyComment $ tr ^. newTimereportComment
             , PM.etrUser    = pmUid
             }
 
@@ -289,6 +289,10 @@ instance MonadHours Hours where
 -- Helpers
 -------------------------------------------------------------------------------
 
+nonEmptyComment :: Text -> Text
+nonEmptyComment ""   = "-"
+nonEmptyComment comm = comm
+
 convertTimereport :: PM.Timereport -> Hours Timereport
 convertTimereport tr = case PM.trProject tr of
     Just pid -> pure (makeTimereport pid tr)
@@ -307,12 +311,28 @@ makeTimereport pid tr = Timereport
     , _timereportType      = billableStatus (PM.trProject tr) (PM.trBillableStatus tr)
     }
 
--- TODO: we hard code the non-billable enumeration value.
--- TODO: absences should be EntryTypeOther, seems that Nothing projectId is the thing there.
+-- |
+--
+-- @pm-cli -- enumeration "Time report.Billable status"@
+--
+-- @
+-- IntMap [1 : Billable
+--        :3 : Non-billable
+--        :4 : In billing
+--        :5 : Draft invoice
+--        :6 : Invoiced]
+-- @
+--
+-- /TODO:/ we hard code enumeration values.
+--
+-- /TODO:/ absences should be EntryTypeAbsence
+-- seems that Nothing projectId is the thing there.
+--
 billableStatus :: Maybe PM.ProjectId -> Int -> T.EntryType
-billableStatus Nothing 3 = T.EntryTypeOther
+billableStatus Nothing 3 = T.EntryTypeAbsence
 billableStatus _ 3       = T.EntryTypeNotBillable
-billableStatus _ _       = T.EntryTypeBillable
+billableStatus _ 1       = T.EntryTypeBillable
+billableStatus _ _       = T.EntryTypeInBilling
 
 -- | Absences go into magic project.
 isAbsence :: PM.Project -> Bool

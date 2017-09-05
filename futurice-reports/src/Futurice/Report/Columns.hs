@@ -447,7 +447,9 @@ instance ToSchema ReportGenerated
 instance ToHtml ReportGenerated where
     toHtml r = do
         "Generated at "
-        toHtml . show . getReportGenerated $ r
+        toHtml . formatHumanHelsinkiTime . getReportGenerated $ r
+        hr_ []
+        i_ "Note: PlanMill data is updated at night around 03:00."
     toHtmlRaw = toHtml
 
 -------------------------------------------------------------------------------
