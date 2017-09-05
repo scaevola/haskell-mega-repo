@@ -72,7 +72,8 @@ data MarkedTask = MarkedTask
 data EntryType
     = EntryTypeBillable
     | EntryTypeNotBillable
-    | EntryTypeOther
+    | EntryTypeInBilling  -- ^ also "Draft invoice" and "invoiced"
+    | EntryTypeAbsence
   deriving (Eq, Ord, Show, Enum, Bounded, Typeable, Generic)
 
 -- Entries for a specific Day
@@ -92,8 +93,9 @@ entryUtilizationAvg :: Getter Entry (Maybe (Average Float))
 entryUtilizationAvg = getter $ \entry ->
     let NDT hours = _entryHours entry in case _entryBillable entry of
         EntryTypeBillable    -> Just $ Average (realToFrac hours) 100
+        EntryTypeInBilling   -> Just $ Average (realToFrac hours) 100
         EntryTypeNotBillable -> Just $ Average (realToFrac hours) 0
-        EntryTypeOther       -> Nothing
+        EntryTypeAbsence     -> Nothing
 
 -- TODO: perhaps a lens getter for an Entry?
 
@@ -282,7 +284,8 @@ instance Arbitrary EntryType where
 entryTypeText :: EntryType -> Text
 entryTypeText EntryTypeBillable    = "billable"
 entryTypeText EntryTypeNotBillable = "non-billable"
-entryTypeText EntryTypeOther       = "other"
+entryTypeText EntryTypeInBilling   = "in-billing"
+entryTypeText EntryTypeAbsence     = "absence"
 
 instance ToJSON EntryType where
     toJSON = String . entryTypeText

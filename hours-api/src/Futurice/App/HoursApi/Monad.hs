@@ -307,12 +307,28 @@ makeTimereport pid tr = Timereport
     , _timereportType      = billableStatus (PM.trProject tr) (PM.trBillableStatus tr)
     }
 
--- TODO: we hard code the non-billable enumeration value.
--- TODO: absences should be EntryTypeOther, seems that Nothing projectId is the thing there.
+-- |
+--
+-- @pm-cli -- enumeration "Time report.Billable status"@
+--
+-- @
+-- IntMap [1 : Billable
+--        :3 : Non-billable
+--        :4 : In billing
+--        :5 : Draft invoice
+--        :6 : Invoiced]
+-- @
+--
+-- /TODO:/ we hard code enumeration values.
+--
+-- /TODO:/ absences should be EntryTypeAbsence
+-- seems that Nothing projectId is the thing there.
+--
 billableStatus :: Maybe PM.ProjectId -> Int -> T.EntryType
-billableStatus Nothing 3 = T.EntryTypeOther
+billableStatus Nothing 3 = T.EntryTypeAbsence
 billableStatus _ 3       = T.EntryTypeNotBillable
-billableStatus _ _       = T.EntryTypeBillable
+billableStatus _ 1       = T.EntryTypeBillable
+billableStatus _ _       = T.EntryTypeInBilling
 
 -- | Absences go into magic project.
 isAbsence :: PM.Project -> Bool

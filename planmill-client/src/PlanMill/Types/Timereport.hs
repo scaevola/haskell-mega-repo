@@ -31,7 +31,7 @@ data Timereport = Timereport
     { _trId             :: !TimereportId
     , trTask            :: !TaskId
     , trAmount          :: !(NDT 'Minutes Int)
-    , trBillableStatus  :: !Int          -- TODO: make type
+    , trBillableStatus  :: !Int          -- TODO: make into enum
     , trBillingComment  :: !(Maybe Text)
     , trComment         :: !(Maybe Text)
     , trDutyType        :: !(Maybe Int)  -- TODO: make type, schema says it's mandatory
