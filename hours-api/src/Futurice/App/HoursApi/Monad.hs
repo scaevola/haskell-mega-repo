@@ -255,7 +255,7 @@ instance MonadHours Hours where
             { PM.ntrTask    = tr ^. newTimereportTaskId
             , PM.ntrStart   = tr ^. newTimereportDay
             , PM.ntrAmount  = fmap truncate $ ndtConvert $ tr ^. newTimereportAmount
-            , PM.ntrComment = tr ^. newTimereportComment
+            , PM.ntrComment = nonEmptyComment $ tr ^. newTimereportComment
             , PM.ntrUser    = pmUid
             }
 
@@ -268,7 +268,7 @@ instance MonadHours Hours where
             , PM.etrTask    = tr ^. newTimereportTaskId
             , PM.etrStart   = tr ^. newTimereportDay
             , PM.etrAmount  = fmap truncate $ ndtConvert $ tr ^. newTimereportAmount
-            , PM.etrComment = tr ^. newTimereportComment
+            , PM.etrComment = nonEmptyComment $ tr ^. newTimereportComment
             , PM.etrUser    = pmUid
             }
 
@@ -288,6 +288,10 @@ instance MonadHours Hours where
 -------------------------------------------------------------------------------
 -- Helpers
 -------------------------------------------------------------------------------
+
+nonEmptyComment :: Text -> Text
+nonEmptyComment ""   = "-"
+nonEmptyComment comm = comm
 
 convertTimereport :: PM.Timereport -> Hours Timereport
 convertTimereport tr = case PM.trProject tr of
