@@ -23,7 +23,7 @@ library:
     - ScopedTypeVariables
   source-dirs: src
   dependencies:
-    - base               >=4.7     && <4.10
+    - base               >=4.7     && <4.11
     - amazonka                 >= 1.4.5 && <1.5
     - amazonka-cloudwatch-logs >= 1.4.5 && <1.5
     - base-compat        >=0.9.1   && <0.10

@@ -21,7 +21,7 @@ flags:
 library:
   source-dirs: src
   dependencies:
-    - base                  >=4.7   && <4.10
+    - base                  >=4.7   && <4.11
     - base-compat
     - blaze-html
     - bytestring

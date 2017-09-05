@@ -23,7 +23,7 @@ library:
     - ScopedTypeVariables
   source-dirs: src
   dependencies:
-    - base                  >=4.7   && <4.10
+    - base                  >=4.7   && <4.11
     - ekg-core
     - focus
     - futurice-prelude

@@ -11,7 +11,7 @@ category: Web
 ghc-options: -Wall
 
 dependencies:
-  - base >= 4.7 && <4.10
+  - base >= 4.7 && <4.11
   - clay >= 0.11
   - env-config
   - JuicyPixels

@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.17.0.
+-- This file has been generated from package.yaml by hpack version 0.17.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -30,7 +30,7 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base >=4.7   && <4.10
+      base >=4.7   && <4.11
     , constraints
     , env-config
     , futurice-prelude
@@ -85,7 +85,7 @@ executable planmill-proxy-client
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall -threaded -rtsopts
   build-depends:
-      base >=4.7   && <4.10
+      base >=4.7   && <4.11
     , constraints
     , env-config
     , futurice-prelude
@@ -109,7 +109,7 @@ executable planmill-proxy-server
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall -threaded -rtsopts
   build-depends:
-      base >=4.7   && <4.10
+      base >=4.7   && <4.11
     , constraints
     , env-config
     , futurice-prelude
