@@ -24,6 +24,13 @@ indexPageHref_ :: Attribute
 indexPageHref_ = href_ $ linkToText $ safeLink fumCarbonPagesApi
     indexPageEndpoint
 
+fromPersonioHrefText :: Text 
+fromPersonioHrefText = linkToText $ safeLink fumCarbonPagesApi
+    fromPersonioPageEndpoint
+
+fromPersonioPageHref_ :: Attribute
+fromPersonioPageHref_ = href_ fromPersonioHrefText
+
 -------------------------------------------------------------------------------
 -- Employees
 -------------------------------------------------------------------------------

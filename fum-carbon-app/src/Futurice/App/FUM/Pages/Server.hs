@@ -11,6 +11,7 @@ import Futurice.App.FUM.Ctx
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Pages.CreateEmployee
 import Futurice.App.FUM.Pages.CreateGroup
+import Futurice.App.FUM.Pages.FromPersonio
 import Futurice.App.FUM.Pages.Index
 import Futurice.App.FUM.Pages.ListEmployees
 import Futurice.App.FUM.Pages.ListGroups
@@ -26,6 +27,7 @@ import Futurice.App.FUM.Pages.Error
 
 pagesServer :: Ctx -> Server FumCarbonPagesApi
 pagesServer ctx = indexPageImpl ctx
+    :<|> fromPersonioPageImpl ctx
     :<|> listEmployeesPageImpl ctx
     :<|> viewEmployeePageImpl ctx
     :<|> createEmployeePageImpl ctx
@@ -44,6 +46,14 @@ indexPageImpl
     -> Handler (HtmlPage "indexpage")
 indexPageImpl ctx mfu = withAuthUser ctx mfu $ \auth world es ->
     pure $ indexPage auth world es
+
+-- TODO: acl
+fromPersonioPageImpl
+    :: Ctx
+    -> Maybe Login
+    -> Handler (HtmlPage "from-personio")
+fromPersonioPageImpl ctx mfu = withAuthUser ctx mfu $ \auth world es ->
+    pure $ fromPersonioPage auth world es
 
 -------------------------------------------------------------------------------
 -- Employees

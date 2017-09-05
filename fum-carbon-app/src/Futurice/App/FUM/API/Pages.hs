@@ -15,6 +15,7 @@ import Servant.HTML.Lucid        (HTML)
 import qualified Personio
 
 type FumCarbonPagesApi = IndexPageEndpoint
+    :<|> FromPersonioPageEndpoint
     -- Employees
     :<|> ListEmployeesPageEndpoint
     :<|> ViewEmployeePageEndpoint
@@ -37,6 +38,14 @@ type IndexPageEndpoint =
 
 indexPageEndpoint :: Proxy IndexPageEndpoint
 indexPageEndpoint = Proxy
+
+type FromPersonioPageEndpoint =
+    "from-personio" :>
+    SSOUser :>
+    Get '[HTML] (HtmlPage "from-personio")
+
+fromPersonioPageEndpoint :: Proxy FromPersonioPageEndpoint
+fromPersonioPageEndpoint = Proxy
 
 -------------------------------------------------------------------------------
 -- Employee

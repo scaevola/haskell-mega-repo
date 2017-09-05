@@ -18,6 +18,10 @@ listEmployeesPage auth world = fumPage_ "Employees" auth $ do
     -- Title
     fumHeader_ "Employees" []
 
+    -- TODO: if IT
+    fullRow_ $
+        futuLinkButton_ fromPersonioPageHref_ "Create employee"
+
     when (hasn't (worldEmployees . folded) world) $
         row_ $ large_ 12 [ class_ "callout warning" ] $
             em_ "No employees"

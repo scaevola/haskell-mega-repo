@@ -96,6 +96,7 @@ library
       Futurice.App.FUM.Pages.CreateEmployee
       Futurice.App.FUM.Pages.CreateGroup
       Futurice.App.FUM.Pages.Error
+      Futurice.App.FUM.Pages.FromPersonio
       Futurice.App.FUM.Pages.Href
       Futurice.App.FUM.Pages.Index
       Futurice.App.FUM.Pages.ListEmployees
