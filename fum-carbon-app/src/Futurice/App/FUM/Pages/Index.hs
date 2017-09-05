@@ -3,9 +3,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.FUM.Pages.Index (indexPage) where
 
-import Prelude ()
+import Futurice.IdMap   (IdMap)
 import Futurice.Prelude
-import Futurice.IdMap (IdMap)
+import Prelude ()
 
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Types
@@ -20,12 +20,8 @@ indexPage
 indexPage auth _world _es = fumPage_ "FUM" auth $ do
     fumHeader_ "FUM" []
 
-    fullRow_ $ 
-        i_ "TBD"
+    when (hasITRights auth) $ do
+        subheader_ "IT Tasks"
 
-    subheader_ "Management"
-
-    -- TODO: it
-    fullRow_ $
-        futuLinkButton_ fromPersonioPageHref_ "Create employee"
-
+        fullRow_ $
+            futuLinkButton_ fromPersonioPageHref_ "Create employee"

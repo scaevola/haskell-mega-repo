@@ -41,6 +41,8 @@
 
 # Technicals
 
+- ~1:1:1 Bootstrap~
+
 ## Event stream
 
 - ~2:2:4 Provide internal way to process events. Needed for incremental~
@@ -58,4 +60,5 @@
 
 # Personio -> PlanMill
 
+- 2:3:4 GitHub prototype
 - 10:15:20 Raw estimate

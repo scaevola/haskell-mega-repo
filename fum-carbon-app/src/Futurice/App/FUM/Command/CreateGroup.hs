@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
-module Futurice.App.FUM.Command.CreateGroup where
+module Futurice.App.FUM.Command.CreateGroup (CreateGroup (..)) where
 
 import Data.Maybe        (isJust)
 import Futurice.Generics
@@ -23,7 +23,6 @@ data CreateGroup (phase :: Phase) = CreateGroup
     }
   deriving (Show, Typeable, Generic)
 
-makeLenses ''CreateGroup
 deriveGeneric ''CreateGroup
 
 instance phase ~ 'Input => HasLomake (CreateGroup phase) where
@@ -43,9 +42,10 @@ instance phase ~ 'Internal => FromJSON (CreateGroup phase) where
 instance Command CreateGroup where
     type CommandTag CreateGroup = "create-group"
 
-    internalizeCommand _now _login cmd = do
+    internalizeCommand _now _login rights cmd = do
+        requireRights RightsNormal rights
         validate cmd
-        pure $ coerce cmd
+        pure (coerce cmd)
 
     applyCommand _now login cmd = do
         validate cmd
@@ -61,9 +61,8 @@ instance Command CreateGroup where
             , _groupCustomers    = mempty
             }
 
-        pure $ LomakeResponseRedirect $ viewGroupHrefText $ name
+        pure $ LomakeResponseRedirect $ viewGroupHrefText name
 
--- TODO: move validate to the 'Command' class
 validate :: (MonadReader World m, MonadError String m) => CreateGroup phase -> m ()
 validate cmd = do
     let name = cgName cmd

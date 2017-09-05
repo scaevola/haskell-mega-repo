@@ -1,11 +1,11 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE KindSignatures    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
-module Futurice.App.FUM.Command.CreateEmployee where
+module Futurice.App.FUM.Command.CreateEmployee (CreateEmployee (..)) where
 
-import Control.Lens      (preuse)
 import Data.Maybe        (isJust)
 import Futurice.Generics
 import Futurice.Prelude
@@ -26,7 +26,6 @@ data CreateEmployee (phase :: Phase) = CreateEmployee
     }
   deriving (Show, Typeable, Generic)
 
-makeLenses ''CreateEmployee
 deriveGeneric ''CreateEmployee
 
 instance phase ~ 'Input => HasLomake (CreateEmployee phase) where
@@ -48,16 +47,16 @@ instance phase ~ 'Internal => FromJSON (CreateEmployee phase) where
 instance Command CreateEmployee where
     type CommandTag CreateEmployee = "create-employee"
 
-    -- TODO: check that personioId and loginId aren't yet used!
-    internalizeCommand _now _login cmd = pure $ coerce cmd
+    internalizeCommand _now _login rights cmd = do
+        requireRights RightsIT rights
+        validate cmd
 
-    -- TODO:
+        pure (coerce cmd)
+
     applyCommand now _login cmd = do
+        validate cmd
+
         let login = ceLogin cmd
-
-        whenM (fmap isJust $ preuse $ worldEmployees . ix login) $
-            throwError $ "Employee with login " ++ show (loginToText login) ++ " already exists"
-
         worldEmployees . at login ?= Employee
             { _employeeLogin        = login
             , _employeePersonioId   = cePersonioId cmd
@@ -70,3 +69,10 @@ instance Command CreateEmployee where
             }
 
         pure $ LomakeResponseRedirect $ viewEmployeeHrefText login
+
+validate :: (MonadReader World m, MonadError String m) => CreateEmployee phase -> m ()
+validate  cmd = do
+   let login = ceLogin cmd
+
+   whenM (fmap isJust $ preview $ worldEmployees . ix login) $
+       throwError $ "Employee with login " ++ show (loginToText login) ++ " already exists"

@@ -128,4 +128,7 @@ withAuthUser
     -> (AuthUser -> World -> IdMap.IdMap Personio.Employee -> Handler (HtmlPage a))
     -> Handler (HtmlPage a)
 withAuthUser ctx mfu f = runLogT "page" (ctxLogger ctx) $
-    withAuthUser' forbiddenPage ctx mfu (\fu w personio -> lift $ f fu w personio)
+    withAuthUser' (forbiddenPage Nothing) ctx mfu $ \auth world personio ->
+        if hasRights auth
+        then lift $ f auth world personio
+        else return $ forbiddenPage (Just (authLogin auth, world, personio))

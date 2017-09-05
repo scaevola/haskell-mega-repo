@@ -31,8 +31,7 @@ listGroupsPage auth world = fumPage_ "Groups" auth $ do
             th_ "Type"
 
         tbody_ $ forOf_ (sortedOnOf (view groupName) $ worldGroups . folded) world $ \g -> tr_ $ do
-            -- TODO: name
-            td_ $ toHtml $ g ^. groupName
+            td_ $ a_ [ viewGroupHref_ $ g ^. groupName] $ toHtml $ g ^. groupName
             td_ $ toHtml $ g ^. groupType
 
 -- | This isn't super effective, yet good enough.

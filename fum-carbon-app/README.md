@@ -21,6 +21,8 @@ For terminology watch [GOTO 2017 • The Many Meanings of Event-Driven Architect
 
 ## Bootstrapping
 
-*FUM* uses own data for access control, therefore bootstrapping is a slight challenge.
+*FUM* uses own data for access control, therefore bootstrapping could be a challenge, but it isn't.
 
-TBW
+When pristine instance is booted, the *forbidden page* has a form to perform a
+bootstrap command, which will create a sudoers group and a user, adding the
+user to the group.

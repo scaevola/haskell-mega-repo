@@ -4,8 +4,10 @@ module Futurice.App.FUM.Types (
     module Futurice.App.FUM.Types.Identifier,
     module Futurice.App.FUM.Types.Status,
     module Futurice.App.FUM.Types.World,
-    AuthUser,
+    AuthUser (..),
     Rights (..),
+    hasITRights,
+    hasRights,
     ) where
 
 import Futurice.Prelude
@@ -17,8 +19,19 @@ import Futurice.App.FUM.Types.Identifier
 import Futurice.App.FUM.Types.Status
 import Futurice.App.FUM.Types.World
 
-data Rights = RightsIT | RightsOther
+data Rights = RightsIT | RightsNormal | RightsOther
   deriving (Eq, Ord, Show)
 
 -- | Authorised user.
-type AuthUser = (Login, Rights)
+data AuthUser = AuthUser
+    { authLogin :: !Login
+    , authRights :: !Rights
+    }
+  deriving (Eq, Ord, Show)
+
+hasITRights :: AuthUser -> Bool
+hasITRights = (RightsIT ==) . authRights
+
+-- | Has IT or Admin
+hasRights :: AuthUser -> Bool
+hasRights = (RightsOther /=) . authRights
