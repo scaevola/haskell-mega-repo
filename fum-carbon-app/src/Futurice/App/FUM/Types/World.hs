@@ -4,12 +4,14 @@
 module Futurice.App.FUM.Types.World (
     World,
     emptyWorld,
+    nullWorld,
     validateWorld,
     -- * Lenses
     worldEmployees,
     worldCustomers,
     worldMailboxes,
     worldGroups,
+    worldSudoGroup,
     ) where
 
 import Prelude ()
@@ -26,12 +28,17 @@ data World = World
     , _worldCustomers  :: !(IdMap Customer)
     , _worldMailboxes  :: !(IdMap Mailbox)
     , _worldGroups     :: !(IdMap Group)
+    , _worldSudoGroup  :: !(Maybe GroupName)
     }
 
 makeLenses ''World
 
 emptyWorld :: World
-emptyWorld = World mempty mempty mempty mempty
+emptyWorld = World mempty mempty mempty mempty Nothing
+
+nullWorld :: World -> Bool
+nullWorld (World es cs ms gs sg) =
+    null es && null cs && null ms && null gs && null sg
 
 -------------------------------------------------------------------------------
 -- Validation

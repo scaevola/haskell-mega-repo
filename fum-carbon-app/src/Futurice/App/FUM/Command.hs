@@ -5,6 +5,7 @@ module Futurice.App.FUM.Command (
     SomeCommand,
     someCommand,
     withSomeCommand,
+    module Futurice.App.FUM.Command.Bootstrap,
     module Futurice.App.FUM.Command.Definition,
     module Futurice.App.FUM.Command.CreateEmployee,
     module Futurice.App.FUM.Command.CreateGroup,
@@ -12,6 +13,7 @@ module Futurice.App.FUM.Command (
 
 import Prelude ()
 
+import Futurice.App.FUM.Command.Bootstrap
 import Futurice.App.FUM.Command.CreateEmployee
 import Futurice.App.FUM.Command.CreateGroup
 import Futurice.App.FUM.Command.Definition

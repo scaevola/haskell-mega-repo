@@ -59,6 +59,7 @@ class
     internalizeCommand
         :: UTCTime     -- ^ now
         -> Login       -- ^ submitter of the command
+        -> Rights      -- ^ rights of the submitter
         -> cmd 'Input  -- ^ input command
         -> ReaderT World (ExceptT String (LogT IO)) (cmd 'Internal) -- ^ we can do IO and fail.
 
@@ -76,6 +77,14 @@ type CommandEndpoint (cmd :: Phase -> *) = CommandTag cmd
     :> SSOUser
     :> ReqBody '[JSON] (LomakeRequest (cmd 'Input))
     :> Post '[JSON] LomakeResponse
+
+requireRights
+    :: MonadError String m
+    => Rights  -- ^ required
+    -> Rights  -- ^ actual
+    -> m ()
+requireRights req act = when (act < req) $
+    throwError $ "Too low rights. Required: " ++ show req ++ "; actual: " ++ show act
 
 commandTag :: forall cmd. Command cmd => Proxy cmd -> Text
 commandTag _ = view packed (symbolVal p) where

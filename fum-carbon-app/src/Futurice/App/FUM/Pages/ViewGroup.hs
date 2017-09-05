@@ -14,10 +14,26 @@ viewGroupPage
     -> World  -- ^ the world
     -> Group  -- ^ group
     -> HtmlPage "view-group"
-viewGroupPage auth _world g = fumPage_ "Group" auth $ do
+viewGroupPage auth world g = fumPage_ "Group" auth $ do
     -- Title
     fumHeader_ "Group" [g ^? groupName . getter groupNameToText ]
 
     fullRow_ $ table_ $ tbody_ $ do
         vertRow_ "Name" $ toHtml $ g ^. groupName
         vertRow_ "Type" $ toHtml $ g ^. groupType
+
+    subheader_ "Add member"
+    fullRow_ "TODO"
+
+    subheader_ "Members"
+    fullRow_ $ table_ $ do
+        thead_ $ tr_ $ do
+            th_ "Login"
+            th_ "Name"
+            th_ "Status"
+
+        tbody_ $ for_ (g ^.. groupEmployees . folded) $ \login -> tr_ $
+            for_ (world ^? worldEmployees . ix login) $ \e -> do
+                td_ $ loginToHtml $ e ^. employeeLogin
+                td_ $ toHtml $ e ^. employeeName
+                td_ $ toHtml $ e ^. employeeStatus

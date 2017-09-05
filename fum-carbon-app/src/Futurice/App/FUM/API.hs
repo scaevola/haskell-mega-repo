@@ -25,8 +25,8 @@ type FumCarbonApi = FumCarbonPagesApi
     -- machine api
     :<|> "api" :> FumCarbonMachineApi
 
-type FumCarbonCommandApi =
-    CommandEndpoint CreateEmployee
+type FumCarbonCommandApi = CommandEndpoint Bootstrap
+    :<|> CommandEndpoint CreateEmployee
     :<|> CommandEndpoint CreateGroup
 
 type FumCarbonMachineApi =
