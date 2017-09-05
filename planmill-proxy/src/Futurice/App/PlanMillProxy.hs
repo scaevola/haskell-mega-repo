@@ -60,9 +60,9 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                 , ctxWorkers      = ws
                 }
         let jobs =
-                -- See every 5 minutes, if there's something to update in cache
+                -- See every 40 minutes, if there's something to update in cache
                 [ mkJob "cache update" (updateCache ctx)
-                  $ shifted (3 * 60) $ every $ 5 * 60
+                  $ shifted (3 * 60) $ every $ 40 * 60
 
                 -- Cleanup cache every three hours
                 , mkJob "cache cleanup" (cleanupCache ctx)
@@ -79,8 +79,11 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                   )
                 -}
                 -- Update timereports
+                -- we update 67 employee at time, 3 times in hour, i.e. 200 in one hour.
+                -- to update ~1000 people it will take 5 hours.
+                -- as we start at around 2:00 AM, we should be done by 7:00 AM.
                 , mkJob "update timereports" (updateAllTimereports ctx)
-                  $ shifted (5 * 60) $ every $ 30 * 60 -- TODO: see how often it should be run
+                  $ shifted (5 * 60) $ every $ 20 * 60
 
                 , mkJob "update without timereports" (updateWithoutTimereports ctx)
                   $ shifted (10 * 60) $ every $ 2 * 60 * 60
