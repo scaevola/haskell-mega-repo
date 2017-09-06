@@ -19,13 +19,16 @@ import Futurice.App.PlanMillProxy.Types (Ctx (..))
 
 timereportsAgeDistr :: Ctx -> IO (Chart "cache-distr")
 timereportsAgeDistr ctx = do
-    res <- poolQuery_ ctx selectTimereportsQuery
-    let xs = Postgres.fromOnly <$> res
+    res1 <- poolQuery_ ctx selectTimereportsQuery
+    let xs = Postgres.fromOnly <$> res1
 
-    res' <- poolQuery_ ctx selectDataQuery
-    let ys = Postgres.fromOnly <$> res'
+    res2 <- poolQuery_ ctx selectDataQuery
+    let ys = Postgres.fromOnly <$> res2
 
-    let r = (safeMinimum (xs ++ ys), safeMaximum (xs ++ ys))
+    res3 <- poolQuery_ ctx selectZeroDataQuery
+    let zs = Postgres.fromOnly <$> res3
+
+    let r = (safeMinimum (zs ++ ys ++ xs), safeMaximum (zs ++ ys ++ xs))
 
     return $ Chart . C.toRenderable $ do
         -- Timereports
@@ -45,6 +48,15 @@ timereportsAgeDistr ctx = do
               & FC.plot_hist_range  ?~ r
               & FC.plot_hist_line_style .~ mkLineStyle C.red
               & FC.plot_hist_fill_style .~ mkFillStyle C.red
+
+        -- Other zero data
+        C.plot $ return $ FC.histToPlot $ FC.defaultFloatPlotHist
+              & FC.plot_hist_title  .~ "old-ish data, oldest " ++ show (safeMinimum zs)
+              & FC.plot_hist_values .~ zs
+              & FC.plot_hist_bins   .~ 100
+              & FC.plot_hist_range  ?~ r
+              & FC.plot_hist_line_style .~ mkLineStyle C.green
+              & FC.plot_hist_fill_style .~ mkFillStyle C.green
 
         -- Layout
         C.layout_title .= "Cache data age"
@@ -70,6 +82,15 @@ timereportsAgeDistr ctx = do
     selectDataQuery = fromString $ unwords
         [ "SELECT updated as a"
         , "FROM planmillproxy.cache"
+        , "WHERE viewed > 0"
+        , ";"
+        ]
+
+    selectZeroDataQuery :: Postgres.Query
+    selectZeroDataQuery = fromString $ unwords
+        [ "SELECT updated as a"
+        , "FROM planmillproxy.cache"
+        , "WHERE viewed <= 0"
         , ";"
         ]
 

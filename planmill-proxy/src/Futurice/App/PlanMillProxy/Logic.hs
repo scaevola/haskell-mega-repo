@@ -215,6 +215,7 @@ updateCache ctx = runLIO ctx $ do
         [ "SELECT (query) FROM planmillproxy.cache"
         -- , "WHERE current_timestamp - updated > (" ++ genericAge ++ " :: interval) * (1 + variance) AND viewed > 0"
         , "WHERE updated < date_trunc('day', now() at time zone 'Europe/Helsinki') at time zone 'Europe/Helsinki' + '2 hours' :: interval"
+        , "  AND viewed >= 1"
         , "ORDER BY updated"
         , "LIMIT 1000"
         , ";"
