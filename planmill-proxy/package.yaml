@@ -48,7 +48,10 @@ library:
     - binary
     - binary-tagged
     - bytestring
+    - Chart
+    - colour
     - containers
+    - data-default-class
     - exceptions
     - futurice-servant
     - intervals
@@ -59,6 +62,7 @@ library:
     - resource-pool
     - servant
     - servant-binary-tagged
+    - servant-Chart
     - servant-server
     - swagger2
     - text

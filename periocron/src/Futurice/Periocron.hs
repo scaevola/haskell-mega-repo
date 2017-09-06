@@ -18,15 +18,16 @@ module Futurice.Periocron (
     optionsInterval,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Concurrent          (ThreadId, forkIO, threadDelay)
 import Control.Concurrent.STM      (atomically)
 import Control.Concurrent.STM.TSem (TSem, newTSem, signalTSem, waitTSem)
 import Control.Exception.Lifted    (bracket)
 import Data.Ratio                  ((%))
+import Futurice.Prelude
+import Prelude ()
 import System.Metrics              (Store, createDistribution)
 import System.Timeout              (timeout)
+import Text.Printf                 (printf)
 
 import Control.Concurrent.Async.Lifted.Safe (async)
 
@@ -184,8 +185,8 @@ workerLoop options tsem js = do
         exit startTime = do
             endTime <- getMonotonicClock
             let d = Clock.diffTimeSpec endTime startTime
-            let d' = fromRational $ Clock.toNanoSecs d % 1000000000
-            logInfo_ $ "Done '" <> label <> "'; took " <> textShow d' <> "s = " <> textShow d
+            let d' = fromRational $ Clock.toNanoSecs d % 1000000000 :: Double
+            logInfo_ $ "Done '" <> label <> "'; took " <> printf "%.06f" d' ^. packed <> "s = " <> textShow d
             liftIO $ Distr.add distr d'
             liftIO $ atomically $ do
                 signalTSem tsem

@@ -237,7 +237,7 @@ cleanupCache ctx = runLIO ctx $ do
     cleanupQuery :: Postgres.Query
     cleanupQuery = fromString $ unwords $
         [ "DELETE FROM planmillproxy.cache"
-        , "WHERE current_timestamp - updated > '24 hours' AND viewed <= 0"
+        , "WHERE current_timestamp - updated > '48 hours' AND viewed <= 0"
         , ";"
         ]
 

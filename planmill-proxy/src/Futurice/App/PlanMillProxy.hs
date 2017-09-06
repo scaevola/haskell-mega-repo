@@ -21,6 +21,7 @@ import qualified Database.PostgreSQL.Simple as Postgres
 
 -- PlanmillProxy modules
 import Futurice.App.PlanMillProxy.API
+import Futurice.App.PlanMillProxy.Charts
 import Futurice.App.PlanMillProxy.Config (Config (..))
 import Futurice.App.PlanMillProxy.Logic
        (cleanupCache, haxlEndpoint, statsEndpoint, updateAllTimereports,
@@ -34,6 +35,7 @@ server :: Ctx -> Server PlanMillProxyAPI
 server ctx = pure "Try /swagger-ui/"
     :<|> liftIO . haxlEndpoint ctx
     :<|> liftIO (statsEndpoint ctx)
+    :<|> liftIO (timereportsAgeDistr ctx)
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
@@ -62,7 +64,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         let jobs =
                 -- See every 40 minutes, if there's something to update in cache
                 [ mkJob "cache update" (updateCache ctx)
-                  $ shifted (3 * 60) $ every $ 40 * 60
+                  $ shifted (7 * 60) $ every $ 10 * 60
 
                 -- Cleanup cache every three hours
                 , mkJob "cache cleanup" (cleanupCache ctx)
@@ -83,7 +85,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
                 -- to update ~1000 people it will take 5 hours.
                 -- as we start at around 2:00 AM, we should be done by 7:00 AM.
                 , mkJob "update timereports" (updateAllTimereports ctx)
-                  $ shifted (5 * 60) $ every $ 20 * 60
+                  $ shifted (3 * 60) $ every $ 10 * 60
 
                 , mkJob "update without timereports" (updateWithoutTimereports ctx)
                   $ shifted (10 * 60) $ every $ 2 * 60 * 60
