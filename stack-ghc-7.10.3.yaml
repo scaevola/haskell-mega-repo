@@ -72,7 +72,7 @@ extra-deps:
 - bitarray-0.0.1.1
 - cabal-doctest-1.0.2
 - carray-0.1.6.8
-- cassava-0.5.0.0
+- cassava-0.5.1.0
 - Chart-diagrams-1.8.2
 - clay-0.11
 - comonad-5
@@ -138,4 +138,4 @@ extra-deps:
 - warp-3.2.11.1
 flags:
   cassava:
-    pre-bytestring-0-10-4: false
+    bytestring--lt-0_10_4: false

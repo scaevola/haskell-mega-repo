@@ -8,7 +8,6 @@ import Algebra.Lattice
        (BoundedJoinSemiLattice (..), BoundedLattice,
        BoundedMeetSemiLattice (..), JoinSemiLattice (..), Lattice,
        MeetSemiLattice (..), joins1, meets1)
-import Control.Applicative       (liftA2)
 import Data.Aeson.Compat         (withText)
 import Data.Functor.Foldable     (cata, embed)
 import Data.Functor.Foldable.TH
