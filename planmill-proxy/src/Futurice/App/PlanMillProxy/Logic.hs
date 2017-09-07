@@ -172,7 +172,7 @@ haxlEndpoint ctx qs = runLIO ctx $ do
 
     -- Select multiple items
     selectQuery :: Postgres.Query
-    selectQuery = fromString $ unwords $
+    selectQuery = fromString $ unwords
         [ "SELECT query, data FROM planmillproxy.cache"
         , "WHERE query in ?"
         , ";"
@@ -211,18 +211,17 @@ updateCache ctx = runLIO ctx $ do
 
     -- Fetch queries which are old enough, and viewed at least once
     selectQuery :: Postgres.Query
-    selectQuery = fromString $ unwords $
+    selectQuery = fromString $ unwords
         [ "SELECT (query) FROM planmillproxy.cache"
         -- , "WHERE current_timestamp - updated > (" ++ genericAge ++ " :: interval) * (1 + variance) AND viewed > 0"
         , "WHERE updated < date_trunc('day', now() at time zone 'Europe/Helsinki') at time zone 'Europe/Helsinki' + '2 hours' :: interval"
-        , "  AND viewed >= 1"
         , "ORDER BY updated"
         , "LIMIT 1000"
         , ";"
         ]
 
     deleteQuery :: Postgres.Query
-    deleteQuery = fromString $ unwords $
+    deleteQuery = fromString $ unwords
         [ "DELETE FROM planmillproxy.cache"
         , "WHERE query = ?"
         , ";"
@@ -235,9 +234,9 @@ cleanupCache ctx = runLIO ctx $ do
     logInfo_ $  "cleaned up " <> textShow i <> " cache items"
   where
     cleanupQuery :: Postgres.Query
-    cleanupQuery = fromString $ unwords $
+    cleanupQuery = fromString $ unwords
         [ "DELETE FROM planmillproxy.cache"
-        , "WHERE current_timestamp - updated > '48 hours' AND viewed <= 0"
+        , "WHERE AND viewed < -4" -- -4 makes data survive over the weekends
         , ";"
         ]
 
@@ -251,11 +250,14 @@ storeInPostgres ctx q x = do
     when (i == 0) $
         logAttention_ $ "Storing in postgres failed: " <> textShow q
   where
-    postgresQuery = fromString $ unwords $
+    postgresQuery = fromString $ unwords
         [ "INSERT INTO planmillproxy.cache as c (query, data)"
         , "VALUES (?, ?)"
         , "ON CONFLICT (query) DO UPDATE"
-        , "SET data = EXCLUDED.data, viewed = 0, updated = now(), variance = random()"
+        , "SET data = EXCLUDED.data,"
+        , "    viewed = case WHEN c.viewed <= 0 THEN c.viewed-1 ELSE 0 END,"
+        , "    updated = now(),"
+        , "    variance = random()"
         , "WHERE c.query = EXCLUDED.query"
         , ";"
         ]

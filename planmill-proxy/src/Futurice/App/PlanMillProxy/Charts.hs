@@ -82,7 +82,7 @@ timereportsAgeDistr ctx = do
     selectDataQuery = fromString $ unwords
         [ "SELECT updated as a"
         , "FROM planmillproxy.cache"
-        , "WHERE viewed > 0"
+        , "WHERE viewed >= 0"
         , ";"
         ]
 
@@ -90,7 +90,7 @@ timereportsAgeDistr ctx = do
     selectZeroDataQuery = fromString $ unwords
         [ "SELECT updated as a"
         , "FROM planmillproxy.cache"
-        , "WHERE viewed <= 0"
+        , "WHERE viewed < 0"
         , ";"
         ]
 
