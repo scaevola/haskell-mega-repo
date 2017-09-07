@@ -1,0 +1,75 @@
+-- This file has been generated from package.yaml by hpack version 0.18.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           github-sync
+version:        0
+synopsis:       Manage GitHub
+description:    New and fancy
+category:       Web
+homepage:       https://github.com/futurice/haskell-mega-repo#readme
+bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
+author:         Oleg Grenrus <oleg.grenrus@iki.fi>
+maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
+license:        BSD3
+license-file:   LICENSE
+tested-with:    GHC==7.10.3
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/futurice/haskell-mega-repo
+
+library
+  hs-source-dirs:
+      src
+  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
+  ghc-options: -Wall
+  build-depends:
+      base                  >=4.7   && <4.11
+    , aeson
+    , aeson-compat
+    , env-config
+    , fum-types
+    , futurice-foundation
+    , futurice-integrations
+    , futurice-prelude
+    , futurice-servant
+    , github
+    , haxl
+    , lens
+    , personio-client
+    , regex-applicative
+    , servant
+    , servant-lucid
+    , servant-server
+  if impl(ghc >= 8.0)
+    ghc-options: -freduction-depth=30
+  else
+    ghc-options: -fcontext-stack=30
+  exposed-modules:
+      Futurice.App.GitHubSync
+      Futurice.App.GitHubSync.API
+      Futurice.App.GitHubSync.Config
+      Futurice.App.GitHubSync.Ctx
+      Futurice.App.GitHubSync.IndexPage
+  default-language: Haskell2010
+
+executable github-sync-server
+  main-is: Main.hs
+  hs-source-dirs:
+      srv
+  default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
+  ghc-options: -Wall -threaded -rtsopts
+  build-depends:
+      base
+    , github-sync
+  if impl(ghc >= 8.0)
+    ghc-options: -freduction-depth=30
+  else
+    ghc-options: -fcontext-stack=30
+  default-language: Haskell2010

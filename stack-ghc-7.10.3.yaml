@@ -25,6 +25,7 @@ packages:
 - futurice-servant/
 - futurice-tribes/
 - github-proxy/
+- github-sync/
 - haxl-fxtra/
 - hours-api/
 - log-cloudwatch/
@@ -49,12 +50,8 @@ packages:
 - tdigest/tdigest-bench/
 - tdigest-ekg/
 - theme-app/
-- extra-dep: true
-  subdirs:
-  - chart
-  location:
-    git: https://github.com/timbod7/haskell-chart.git
-    commit: 564d8672c4217db30032d093a6652edd83f0100d
+- location: vendor/chart/chart
+  extra-dep: true
 extra-deps:
 - active-0.2.0.12
 - aeson-1.2.1.0

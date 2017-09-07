@@ -30,6 +30,7 @@ packages:
   futurice-servant/
   futurice-tribes/
   github-proxy/
+  github-sync/
   haxl-fxtra/
   hours-api/
   log-cloudwatch/
