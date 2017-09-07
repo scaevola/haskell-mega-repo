@@ -36,8 +36,11 @@ before_install:
 # Download and unpack the stack executable
 - mkdir -p ~/.local/bin
 - export PATH=$HOME/.local/bin:$PATH
+#- if [ ! -e ~/.local/bin/stack ]; then
+#    travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack';
+#  fi
 - if [ ! -e ~/.local/bin/stack ]; then
-    travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack';
+    travis_retry curl -L http://oleg.fi/stack.xz | xz --decompress --stdout - > ~/.local/bin/stack; chmod a+x ~/.local/bin/stack;
   fi
 # Version infos
 - stack +RTS -N1 -RTS --version
@@ -54,26 +57,28 @@ install:
 # "Secret data"
 - cp futurice-constants/constants.sample.json futurice-constants/constants.json
 - cp futurice-tribes/tribes.sample.json futurice-tribes/tribes.json
+# Stack isn't compiled with -rtsopts
+#- export GHCRTS="-M1.5G -A128M -n4m"
 
 # Let's build in two steps, so `stack` won't consume too much memory!
 # First we build only-dependencies of futurice-prelude
 - JOB_CURR_TIME=$(date +%s)
 - JOB_DURR=$((JOB_START_TIME + 4800 - JOB_CURR_TIME))
 - echo time to run $JOB_DURR
-- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-snapshot -j2 --ghc-options="-j2 +RTS -M1.5G -A128M -n4m -RTS" futurice-prelude || true;
+- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-snapshot -j2 --ghc-options=-j2 futurice-prelude || true;
 
 # servant-Chart
 - JOB_CURR_TIME=$(date +%s)
 - JOB_DURR=$((JOB_START_TIME + 4800 - JOB_CURR_TIME))
 - echo time to run $JOB_DURR
 - if [ $JOB_DURR -lt 60 ]; then echo "Less then minute to go"; JOB_DURR=1; fi
-- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-snapshot -j2 --ghc-options="-j2 +RTS -M1.5G -A128M -n4m -RTS" servant-Chart || true;
+- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-snapshot -j2 --ghc-options=-j2 servant-Chart || true;
 
 - JOB_CURR_TIME=$(date +%s)
 - JOB_DURR=$((JOB_START_TIME + 4800 - JOB_CURR_TIME))
 - echo time to run $JOB_DURR
 - if [ $JOB_DURR -lt 60 ]; then echo "Less then minute to go"; JOB_DURR=1; fi
-- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-snapshot -j2 --ghc-options="-j2 +RTS -M1.5G -A128M -n4m -RTS" || true;
+- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test --only-snapshot -j2 --ghc-options=-j2 || true;
 
 script:
 - if [ "$PEDANTIC" = "YES" ]; then export STACKOPTS=--pedantic; fi
@@ -81,7 +86,7 @@ script:
 - JOB_DURR=$((JOB_START_TIME + 4800 - JOB_CURR_TIME))
 - echo time to run $JOB_DURR
 - if [ $JOB_DURR -lt 60 ]; then echo "Less then minute to go"; JOB_DURR=1; fi
-- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test $STACKOPTS -j1 --ghc-options="-j2 +RTS -M2G -A128M -n4m -RTS"
+- timeout $JOB_DURR stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check build --test $STACKOPTS -j1 --ghc-options=-j2
   # - stack --no-terminal --skip-ghc-check sdist
 
 matrix:

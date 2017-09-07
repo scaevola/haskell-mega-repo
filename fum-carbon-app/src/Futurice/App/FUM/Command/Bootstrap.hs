@@ -6,7 +6,6 @@
 {-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.FUM.Command.Bootstrap (Bootstrap (..)) where
 
-import Control.Monad     (unless)
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
