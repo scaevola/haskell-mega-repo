@@ -84,6 +84,7 @@ dependencies:
 
 library:
   source-dirs: src
+  other-modules: []
   default-extensions:
     - DeriveDataTypeable
     - DeriveFoldable

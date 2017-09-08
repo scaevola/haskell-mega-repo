@@ -1,0 +1,55 @@
+index-state: 2017-09-08T06:13:01Z
+
+allow-newer: Chart:base
+allow-newer: flowdock-grep:base
+allow-newer: diagrams-svg:optparse-applicative
+allow-newer: diagrams-postscript:base
+
+packages:
+  ansi-pretty/
+  avatar-app/
+  checklist-app/
+  contacts-api/
+  dynmap-cache/
+  email-proxy/
+  env-config/
+  favicon-app/
+  flowdock-grep/
+  flowdock-rest/
+  fum-carbon-app/
+  fum-client/
+  fum-types/
+  futurice-constants/
+  futurice-foundation/
+  futurice-github/
+  futurice-integrations/
+  futurice-logo/
+  futurice-prelude/
+  futurice-pure-trans/
+  futurice-reports/
+  futurice-servant/
+  futurice-tribes/
+  github-proxy/
+  haxl-fxtra/
+  hours-api/
+  log-cloudwatch/
+  mega-repo-tool/
+  monad-http/
+  optparse-sop/
+  periocron/
+  personio-client/
+  planmill-client/
+  planmill-proxy/
+  proxy-app/
+  proxy-mgmt-app/
+  reports-app/
+  servant-Chart/
+  servant-binary-tagged/
+  servant-status/
+  smileys-app/
+  sms-proxy/
+  tajna/
+  tdigest-ekg/
+  theme-app/
+
+  vendor/chart/chart

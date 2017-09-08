@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.17.1.
+-- This file has been generated from package.yaml by hpack version 0.18.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -34,7 +34,7 @@ library
     , binary
     , binary-tagged >=0.1      && <0.2
     , bytestring    >=0.10.4.0 && <0.11
-    , http-media    >=0.6.2    && <0.7
+    , http-media    >=0.6.2
     , servant       >=0.4.4.5  && <0.12
     , zlib          >=0.6      && <0.7
   exposed-modules:
