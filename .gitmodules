@@ -28,3 +28,6 @@
 [submodule "tajna"]
 	path = tajna
 	url = https://github.com/phadej/tajna.git
+[submodule "vendor/chart"]
+	path = vendor/chart
+	url = https://github.com/timbod7/haskell-chart.git

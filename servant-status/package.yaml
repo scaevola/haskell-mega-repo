@@ -41,6 +41,7 @@ when:
 
 library:
   source-dirs: src
+  other-modules: []
 
 tests:
   example:

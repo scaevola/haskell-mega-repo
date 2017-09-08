@@ -20,6 +20,7 @@ flags:
 
 library:
   source-dirs: src
+  other-modules: []
   dependencies:
     - base                  >=4.7   && <4.11
     - base-compat

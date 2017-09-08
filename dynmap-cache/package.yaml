@@ -34,6 +34,7 @@ dependencies:
 
 library:
   source-dirs: src
+  other-modules: []
 
 tests:
   unit-tests:

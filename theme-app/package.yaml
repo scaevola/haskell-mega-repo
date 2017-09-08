@@ -28,6 +28,7 @@ dependencies:
 
 library:
   source-dirs: src
+  other-modules: []
   default-extensions:
     - DeriveDataTypeable
     - DeriveFoldable
@@ -42,4 +43,4 @@ executables:
     source-dirs: srv
     ghc-options: -Wall -threaded -rtsopts
     dependencies:
-      - theme-app 
+      - theme-app
