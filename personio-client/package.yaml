@@ -36,6 +36,7 @@ dependencies:
   - mtl
   - regex-applicative
   - regex-applicative-text
+  - scientific
   - swagger2
   - text
   - time
