@@ -80,7 +80,8 @@ import Futurice.Lucid.Foundation            (vendorServer)
 import Futurice.Periocron
        (Job, defaultOptions, every, mkJob, spawnPeriocron)
 import Futurice.Prelude
-import Log.Backend.CloudWatchLogs           (withCloudWatchLogger)
+import Log.Backend.CloudWatchLogs
+       (createCloudWatchLogStream, withCloudWatchLogger)
 import Network.Wai
        (Middleware, requestHeaders, responseLBS)
 import Network.Wai.Metrics                  (metrics, registerWaiMetrics)
@@ -243,7 +244,8 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
 
         cache       <- newDynMapCache
 
-        let service = t <> maybe "" (" " <>) (_cfgCloudWatchSuffix cfg)
+        let group   = fromMaybe "Haskell" (_cfgCloudWatchGroup cfg )
+        let service = t
 
         menv <- for (_cfgCloudWatchCreds cfg) $ \awsCreds -> do
             env' <- AWS.newEnv awsCreds
@@ -254,8 +256,9 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
 
         case menv of
             Nothing -> main' logger
-            Just env ->
-                withCloudWatchLogger env "Haskell" service $ \leLogger -> main' (logger <> leLogger)
+            Just env -> do
+                createCloudWatchLogStream env group service
+                withCloudWatchLogger env group service $ \leLogger -> main' (logger <> leLogger)
 
   where
     main (Cfg cfg p ekgP _ _) menv service cache logger = do
@@ -340,7 +343,7 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
                     & AWS.mdDimensions .~ [AWS.dimension "Service" service]
             -- Productivity
             let datum2 = AWS.metricDatum "Productivity"
-                    & AWS.mdValue ?~ productivity
+                    & AWS.mdValue      ?~ productivity
                     & AWS.mdUnit       ?~ AWS.Percent
                     & AWS.mdDimensions .~ [AWS.dimension "Service" service]
 
@@ -434,11 +437,11 @@ instance HasSwagger api => HasSwagger (SSOUser :> api) where
 -------------------------------------------------------------------------------
 
 data Cfg cfg = Cfg
-    { _cfgInner            :: !cfg
-    , _cfgPort             :: !Int
-    , _cfgEkgPort          :: !Int
-    , _cfgCloudWatchSuffix :: !(Maybe Text)
-    , _cfgCloudWatchCreds  :: !(Maybe AWS.Credentials)
+    { _cfgInner           :: !cfg
+    , _cfgPort            :: !Int
+    , _cfgEkgPort         :: !Int
+    , _cfgCloudWatchGroup :: !(Maybe Text)
+    , _cfgCloudWatchCreds :: !(Maybe AWS.Credentials)
     }
   deriving Show
 
@@ -450,7 +453,7 @@ getConfigWithPorts n = getConfig' n $ Cfg
     <$> configure
     <*> envVarWithDefault "PORT" defaultPort
     <*> envVarWithDefault "EKGPORT" defaultEkgPort
-    <*> optionalAlt (envVar "CLOUDWATCH_SUFFIX")
+    <*> optionalAlt (envVar "CLOUDWATCH_GROUP")
     <*> optionalAlt (envAwsCredentials "CLOUDWATCH_")
 
 -------------------------------------------------------------------------------

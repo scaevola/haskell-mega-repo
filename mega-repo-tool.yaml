@@ -27,6 +27,9 @@ apps:
   github-proxy:
     docker: github-proxy
     executable: github-proxy-server
+  github-sync:
+    docker: github-sync
+    executable: github-sync-server
   prox:
     docker: proxy-app
     executable: proxy-app-server

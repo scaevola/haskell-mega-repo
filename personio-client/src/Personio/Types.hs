@@ -159,10 +159,16 @@ data Employee = Employee
     }
   deriving (Eq, Show, Generic)
 
+-- | Employee is active if
+--
+-- * contacts end date isn't passed
+--
+-- * it's status is 'Acitve' or 'Leave'.
+--
 employeeIsActive :: UTCTime -> Employee -> Bool
 employeeIsActive now e =
     maybe True (utctDay now <) (_employeeEndDate e)
-    && _employeeStatus e == Active
+    && (_employeeStatus e == Active || _employeeStatus e == Leave)
 
 makeLenses ''Employee
 deriveGeneric ''Employee

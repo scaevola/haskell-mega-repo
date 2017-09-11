@@ -9,13 +9,17 @@
 -- AWS user should be able to perform
 -- @ "logs:PutLogEvents"@ and @"logs:DescribeLogStreams" actions.
 --
-module Log.Backend.CloudWatchLogs (withCloudWatchLogger) where
+module Log.Backend.CloudWatchLogs (
+    withCloudWatchLogger,
+    createCloudWatchLogStream,
+    ) where
 
 import Control.Concurrent     (threadDelay)
 import Control.Concurrent.STM
        (TVar, atomically, newTVarIO, readTVarIO, writeTVar)
 import Control.Lens
-       (filtered, firstOf, folded, view, (&), (.~), (^.), _Just)
+       (filtered, firstOf, folded, only, view, (&), (.~), (^.), _Just)
+import Control.Monad          (void)
 import Control.Monad.IO.Class (liftIO)
 import Data.List.Compat       (sortOn)
 import Data.List.NonEmpty     (NonEmpty (..))
@@ -28,11 +32,27 @@ import System.IO              (hPutStrLn, stderr)
 import qualified Log
 import qualified Log.Internal.Logger                           as Log
 import qualified Network.AWS                                   as AWS
+import qualified Network.AWS.CloudWatchLogs.CreateLogStream    as AWS
 import qualified Network.AWS.CloudWatchLogs.DescribeLogStreams as AWS
 import qualified Network.AWS.CloudWatchLogs.PutLogEvents       as AWS
 import qualified Network.AWS.CloudWatchLogs.Types              as AWS
 
 import Control.Exception (SomeException, handle)
+
+createCloudWatchLogStream
+    :: AWS.Env               -- ^ AWS Environment
+    -> Text                  -- ^ group name
+    -> Text                  -- ^ stream name
+    -> IO ()
+createCloudWatchLogStream env group stream =
+    AWS.runResourceT $ AWS.runAWS env $ do
+        res <- AWS.send $ AWS.describeLogStreams group
+        let mname = firstOf (AWS.dlsrsLogStreams . folded . AWS.lsLogStreamName . _Just . only stream) res
+        case mname of
+            Just () -> pure () -- already exists
+            Nothing -> do
+                let cls = AWS.createLogStream group stream
+                void $ AWS.send cls
 
 withCloudWatchLogger
     :: AWS.Env               -- ^ AWS Environment

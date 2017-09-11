@@ -78,6 +78,7 @@ envs:
     GITHUBPROXY_PORT:   "8811"
     FUMAPP_PORT:        "8812"
     SMILEYS_PORT:       "8813"
+    GITHUBSYNC_PORT:    "8814"
 
     AVATARAPP_EKGPORT:     "9901"
     CONTACTSAPI_EKGPORT:   "9902"
@@ -94,6 +95,7 @@ envs:
     GITHUBPROXY_EKGPORT:   "9911"
     FUMAPP_EKGPORT:        "9912"
     SMILEYS_EKGPORT:       "9913"
+    GITHUBSYNC_EKPORT:     "9914"
 
     ## Development
     MOCKAUTH: "YES"

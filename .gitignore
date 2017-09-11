@@ -4,6 +4,7 @@ dist-newstyle/
 .stack-work/
 .stack-work-docker/
 .stack-root/
+dist-newstyle/
 
 tajna.local.yaml
 
