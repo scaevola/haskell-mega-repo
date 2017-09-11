@@ -36,7 +36,7 @@ validationReport ctx = do
                 td_ $ toHtml _evLast
                 td_ $ toHtml $ show _evHireDate
                 td_ $ toHtml $ show _evEndDate
-                td_ $ toHtml $ show _evMessages
+                td_ $ ul_ $ traverse_ (li_ . toHtml . show) _evMessages
   where
     isCurrentEmployee today v =
         maybe True (today <=) (v ^. Personio.evEndDate) &&
