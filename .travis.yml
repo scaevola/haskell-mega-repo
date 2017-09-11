@@ -2,6 +2,12 @@ dist: trusty
 sudo: false
 language: c
 
+# Build only master (and PRs to master)
+branches:
+  only:
+  - master
+  submodules: false
+
 # Caching so the next build will be fast too.
 cache:
   directories:
@@ -54,24 +60,55 @@ before_install:
 - dpkg-buildflags --get LDFLAGS
 - dpkg-buildflags --get CFLAGS
 # Install tools
-- scripts/travis.sh prepare stack
+- scripts/travis.sh prepare $BUILD
 
 install:
-# "Secret data"
-- cp futurice-constants/constants.sample.json futurice-constants/constants.json
-- cp futurice-tribes/tribes.sample.json futurice-tribes/tribes.json
-# Stack isn't compiled with -rtsopts
-#- export GHCRTS="-M1.5G -A128M -n4m"
-
-- scripts/travis.sh install stack || true
+- scripts/travis.sh install $BUILD || true
 
 script:
-- scripts/travis.sh build stack
+- scripts/travis.sh build $BUILD
 
 matrix:
   fast_finish: true
   include:
-  - env: GHCVER=7.10.3 STACK_YAML=stack-ghc-7.10.3.yaml PEDANTIC=YES
+# stack unusable because of https://github.com/commercialhaskell/stack/issues/3424
+#  - env: BUILD=stack GHCVER=7.10.3 STACK_YAML=stack-ghc-7.10.3.yaml PEDANTIC=YES
+#    compiler: ghc-7.10.3
+#    addons:
+#      apt:
+#        sources:
+#        - hvr-ghc
+#        packages:
+#        - libfftw3-dev
+#        - alex-3.1.7
+#        - happy-1.19.5
+#        - ghc-7.10.3
+#        - libgmp-dev
+#  - env: BUILD=stack GHCVER=8.0.2 STACK_YAML=stack-ghc-8.0.2.yaml PEDANTIC=YES
+#    compiler: ghc-8.0.2
+#    addons:
+#      apt:
+#        sources:
+#        - hvr-ghc
+#        packages:
+#        - libfftw3-dev
+#        - alex-3.1.7
+#        - happy-1.19.5
+#        - ghc-8.0.2
+#        - libgmp-dev
+#  - env: BUILD=stack GHCVER=8.2.1 STACK_YAML=stack-ghc-8.2.1.yaml # PEDANTIC=YES
+#    compiler: ghc-8.2.1
+#    addons:
+#      apt:
+#        sources:
+#        - hvr-ghc
+#        packages:
+#        - libfftw3-dev
+#        - alex-3.1.7
+#        - happy-1.19.5
+#        - ghc-8.2.1
+#        - libgmp-dev
+  - env: BUILD=cabal GHCVER=7.10.3 PEDANTIC=YES
     compiler: ghc-7.10.3
     addons:
       apt:
@@ -80,10 +117,11 @@ matrix:
         packages:
         - libfftw3-dev
         - alex-3.1.7
+        - cabal-install-head
         - happy-1.19.5
         - ghc-7.10.3
         - libgmp-dev
-  - env: GHCVER=8.0.2 STACK_YAML=stack-ghc-8.0.2.yaml PEDANTIC=YES
+  - env: BUILD=cabal GHCVER=8.0.2 PEDANTIC=YES
     compiler: ghc-8.0.2
     addons:
       apt:
@@ -92,10 +130,11 @@ matrix:
         packages:
         - libfftw3-dev
         - alex-3.1.7
+        - cabal-install-head
         - happy-1.19.5
         - ghc-8.0.2
         - libgmp-dev
-  - env: GHCVER=8.2.1 STACK_YAML=stack-ghc-8.2.1.yaml # PEDANTIC=YES
+  - env: BUILD=cabal GHCVER=8.2.1 # PEDANTIC=YES
     compiler: ghc-8.2.1
     addons:
       apt:
@@ -104,12 +143,8 @@ matrix:
         packages:
         - libfftw3-dev
         - alex-3.1.7
+        - cabal-install-head
         - happy-1.19.5
         - ghc-8.2.1
         - libgmp-dev
 
-# Build only master (and PRs to master)
-branches:
-  only:
-  - master
-  submodules: false

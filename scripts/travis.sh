@@ -5,12 +5,15 @@ BUILD=$2
 
 STACK="stack +RTS -N2 -RTS --no-terminal --system-ghc --skip-ghc-check"
 
+# Stack isn't compiled with -rtsopts
+#export GHCRTS="-M1.5G -A128M -n4m"
+
 timed () {
     JOB_CURR_TIME=$(date +%s)
     JOB_DURR=$((JOB_START_TIME + 4800 - JOB_CURR_TIME))
     echo time to run $JOB_DURR
-    if [ $JOB_DURR -lt 300 ]; then
-        echo "Less than 5 minutes to go, aborting"
+    if [ $JOB_DURR -lt 600 ]; then
+        echo "Less than 10 minutes to go, aborting"
         exit 1
     else
         timeout $JOB_DURR $*
@@ -19,11 +22,13 @@ timed () {
 
 case $STEP in
 prepare)
+    echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
+
     case $BUILD in
     stack)
         # Download and unpack the stack executable
         mkdir -p ~/.local/bin
-        
+
         # if [ ! -e ~/.local/bin/stack ]; then
         #    travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack';
         #  fi
@@ -32,7 +37,15 @@ prepare)
         fi
 
         stack +RTS -N1 -RTS --version
-        ghc --version
+        ;;
+
+    cabal)
+        cabal --version
+
+        cabal update -v
+        sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
+        rm -fv cabal.project.local
+        rm -fv cabal.project.freeze
         ;;
 
     esac
@@ -51,6 +64,11 @@ install)
         timed $STACK build --test --only-snapshot -j2 --ghc-options=-j2
         ;;
 
+    cabal)
+        timed cabal new-build --enable-tests -j2 futurice-prelude
+        timed cabal new-build --enable-tests -j2 servant-Chart
+        ;;
+
     esac
     ;;
 
@@ -63,6 +81,11 @@ build)
         fi
 
         timed $STACK build --test $STACKOPTS -j1 --ghc-options=-j2
+        ;;
+
+    cabal)
+        timed cabal new-build --enable-tests  -j2 all
+        timed cabal new-test --enable-tests all
         ;;
 
     esac
