@@ -828,7 +828,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         homeTribeValidate :: WriterT [ValidationMessage] Parser()
         homeTribeValidate = do
             hTribe <- lift (parseDynamicAttribute obj "Home tribe")
-            case tribeFromText hTribe of
+            unless (hTribe == "") $ case tribeFromText hTribe of
                 Just _  -> pure ()
                 Nothing -> tell [HomeTribeInvalid hTribe]
 
