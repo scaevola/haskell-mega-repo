@@ -64,6 +64,7 @@ library
     , reflection
     , regex-applicative
     , resource-pool
+    , semigroupoids
     , servant
     , servant-Chart
     , servant-lucid
@@ -160,6 +161,7 @@ executable fum-carbon-server
     , reflection
     , regex-applicative
     , resource-pool
+    , semigroupoids
     , servant
     , servant-Chart
     , servant-lucid
@@ -222,6 +224,7 @@ test-suite unit-tests
     , reflection
     , regex-applicative
     , resource-pool
+    , semigroupoids
     , servant
     , servant-Chart
     , servant-lucid

@@ -32,7 +32,7 @@ import qualified Personio
 -------------------------------------------------------------------------------
 
 cmdServer
-    :: forall cmd. Command cmd
+    :: forall cmd. (Command cmd, ICT cmd)
     => Ctx -> Server (CommandEndpoint cmd)
 cmdServer ctx mlogin (LomakeRequest cmdInput) = runLogT "command" (ctxLogger ctx) $
     withAuthUser' (error "lomake error") ctx mlogin $ \(AuthUser login rights) world _ -> do
@@ -91,7 +91,6 @@ makeCtx Config {..} lgr _cache = do
         cfgPostgresConnInfo
         (IdMap.fromFoldable employees)
         validations
-        emptyWorld
 
     -- jobs
     let employeesJob = mkJob "Update personio data" (updateJob ctx fetchEmployees) $ tail $ every 300
