@@ -35,6 +35,8 @@ import Futurice.App.FUM.Types
 --
 data Phase = Input | Internal
 
+
+
 -- | Class describing different commands.
 class
     ( HasLomake (cmd 'Input)
@@ -86,8 +88,12 @@ requireRights
 requireRights req act = when (act < req) $
     throwError $ "Too low rights. Required: " ++ show req ++ "; actual: " ++ show act
 
-commandTag :: forall cmd. Command cmd => Proxy cmd -> Text
+commandTag :: forall cmd proxy. Command cmd => proxy cmd -> Text
 commandTag _ = view packed (symbolVal p) where
+    p = Proxy :: Proxy (CommandTag cmd)
+
+commandTag' :: forall cmd phase. Command cmd => cmd phase -> Text
+commandTag' _ = view packed (symbolVal p) where
     p = Proxy :: Proxy (CommandTag cmd)
 
 -- | Render command form with optional arguments.

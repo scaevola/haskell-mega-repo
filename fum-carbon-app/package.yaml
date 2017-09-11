@@ -49,6 +49,7 @@ dependencies:
   - reflection
   - regex-applicative
   - resource-pool
+  - semigroupoids
   - servant
   - servant-Chart
   - servant-lucid
