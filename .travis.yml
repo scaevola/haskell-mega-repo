@@ -72,18 +72,6 @@ matrix:
   fast_finish: true
   include:
 # stack unusable because of https://github.com/commercialhaskell/stack/issues/3424
-#  - env: BUILD=stack GHCVER=7.10.3 STACK_YAML=stack-ghc-7.10.3.yaml PEDANTIC=YES
-#    compiler: ghc-7.10.3
-#    addons:
-#      apt:
-#        sources:
-#        - hvr-ghc
-#        packages:
-#        - libfftw3-dev
-#        - alex-3.1.7
-#        - happy-1.19.5
-#        - ghc-7.10.3
-#        - libgmp-dev
 #  - env: BUILD=stack GHCVER=8.0.2 STACK_YAML=stack-ghc-8.0.2.yaml PEDANTIC=YES
 #    compiler: ghc-8.0.2
 #    addons:
@@ -108,19 +96,6 @@ matrix:
 #        - happy-1.19.5
 #        - ghc-8.2.1
 #        - libgmp-dev
-  - env: BUILD=cabal GHCVER=7.10.3 PEDANTIC=YES
-    compiler: ghc-7.10.3
-    addons:
-      apt:
-        sources:
-        - hvr-ghc
-        packages:
-        - libfftw3-dev
-        - alex-3.1.7
-        - cabal-install-head
-        - happy-1.19.5
-        - ghc-7.10.3
-        - libgmp-dev
   - env: BUILD=cabal GHCVER=8.0.2 PEDANTIC=YES
     compiler: ghc-8.0.2
     addons:

@@ -8,20 +8,31 @@ set -ex
 # This matters
 unset POSIXLY_CORRECT
 
-ROOTDIR=$(pwd)
+# Root directory. In docker it's /app/src
+if [ "x$DOCKER" = "xYES" ]; then
+    ROOTDIR=/app/src
+else
+    ROOTDIR=$(pwd)
+fi
+
+cd $ROOTDIR
 
 # Check that we have somewhat clean working dir
 if [ ! -z "$(git status --porcelain)" ]; then
     echo "DIRTY WORKINGDIR"
+    exit 1
 fi
 
 # GHC version
-GHCVER=7.10.3
+GHCVER=${GHCVER-8.0.2}
 export PATH=/opt/ghc/$GHCVER/bin:$PATH
 HC=ghc-$GHCVER
 
 # Use different BUILDDIR
 BUILDDIR=dist-newstyle-prod
+
+# Update cabal
+cabal update
 
 # Perform build
 cabal new-build -j1 -w $HC --builddir=$BUILDDIR all:exes 
