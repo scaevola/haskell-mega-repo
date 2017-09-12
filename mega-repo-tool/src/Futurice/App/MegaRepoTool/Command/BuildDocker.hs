@@ -61,7 +61,7 @@ buildCmd buildImage = T.unwords
     , "-e DOCKER=YES" -- tell script we are in docker
     , "-v $(pwd):/app/src"
     , "-v haskell-mega-repo-cabal:/home/root/.cabal"
-    , "-v haskell-mega-repo-dist:/app/src/dist-newbuild-prod"
+    , "-v haskell-mega-repo-dist:/app/src/dist-newstyle-prod"
     , buildImage
     ]
 
