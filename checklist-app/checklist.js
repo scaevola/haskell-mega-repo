@@ -1,6 +1,10 @@
 document.addEventListener("DOMContentLoaded", function () {
   console.info("Initialising checklist js");
 
+  var SELECT2_OPTS = {
+    minimumResultsForSearch: 10,
+  };
+
   // Reload indicator
   var futuReloadIndicatorEl = $_("#futu-reload-indicator");
   buttonOnClick(futuReloadIndicatorEl, function () {
@@ -79,18 +83,26 @@ document.addEventListener("DOMContentLoaded", function () {
   function selectorForm(form) {
     console.info("Initialising selector form");
     var btn = $_("button", form);
-    var inputs = $$("select, input", form);
+    var inputs = $$("select, input", form).map(function (el) {
+      if (el.tagName === "SELECT") {
+        return [el.name, jQuery(el).select2(SELECT2_OPTS)];
+      } else {
+        return [el.name, jQuery(el)];
+      }
+    });
 
     buttonOnClick(btn, function () {
       var querys = [];
-      inputs.forEach(function (el) {
-        var value = inputValue(el);
+      inputs.forEach(function (p) {
+        var name = p[0];
+        var $el = p[1];
+        var value = inputValue($el);
         if (value !== "" && value !== false) {
-          querys.push(el.name + "=" + encodeURIComponent(value));
+          querys.push(name + "=" + encodeURIComponent(value));
         }
       });
 
-      location.search = "?" + querys.join("&");
+       location.search = "?" + querys.join("&");
     });
   }
 
@@ -169,14 +181,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.info("Initialising checklist editing form: " + checklistId);
 
-    var nameEl = $_("input[data-futu-id=checklist-name]", form);
+    var $nameEl = jQuery($_("input[data-futu-id=checklist-name]", form));
 
-    var nameOrig = nameEl.value;
+    var nameOrig = inputValue($nameEl);
 
     var submitBtn = $_("button[data-futu-action=submit]", form);
     var resetBtn = $_("button[data-futu-action=reset]", form);
 
-    var name$ = menrvaInputValue(nameEl);
+    var name$ = menrvaInputValue($nameEl);
 
     var changed$ = menrva.combine(name$, function (name) {
       return !_.isEqual(name, nameOrig);
@@ -595,9 +607,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     _.forEach(defs, function (def, k) {
       def.el = $_(def.sel, form);
-      def.checkbox = def.el.type === "checkbox";
-      def.orig = inputValue(def.el)
-      def.signal = menrvaInputValue(def.el);
+      def.$el = def.el.tagName === "SELECT"
+        ? jQuery(def.el).select2(SELECT2_OPTS)
+        : jQuery(def.el);
+      console.log(def.$el);
+      def.orig = inputValue(def.$el);
+      def.signal = menrvaInputValue(def.$el);
       def.signal$ = def.check ? def.signal.map(def.check) : def.signal;
 
       def.changed$ = def.signal.map(function (x) {
@@ -608,7 +623,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // dirty
       def.dirty$ = menrva.source(false);
-      def.el.addEventListener("blur", function () {
+      def.$el.blur(function () {
         menrva.transaction([def.dirty$, true]).commit();
       });
 
@@ -616,11 +631,11 @@ document.addEventListener("DOMContentLoaded", function () {
         return dirty && !submittable;
       }).onValue(function (errorneous) {
         if (errorneous) {
-          def.el.parentElement.classList.add("error");
-          def.el.classList.add("error");
+          def.$el.parent().addClass("error");
+          def.$el.addClass("error");
         } else {
-          def.el.parentElement.classList.remove("error");
-          def.el.classList.remove("error");
+          def.$el.parent().removeClass("error");
+          def.$el.removeClass("error");
         }
       });
     });
@@ -645,7 +660,7 @@ document.addEventListener("DOMContentLoaded", function () {
         tr.push(def.dirty$);
         tr.push(false);
         tr.push(def.signal);
-        tr.push(inputValue(def.el));
+        tr.push(inputValue(def.$el));
       });
       menrva.transaction(tr).commit();
     }
@@ -679,12 +694,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     buttonOnClick(resetBtn, function () {
       _.forEach(defs, function (def) {
-        // TODO: inputValueSet
-        if (def.el.type === "checkbox") {
-          def.el.checked = def.orig;
-        } else {
-          def.el.value = def.orig;
-        }
+        setInputValue(def.$el, def.orig);
       });
 
       // after value update!
@@ -726,7 +736,7 @@ document.addEventListener("DOMContentLoaded", function () {
     buttonOnClick(submitBtn, function () {
       if (submittable$.value()) {
         var values = _.mapValues(defs, function (def) { return def.signal$.value(); });
-        callback(values);
+        callback(values)
       } else {
         actions.markDirty();
       }
@@ -734,15 +744,14 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Menrva helpers
-  function menrvaInputValue(el) {
-    var value$ = menrva.source(inputValue(el), _.isEqual)
+  function menrvaInputValue($el) {
+    var value$ = menrva.source(inputValue($el), _.isEqual)
     var cb = function () {
       menrva.transaction()
-        .set(value$, inputValue(el))
+        .set(value$, inputValue($el))
         .commit();
     };
-    el.addEventListener("keyup", cb);
-    el.addEventListener("change", cb);
+    $el.change(cb);
     return value$;
   }
 
@@ -774,17 +783,19 @@ document.addEventListener("DOMContentLoaded", function () {
     return Array.prototype.slice.call(res);
   }
 
-  function inputValue(el) {
-    if (el.tagName === "INPUT" && el.type === "checkbox") {
-        return el.checked;
-    } else if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
-        return el.value.trim();
-    } else if (el.tagName === "SELECT" && el.multiple) {
-        return $$("option:checked", el).map(function (o) { return o.value.trim(); });
-    } else if (el.tagName === "SELECT") {
-        return el.value.trim();
+  function inputValue($el) {
+    if ($el.is("input[type=checkbox]")) {
+      return $el.prop("checked");
     } else {
-        throw new Error("inputValue: how to handle " + el.tagName);
+      return $el.val();
+    }
+  }
+
+  function setInputValue($el, val) {
+    if ($el.is("input[type=checkbox]")) {
+      $el.prop('checked', true);
+    } else {
+      $el.val(val);
     }
   }
 
