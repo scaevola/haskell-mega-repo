@@ -89,8 +89,7 @@ navigation (fu, viewerRole) = do
             li_ $ a_ [ createEmployeePageHref ] "Create Employee"
             li_ $ a_ [ personioPageHref ] "... from Personio"
             li_ $ a_ [ archivePageHref ] "Archive"
-        div_ [ class_ "top-bar-right" ] $ ul_ [ class_ "dropdown menu" ] $
-            li_ [ class_ "menu-text" ] $ do
+        div_ [ class_ "top-bar-right" ] $ span_ [ class_ "menu-text" ] $ do
                 "Hello "
                 toHtml fu
                 ", you are "
