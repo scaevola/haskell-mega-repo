@@ -28,6 +28,7 @@ cleanWorld now = World
             , _timereportComment   = "dev stuff"
             , _timereportAmount    = 7.5
             , _timereportType      = EntryTypeBillable
+            , _timereportClosed    = False
             }
         ]
     }

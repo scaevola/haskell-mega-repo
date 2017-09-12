@@ -27,6 +27,7 @@ module Futurice.App.HoursApi.Class (
     timereportComment,
     timereportAmount,
     timereportType,
+    timereportClosed,
     -- ** New timereport
     NewTimereport (..),
     newTimereportTaskId,
@@ -172,6 +173,7 @@ data Timereport = Timereport
     , _timereportComment   :: !Text
     , _timereportAmount    :: !(NDT 'Hours Centi)
     , _timereportType      :: !T.EntryType
+    , _timereportClosed    :: !Bool -- ^ i.e. not editable
     }
   deriving (Eq, Show, Generic)
 
