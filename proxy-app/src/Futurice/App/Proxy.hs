@@ -129,6 +129,11 @@ type PowerBiEndpoint = ProxyPair
     PowerService
     ("api" :> "v2" :> "power_bi" :> QueryParam "month" Text :> QueryParam "start_month" Text :> QueryParam "end_month" Text :> QueryParam "limit" Int :> QueryParam "span" Int:> QueryParam "tribe" Text :> Get '[JSON] Value)
 
+type PowerCompetencesEndpoint = ProxyPair
+    ("power" :> "api" :> "company_competences" :> Get '[JSON] Value)
+    PowerService
+    ("api" :> "v2" :> "company_competences" :> Get '[JSON] Value)
+
 -- Personio via FUM
 type PersonioProxyEndpoint' =
     ReqBody '[JSON] Personio.SomePersonioReq :>
@@ -149,6 +154,7 @@ type ProxyDefinition =
     , FumEmployeesEndpoint
     , FumUserEndpoint
     , PowerBiEndpoint
+    , PowerCompetencesEndpoint
     ]
 
 type ProxyAPI  = Get '[JSON] Text :<|> ProxyServer ProxyDefinition
@@ -185,6 +191,7 @@ server ctx = give (ctxFumAuthToken ctx) $ pure "P-R-O-X-Y"
     :<|> makeProxy (Proxy :: Proxy FumEmployeesEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy FumUserEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy PowerBiEndpoint) ctx
+    :<|> makeProxy (Proxy :: Proxy PowerCompetencesEndpoint) ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
