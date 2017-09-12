@@ -143,7 +143,7 @@ hoursResponse interval = do
         , _entryTaskId      = tr ^. H.timereportTaskId
         , _entryDay         = tr ^. H.timereportDay
         , _entryDescription = tr ^. H.timereportComment
-        , _entryClosed      = (tr ^. H.timereportType) `elem` [EntryTypeAbsence, EntryTypeInBilling]
+        , _entryClosed      = tr ^. H.timereportClosed
         , _entryHours       = tr ^. H.timereportAmount
         , _entryBillable    = tr ^. H.timereportType
         }
@@ -239,7 +239,6 @@ userResponse = User
         timereportAverageUtz :: H.Timereport -> Average Float
         timereportAverageUtz report = case report ^. H.timereportType of
             EntryTypeBillable    -> Average hours 100
-            EntryTypeInBilling   -> Average hours 100
             EntryTypeNotBillable -> Average hours 0
             EntryTypeAbsence     -> mempty
           where

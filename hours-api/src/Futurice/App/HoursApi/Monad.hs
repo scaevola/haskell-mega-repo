@@ -309,9 +309,14 @@ makeTimereport pid tr = Timereport
     , _timereportComment   = fromMaybe "" (PM.trComment tr)
     , _timereportAmount    = ndtConvert' (PM.trAmount tr)
     , _timereportType      = billableStatus (PM.trProject tr) (PM.trBillableStatus tr)
+    , _timereportClosed    =
+        -- see [Note: editing timereports]
+        not $
+            PM.trStatus tr `elem` [0, 4]  -- reported or preliminary
+            && PM.trBillableStatus tr `elem` [1,3,4]  -- non-billable, billable or in-billing
     }
 
--- |
+-- [Note: editing timereports]
 --
 -- @pm-cli -- enumeration "Time report.Billable status"@
 --
@@ -321,8 +326,15 @@ makeTimereport pid tr = Timereport
 --        :4 : In billing
 --        :5 : Draft invoice
 --        :6 : Invoiced]
--- @
+-- @-
+-- % tajna run -r pm-cli -- enumeration 'Time report.Status'         
+-- IntMap [0 : Reported
+--        :1 : Accepted
+--        :2 : Locked
+--        :4 : Preliminary]
 --
+
+-- |
 -- /TODO:/ we hard code enumeration values.
 --
 -- /TODO:/ absences should be EntryTypeAbsence
@@ -331,8 +343,7 @@ makeTimereport pid tr = Timereport
 billableStatus :: Maybe PM.ProjectId -> Int -> T.EntryType
 billableStatus Nothing 3 = T.EntryTypeAbsence
 billableStatus _ 3       = T.EntryTypeNotBillable
-billableStatus _ 1       = T.EntryTypeBillable
-billableStatus _ _       = T.EntryTypeInBilling
+billableStatus _ _       = T.EntryTypeBillable
 
 -- | Absences go into magic project.
 isAbsence :: PM.Project -> Bool

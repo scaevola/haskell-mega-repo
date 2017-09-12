@@ -128,6 +128,7 @@ instance MonadHours Hours where
                 , _timereportComment   = ntr ^. newTimereportComment
                 , _timereportAmount    = ntr ^. newTimereportAmount
                 , _timereportType      = EntryTypeBillable -- :)
+                , _timereportClosed    = False
                 }
             maxId = case reports of
                 [] -> 0
