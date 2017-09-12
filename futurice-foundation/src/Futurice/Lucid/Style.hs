@@ -2,7 +2,7 @@
 module Futurice.Lucid.Style where
 
 import Clay
-import Prelude hiding (div, span)
+import Prelude hiding (div, rem, span)
 
 css :: Css
 css = do
@@ -28,3 +28,7 @@ css = do
         color "#46289A"
     ".personio" ?
         color "#005A4B"
+
+    -- mimicking foundation styles
+    ".select2" ? do
+        marginBottom $ rem 1

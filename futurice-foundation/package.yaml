@@ -18,6 +18,7 @@ library:
   other-modules: []
   dependencies:
     - base                  >=4.7   && <4.11
+    - aeson
     - clay
     - file-embed
     - fum-types
