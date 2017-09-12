@@ -17,6 +17,7 @@ import Data.Aeson.Compat         (FromJSON)
 import Data.Constraint
 import Data.Fixed                (Centi)
 import Data.List                 (maximumBy)
+import Data.Maybe                (isJust)
 import Data.Ord                  (comparing)
 import Data.Time                 (addDays)
 import Futurice.Cache            (DynMapCache, cachedIO)
@@ -202,7 +203,7 @@ instance MonadHours Hours where
             }
 
     task tid = do
-        t <- withFallback (PMQ.task tid) (PM.task tid)
+        t <- withFallback' (PMQ.task tid) (PM.task tid) (isJust . PM.taskProject)
         pure Task
             { _taskId        = t ^. PM.identifier
             , _taskName      = PM.taskName t
@@ -327,7 +328,7 @@ makeTimereport pid tr = Timereport
 --        :5 : Draft invoice
 --        :6 : Invoiced]
 -- @-
--- % tajna run -r pm-cli -- enumeration 'Time report.Status'         
+-- % tajna run -r pm-cli -- enumeration 'Time report.Status'
 -- IntMap [0 : Reported
 --        :1 : Accepted
 --        :2 : Locked
@@ -358,3 +359,14 @@ withFallback action pm = do
     case mx of
         Just x -> pure x
         Nothing -> cachedPlanmillAction pm
+
+-- | Like 'withFallback' but fallbacks if cached result is bad
+withFallback'
+    :: (Typeable a, FromJSON a, NFData a, Show a)
+    => Hours a -> PM.PlanMill a -> (a -> Bool) -> Hours a
+withFallback' action pm pred = do
+    mx <- Just <$> action -- TODO: catch exceptions!
+    case mx of
+        Just x | pred x -> pure x
+        Just _          -> cachedPlanmillAction pm
+        Nothing         -> cachedPlanmillAction pm
