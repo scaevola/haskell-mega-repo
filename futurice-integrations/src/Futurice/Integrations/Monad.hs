@@ -9,6 +9,7 @@ module Futurice.Integrations.Monad (
     Integrations,
     Env,
     runIntegrations,
+    runIntegrationsIO,
     IntegrationsConfig (..),
     loadIntegrationConfig,
     ) where
@@ -118,6 +119,14 @@ runIntegrations mgr lgr now cfg (Integr m) = do
         <$> integrCfgGithubProxyBaseRequest cfg
     peStateSet  = extractSEndo $ fmap H.stateSet $ Personio.Haxl.initDataSource lgr mgr
         <$> integrCfgPersonioProxyBaseRequest cfg
+
+{-# DEPRECATED runIntegrationsIO "Only use this in repl" #-}
+runIntegrationsIO :: Integrations I I I I I a -> IO a
+runIntegrationsIO action = withStderrLogger $ \lgr -> do
+    cfg <- loadIntegrationConfig lgr
+    mgr <- newManager tlsManagerSettings
+    now <- currentTime
+    runIntegrations mgr lgr now cfg action
 
 -------------------------------------------------------------------------------
 -- env-config
