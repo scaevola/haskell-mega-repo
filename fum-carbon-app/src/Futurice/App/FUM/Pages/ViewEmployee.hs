@@ -3,10 +3,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.FUM.Pages.ViewEmployee (viewEmployeePage) where
 
+import Futurice.IdMap   (IdMap)
 import Futurice.Prelude
-import Futurice.IdMap (IdMap)
 import Prelude ()
 
+import Futurice.App.FUM.Command
+import Futurice.App.FUM.Lomake
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Types
 
@@ -18,7 +20,7 @@ viewEmployeePage
     -> IdMap Personio.Employee
     -> Employee  -- ^ employees
     -> HtmlPage "view-employee"
-viewEmployeePage auth _world personio e = fumPage_ "Employee" auth $ do
+viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
     -- Title
     fumHeader_ "Employee" [e ^? employeeLogin . getter loginToText ]
 
@@ -57,6 +59,13 @@ viewEmployeePage auth _world personio e = fumPage_ "Employee" auth $ do
 
     subheader_ "Groups"
     fullRow_ "TODO"
+
+    subheader_ "Add to group"
+    commandHtml' (Proxy :: Proxy AddEmployeeToGroup) $
+        -- TODO: filter not editable groups
+        vGroups (const True) world :*
+        vHidden (e ^. employeeLogin) :*
+        Nil
 
     subheader_ "Password"
     fullRow_ $ do

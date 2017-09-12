@@ -10,6 +10,7 @@ module Futurice.App.FUM.Command (
     ICT (..),
     withCT,
     decodeSomeCommand,
+    module Futurice.App.FUM.Command.AddEmployeeToGroup,
     module Futurice.App.FUM.Command.Bootstrap,
     module Futurice.App.FUM.Command.Definition,
     module Futurice.App.FUM.Command.CreateEmployee,
@@ -21,6 +22,7 @@ import Prelude ()
 import Data.Aeson.Types (parseEither, parseJSON)
 import Data.Functor.Alt ((<!>))
 
+import Futurice.App.FUM.Command.AddEmployeeToGroup
 import Futurice.App.FUM.Command.Bootstrap
 import Futurice.App.FUM.Command.CreateEmployee
 import Futurice.App.FUM.Command.CreateGroup
@@ -43,25 +45,29 @@ withSomeCommand (SomeCommand tag cmd) f = withCT tag (f tag cmd)
 
 -- | GADT representing different commands.
 data CT cmd where
-    CTBootstrap      :: CT Bootstrap
-    CTCreateEmployee :: CT CreateEmployee
-    CTCreateGroup    :: CT CreateGroup
+    CTAddEmployeeToGroup :: CT AddEmployeeToGroup
+    CTBootstrap          :: CT Bootstrap
+    CTCreateEmployee     :: CT CreateEmployee
+    CTCreateGroup        :: CT CreateGroup
 
 deriving instance Show (CT cmd)
 
 -- | Implicit 'CT'.
-class    ICT cmd            where icommandTag :: CT cmd
-instance ICT Bootstrap      where icommandTag = CTBootstrap
-instance ICT CreateEmployee where icommandTag = CTCreateEmployee
-instance ICT CreateGroup    where icommandTag = CTCreateGroup
+class    ICT cmd                where icommandTag :: CT cmd
+instance ICT AddEmployeeToGroup where icommandTag = CTAddEmployeeToGroup
+instance ICT Bootstrap          where icommandTag = CTBootstrap
+instance ICT CreateEmployee     where icommandTag = CTCreateEmployee
+instance ICT CreateGroup        where icommandTag = CTCreateGroup
 
 withCT :: CT cmd -> (Command cmd => r) -> r
-withCT CTBootstrap f      = f
-withCT CTCreateEmployee f = f
-withCT CTCreateGroup f    = f
+withCT CTAddEmployeeToGroup f = f
+withCT CTBootstrap f          = f
+withCT CTCreateEmployee f     = f
+withCT CTCreateGroup f        = f
 
 decodeSomeCommand :: Text -> Value -> Either String SomeCommand
 decodeSomeCommand name payload =
+    ct CTAddEmployeeToGroup <!>
     ct CTBootstrap <!>
     ct CTCreateEmployee <!>
     ct CTCreateGroup <!>

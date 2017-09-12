@@ -22,6 +22,6 @@ createGroupPage auth _world = fumPage_ "Create group" auth $ do
 
     -- Form
     commandHtml' (Proxy :: Proxy CreateGroup) $ 
-        Nothing :*
-        Nothing :*
+        vNothing :*
+        vNothing :*
         Nil

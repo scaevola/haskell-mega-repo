@@ -2,11 +2,12 @@
 module Futurice.App.FUM.Auth where
 
 import Control.Concurrent.STM (atomically, readTVar)
-import Control.Lens           (contains, has)
+import Control.Lens           (has)
 import Futurice.Prelude
 import Prelude ()
 import Servant                (Handler)
 
+import Futurice.App.FUM.ACL
 import Futurice.App.FUM.Ctx
 import Futurice.App.FUM.Types
 
@@ -33,8 +34,3 @@ withAuthUser' def ctx mfu f = case mfu <|> ctxMockUser ctx of
                 | otherwise                          -> RightsOther
 
         f (AuthUser fu rights) world es
-
-isSudoer :: Login -> World -> Bool
-isSudoer login world = fromMaybe False $ do
-    gn <- world ^. worldSudoGroup
-    world ^? worldGroups . ix gn . groupEmployees . contains login

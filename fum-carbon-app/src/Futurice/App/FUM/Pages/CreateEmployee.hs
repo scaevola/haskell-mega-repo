@@ -39,9 +39,9 @@ createEmployeePage auth _world _es e = fumPage_ "Create employee" auth $ do
 
     -- Form
     commandHtml' (Proxy :: Proxy CreateEmployee) $ 
-        Just (e ^. Personio.employeeId) :*
-        (e ^. Personio.employeeLogin) :*
-        Nothing :*
-        (e ^? Personio.employeeFullname) :*
-        (e ^? Personio.employeeEmail) :*
+        vJust (e ^. Personio.employeeId) :*
+        V (e ^. Personio.employeeLogin) [] :*
+        vNothing :*
+        V (e ^? Personio.employeeFullname) [] :*
+        V (e ^? Personio.employeeEmail) [] :*
         Nil
