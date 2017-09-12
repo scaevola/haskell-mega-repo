@@ -57,10 +57,11 @@ buildCmd buildImage = T.unwords
     [ "docker run"
     , "--rm"
     , "-ti"
-    , "--entrypoint /app/src/build-in-docker.sh"
+    , "--entrypoint /app/src/build-in-linux-cabal.sh"
+    , "-e DOCKER=YES" -- tell script we are in docker
     , "-v $(pwd):/app/src"
-    , "-v hmr-stack-root:/stack-root"
-    , "-v hmr-stack-work:/app/src/.stack-work-docker"
+    , "-v haskell-mega-repo-cabal:/home/root/.cabal"
+    , "-v haskell-mega-repo-dist:/app/src/dist-newbuild-prod"
     , buildImage
     ]
 
@@ -97,8 +98,8 @@ buildDocker appnames = do
     when (githashBuild /= githash) $ do
         T.putStrLn $ "Git hash in build directory don't match: " <> githashBuild  <> " != " <> githash
         T.putStrLn $ "Make sure you have data volumes:"
-        T.putStrLn $ "  docker volume create --name hmr-stack-root"
-        T.putStrLn $ "  docker volume create --name hmr-stack-work"
+        T.putStrLn $ "  docker volume create --name haskell-mega-repo-cabal"
+        T.putStrLn $ "  docker volume create --name haskell-mega-repo-dist"
         T.putStrLn $ "Run following command to build image:"
         T.putStrLn $ "  " <> (buildCmd $ mrtDockerBaseImage cfg)
         exitFailure
