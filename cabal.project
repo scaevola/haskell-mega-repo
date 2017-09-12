@@ -54,3 +54,9 @@ packages:
   theme-app/
 
   vendor/chart/chart
+
+package theme-app
+  ghc-options: +RTS -M2G -RTS
+
+package planmill-client
+  ghc-options: +RTS -M2G -RTS
