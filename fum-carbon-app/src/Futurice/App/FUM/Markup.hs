@@ -6,6 +6,8 @@ module Futurice.App.FUM.Markup (
     fumPage_,
     fumHeader_,
     subheader_,
+    block_,
+    todos_,
     -- * Form
     futuId_,
     futuLinkButton_,
@@ -48,7 +50,7 @@ navigation (AuthUser login _) = div_ [ class_ "top-bar" ] $ do
             a_ [ indexPageHref_ ] $ do
                 "FUM"
                 sup_ "6"
-                " - beta"
+                " - alpha"
         li_ $ a_ [ id_ "futu-reload-indicator", href_ "#", style_ "display: none", title_ "You made changes, refresh page to show" ]  "1"
         li_ $ a_ [ listEmployeesHref_ ] "Employees"
         li_ $ a_ [ listGroupsHref_ ] "Groups"
@@ -76,6 +78,17 @@ subheader_
     => Text
     -> HtmlT m ()
 subheader_ title = fullRow_ $ h2_ $ toHtml title
+
+block_ :: Monad m => Text -> HtmlT m () -> HtmlT m ()
+block_ title contents = do
+    div_ [ style_ "margin-bottom: 1em" ] $  do
+        subheader_ title
+        contents
+
+todos_ :: Monad m => [HtmlT m ()] -> HtmlT m ()
+todos_ xs = row_ $ large_ 12 [ class_ "callout warning" ] $ do
+    "To do"
+    ul_ $ traverse_ li_ xs
 
 -------------------------------------------------------------------------------
 -- Forms

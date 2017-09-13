@@ -24,7 +24,7 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
     -- Title
     fumHeader_ "Employee" [e ^? employeeLogin . getter loginToText ]
 
-    fullRow_ "PICTURE TODO"
+    todos_ [ "picture", "its editing" ]
 
     fullRow_ $ table_ $ tbody_ $ do
         vertRow_ "Name" $ toHtml $ e ^. employeeName
@@ -38,38 +38,39 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
             vertRow_ "Tribe" $ toHtml $ p ^. Personio.employeeTribe
             vertRow_ "Phone" $ traverse_ toHtml $ p ^. Personio.employeeWorkPhone
             -- TODO: what else to show?
+            --
+    todos_ [ "show github", "show flowdock", "show internal/external", "show contractEndDate" ]
 
-    fullRow_ "TODO: information from Personio"
+    block_ "Email addresses" $ do
+        when (null $ e ^. employeeEmailAliases) $
+            row_ $ large_ 12 [ class_ "callout warning" ] $
+                em_ "No email addresses"
 
-    subheader_ "Email addresses"
+        fullRow_ $ table_ $ tbody_ $
+            for_ (e ^.. employeeEmailAliases . folded) $ \email -> tr_ $ do
+                td_ $ toHtml email
+                td_ $ button_ [ class_ "button" ] "Remove"
 
-    when (null $ e ^. employeeEmailAliases) $
-        row_ $ large_ 12 [ class_ "callout warning" ] $
-            em_ "No email addresses"
+        todos_ [ "Remove doesn't work", "Add alias" ]
 
-    fullRow_ $ table_ $ tbody_ $
-        for_ (e ^.. employeeEmailAliases . folded) $ \email -> tr_ $ do
-            td_ $ toHtml email
-            td_ $ button_ [ class_ "button" ] "Remove"
+    block_ "SSH Keys" $ do
+        todos_ [ "show", "management" ]
 
-    fullRow_ "Add alias: TODO"
+    block_ "Groups" $ do
+        subheader_ "Add to group"
+        commandHtml' (Proxy :: Proxy AddEmployeeToGroup) $
+            -- TODO: filter not editable groups
+            vGroups (const True) world :*
+            vHidden (e ^. employeeLogin) :*
+            Nil
 
-    subheader_ "SSH Keys"
-    fullRow_ "TODO"
+        todos_ ["Show groups", "removal of groups"]
 
-    subheader_ "Groups"
-    fullRow_ "TODO"
+    block_ "Password" $ do
+        fullRow_ $ do
+            "Expires at "
+            toHtml $ formatHumanHelsinkiTime $ e ^. employeePasswordExp
 
-    subheader_ "Add to group"
-    commandHtml' (Proxy :: Proxy AddEmployeeToGroup) $
-        -- TODO: filter not editable groups
-        vGroups (const True) world :*
-        vHidden (e ^. employeeLogin) :*
-        Nil
+            "Change TODO"
 
-    subheader_ "Password"
-    fullRow_ $ do
-        "Expires at "
-        toHtml $ formatHumanHelsinkiTime $ e ^. employeePasswordExp
-
-        "Change TODO"
+        todos_ [ "management" ]
