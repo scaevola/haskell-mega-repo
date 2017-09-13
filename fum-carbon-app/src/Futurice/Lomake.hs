@@ -178,7 +178,7 @@ lomakeHtml formOpts fields names values =
   where
     formAttributes =
         [ data_ "lomake-form" $ foName formOpts
-        , data_ "lomake-form-submit" $ toUrlPiece $ foUrl formOpts
+        , data_ "lomake-form-submit" $ "/" <> toUrlPiece (foUrl formOpts)
         ]
 
     go :: NP Field ys -> NP (K Text) ys -> NP V ys -> StateT () (HtmlT m) ()
