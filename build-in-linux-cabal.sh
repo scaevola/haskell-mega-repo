@@ -31,11 +31,14 @@ HC=ghc-$GHCVER
 # Use different BUILDDIR
 BUILDDIR=dist-newstyle-prod
 
+# Concurrency
+CONCURRENCY=${CONCURRENCY-1}
+
 # Update cabal
 cabal update
 
 # Perform build
-cabal new-build -j1 -w $HC --builddir=$BUILDDIR all:exes 
+cabal new-build -j$CONCURRENCY -w $HC --builddir=$BUILDDIR all:exes
 
 # write current git hash, so we know where we are
 GITHASH=$(git log --pretty=format:'%h' -n 1)
