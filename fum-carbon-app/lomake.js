@@ -29,17 +29,47 @@ lomake = (function () {
     _.forEach(inputElements, function (el) {
       var elName = el.dataset.lomakeId;
 
+      // jQuery element
+      var $el;
+      if (el.tagName == "SELECT") {
+        var opts = {};
+        // dynamic values
+
+        if (el.dataset.lomakeValuesLink) {
+          opts.ajax = {
+            url: el.dataset.lomakeValuesLink,
+            dataType: "json",
+            cache: true,
+            processResults: function (data) {
+              _.forEach(data.results, function (r) {
+                // if selected value is not set, pick the empty value if there is one
+                if (!el.dataset.lomakeSelectedValue && r.id === "") {
+                    r.selected = true;
+                // otherwise select value defined
+                } else if (el.dataset.lomakeSelectedValue === r.id) {
+                    r.selected = true;
+                }
+              });
+              return data;
+            }
+          }
+        }
+        $el = jQuery(el).select2(opts);
+      } else {
+        $el = jQuery(el);
+      }
+
       // we define the def object here, so we can refer to it already.
-      var def = { el: el };
+      var def = { el: el, $el: $el };
 
       // not used atm.
       // var checkbox = def.el.type === "checkbox";
 
       // original value, so we can find changed elements.
-      def.original$ = menrva.source(inputValue(el));
+      def.original$ = menrva.source(inputValue($el));
 
       // the value in the element
-      def.source$ = menrvaInputValue(el);
+      def.source$ = menrvaInputValue($el);
 
       // todo:
       var check = undefined;
@@ -70,8 +100,9 @@ lomake = (function () {
 
       // dirty = "touched elements".
       def.dirty$ = menrva.source(false);
-      def.el.addEventListener("blur", function () {
+      $el.blur(function () {
         menrva.transaction([def.dirty$, true]).commit();
+        console.log("blur");
       });
 
       // per element validation.
@@ -86,19 +117,13 @@ lomake = (function () {
       }).onValue(function (state) {
         if (state === "error") {
           def.el.parentElement.classList.add("error");
-          def.el.classList.add("error");
           def.el.parentElement.classList.remove("pending");
-          def.el.classList.remove("pending");
         } else if (state === "pending") {
           def.el.parentElement.classList.remove("error");
-          def.el.classList.remove("error");
           def.el.parentElement.classList.add("pending");
-          def.el.classList.add("pending");
         } else {
           def.el.parentElement.classList.remove("pending");
-          def.el.classList.remove("pending");
           def.el.parentElement.classList.remove("error");
-          def.el.classList.remove("error");
         }
       });
 
@@ -121,7 +146,7 @@ lomake = (function () {
         tr.push(def.dirty$);
         tr.push(false);
         tr.push(def.signal);
-        tr.push(inputValue(def.el));
+        tr.push(inputValue(def.$el));
       });
       menrva.transaction(tr).commit();
     }
@@ -202,6 +227,12 @@ lomake = (function () {
                     case "LomakeResponseNoop": 
                         modal.close();
                         break;
+                    case "LomakeResponseError":
+                        throw new Error(response.contents);
+                        break;
+                    case "LomakeResponseReload":
+                        location.reload();
+                        break;
                     case "LomakeResponseRedirect":
                         location.href = response.contents;
                         break;
@@ -248,18 +279,17 @@ lomake = (function () {
   // Menrva
 
   // make a menrva.source with bi-directional binding.
-  function menrvaInputValue(el) {
-    var value$ = menrva.source(inputValue(el), _.isEqual)
+  function menrvaInputValue($el) {
+    var value$ = menrva.source(inputValue($el), _.isEqual)
     var cb = function () {
       menrva.transaction()
-        .set(value$, inputValue(el))
+        .set(value$, inputValue($el))
         .commit();
     };
-    el.addEventListener("keyup", cb);
-    el.addEventListener("change", cb);
+    $el.change(cb);
 
     value$.onValue(function (value) {
-      setInputValue(el, value);
+      setInputValue($el, value);
     });
 
     return value$;
@@ -273,26 +303,12 @@ lomake = (function () {
   }
 
   // DOM
-  function inputValue(el) {
-    if (el.tagName === "INPUT" && el.type === "checkbox") {
-        return el.checked;
-    } else if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
-        return el.value.trim();
-    } else if (el.tagName === "SELECT" && el.multiple) {
-        return $$("option:checked", el).map(function (o) { return o.value.trim(); });
-    } else if (el.tagName === "SELECT") {
-        return el.value.trim();
-    } else {
-        throw new Error("inputValue: how to handle " + el.tagName);
-    }
+  function inputValue($el) {
+    return $el.val();
   }
 
-  function setInputValue(el, value) {
-    if (el.type === "checkbox") {
-      el.checked = value === true;
-    } else {
-      el.value = value;
-    }
+  function setInputValue($el, value) {
+    $el.val(value).change(); // change for select2
   }
 
   // Fetch

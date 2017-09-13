@@ -82,17 +82,20 @@ library
   exposed-modules:
       Futurice.App.FUM
       Futurice.App.FUM.Ack
+      Futurice.App.FUM.ACL
       Futurice.App.FUM.API
       Futurice.App.FUM.API.Pages
       Futurice.App.FUM.Auth
       Futurice.App.FUM.Clay
       Futurice.App.FUM.Command
+      Futurice.App.FUM.Command.AddEmployeeToGroup
       Futurice.App.FUM.Command.Bootstrap
       Futurice.App.FUM.Command.CreateEmployee
       Futurice.App.FUM.Command.CreateGroup
       Futurice.App.FUM.Command.Definition
       Futurice.App.FUM.Config
       Futurice.App.FUM.Ctx
+      Futurice.App.FUM.Lomake
       Futurice.App.FUM.Machine
       Futurice.App.FUM.Markup
       Futurice.App.FUM.Pages.CreateEmployee

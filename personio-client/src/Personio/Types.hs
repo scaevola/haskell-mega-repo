@@ -249,7 +249,7 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseDynamicAttribute obj "HR number"
         <*> parseAttribute obj "employment_type"
         <*> optional (parseDynamicAttribute obj "Contract type")
-        <*> parseDynamicAttribute obj "Home phone"
+        <*> parseDynamicAttribute obj "Private phone"
         <*> parseAttribute obj "position"
 #ifdef PERSONIO_DEBUG
         <*> pure obj -- for employeeRest field
@@ -463,7 +463,6 @@ data ValidationMessage
     | EmploymentTypeMissing
     | EndOfExpatAssignmentMissing
     | ExpatBonusAndAllowanceCurrencyMissing
-    | ExpatMissing
     | ExternalMonthlyVariableSalary
     | FirstNameMissing
     | FISSNInvalid
@@ -562,7 +561,6 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , attributeObjectMissing "office" OfficeMissing
         , costCenterValidate
         , dynamicAttributeMissing "Contract type" ContractTypeMissing
-        , dynamicAttributeMissing "Expat" ExpatMissing
         , dynamicAttributeMissing "Home city" HomeCityMissing
         , dynamicAttributeMissing "Home country" HomeCountryMissing
         , dynamicAttributeMissing "Home street address" HomeStreetAddressMissing
@@ -585,8 +583,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , internalValidations
         , loginValidate
         , monthlyVariableSalaryValidate
-        , phoneValidate "Emergency contact phone" EmergencyContactPhoneInvalid
-        , phoneValidate "Private phone" PrivatePhoneInvalid
+        -- TODO: , phoneValidate "Emergency contact phone" EmergencyContactPhoneInvalid
         , privateEmailValidate
         , supervisorValidate
         , withValidatorValidate "(DE) ID number" DEIDInvalid isValidDeID
@@ -648,12 +645,14 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                 String a -> checkAttributeName a errMsg
                 a        -> lift (typeMismatch (show attrName) a)
 
+{-
         phoneValidate :: Text -> (Text -> ValidationMessage) ->  WriterT [ValidationMessage] Parser ()
         phoneValidate aName errMsg = do
             phone <- lift (parseDynamicAttribute obj aName)
             case match phoneRegexp phone of
                 Just _ -> pure ()
                 Nothing -> tell [errMsg phone]
+-}
 
         githubValidate :: WriterT [ValidationMessage] Parser ()
         githubValidate = do
@@ -720,17 +719,17 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 
         homePhoneValidate :: WriterT [ValidationMessage] Parser ()
         homePhoneValidate = do
-            hPhone <- lift (parseDynamicAttribute obj "Home phone")
-            case match (phoneRegexp <|> pure "") hPhone of
+            hPhone <- lift (parseDynamicAttribute obj "Private phone")
+            case match (void phoneRegexp <|> pure ()) hPhone of
                 Nothing -> tell [HomePhoneInvalid hPhone]
-                Just _  -> pure ()
+                Just () -> pure ()
 
         flowdockValidate :: WriterT [ValidationMessage] Parser ()
         flowdockValidate = do
             fdockText <- lift (parseDynamicAttribute obj "Flowdock")
-            case match (flowdockRegexp <|> empty) fdockText of
+            case match (void flowdockRegexp <|> pure ()) fdockText of
                 Nothing -> tell [FlowdockInvalid]
-                Just _  -> pure ()
+                Just () -> pure ()
 
         emailValidate :: WriterT [ValidationMessage] Parser ()
         emailValidate = do
@@ -818,7 +817,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         privateEmailValidate :: WriterT [ValidationMessage] Parser ()
         privateEmailValidate = do
             pMail <- lift (parseDynamicAttribute obj "Private email")
-            case match emailRegexp pMail of
+            case match (emailRegexp <|> "") pMail of
                 Just _  -> pure ()
                 Nothing -> tell [PrivateEmailInvalid pMail]
 

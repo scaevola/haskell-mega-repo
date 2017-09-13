@@ -19,7 +19,7 @@ import Futurice.App.FUM.Types.Identifier
 import Futurice.App.FUM.Types.Status
 import Futurice.App.FUM.Types.World
 
-data Rights = RightsIT | RightsNormal | RightsOther
+data Rights = RightsOther | RightsNormal | RightsIT
   deriving (Eq, Ord, Show)
 
 -- | Authorised user.

@@ -1,5 +1,5 @@
-{-# LANGUAGE DataKinds      #-}
-{-# LANGUAGE TypeOperators  #-}
+{-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE TypeOperators #-}
 module Futurice.App.FUM.API (
     module Futurice.App.FUM.API,
     module Futurice.App.FUM.API.Pages,
@@ -28,6 +28,7 @@ type FumCarbonApi = FumCarbonPagesApi
 type FumCarbonCommandApi = CommandEndpoint Bootstrap
     :<|> CommandEndpoint CreateEmployee
     :<|> CommandEndpoint CreateGroup
+    :<|> CommandEndpoint AddEmployeeToGroup
 
 type FumCarbonMachineApi =
     "personio-request" :> ReqBody '[JSON] Personio.SomePersonioReq :> Post '[JSON] Personio.SomePersonioRes

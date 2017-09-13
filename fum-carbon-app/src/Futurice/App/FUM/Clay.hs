@@ -2,12 +2,11 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.FUM.Clay where
 
-import Prelude ()
-import Futurice.Prelude          hiding ((&), (**))
 import Clay
 import Futurice.Lucid.Foundation
-       (PageParams, defPageParams, embedJS, pageCss, pageJQuery,
-       pageJs)
+       (PageParams, defPageParams, embedJS, pageCss, pageJQuery, pageJs)
+import Futurice.Prelude          hiding ((&), (**))
+import Prelude ()
 
 import qualified Control.Lens as L
 
@@ -25,18 +24,22 @@ css = do
 
     label # ".error" ? do
         color red
-    "input[type=text]" # ".error" ? do
-        borderColor red
-    "input[type=date]" # ".error" ? do
-        borderColor red
-    "select" # ".error" ? do
-        borderColor red
+        "input[type=text]" ? do
+            borderColor red
+        "input[type=date]" ? do
+            borderColor red
+        "select" ? do
+            borderColor red
+        ".select2-container--default .select2-selection--single" ? do
+            borderColor red
 
     label # ".pending" ? do
         color orange
-    "input[type=text]" # ".pending" ? do
-        borderColor orange
-    "input[type=date]" # ".pending" ? do
-        borderColor orange
-    "select" # ".pending" ? do
-        borderColor orange
+        "input[type=text]" ?  do
+            borderColor orange
+        "input[type=date]" ? do
+            borderColor orange
+        "select" ? do
+            borderColor orange
+        ".select2-container--default .select2-selection--single" ? do
+            borderColor orange

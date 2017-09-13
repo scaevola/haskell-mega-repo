@@ -28,7 +28,7 @@ deriveGeneric ''CreateGroup
 instance phase ~ 'Input => HasLomake (CreateGroup phase) where
     lomake _ =
         textField "name" :*
-        enumField "type" :*
+        enumField "type" groupTypeToText :*
         -- todo description
         Nil
 

@@ -100,12 +100,15 @@ commandTag' _ = view packed (symbolVal p) where
 commandHtml'
     :: forall cmd m. (Command cmd, Monad m)
     => Proxy cmd
-    -> NP Maybe (LomakeCode (cmd 'Input))
+    -> NP V (LomakeCode (cmd 'Input))
     -> HtmlT m ()
-commandHtml' p = lomakeHtml'
+commandHtml' p = lomakeHtml
     commandFormOptions
-    (lomake (Proxy :: Proxy (cmd 'Input)))
+    (lomake cmdp)
+    (strippedFieldNames cmdp)
   where
+    cmdp = Proxy :: Proxy (cmd 'Input)
+
     commandFormOptions :: FormOptions
     commandFormOptions = FormOptions
         { foName = commandTag p <> "-form"

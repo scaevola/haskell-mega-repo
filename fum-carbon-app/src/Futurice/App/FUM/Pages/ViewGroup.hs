@@ -6,6 +6,9 @@ module Futurice.App.FUM.Pages.ViewGroup (viewGroupPage) where
 import Futurice.Prelude
 import Prelude ()
 
+import Futurice.App.FUM.ACL
+import Futurice.App.FUM.Command
+import Futurice.App.FUM.Lomake
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Types
 
@@ -22,8 +25,12 @@ viewGroupPage auth world g = fumPage_ "Group" auth $ do
         vertRow_ "Name" $ toHtml $ g ^. groupName
         vertRow_ "Type" $ toHtml $ g ^. groupType
 
-    subheader_ "Add member"
-    fullRow_ "TODO"
+    when (canEditGroup (authLogin auth) (g ^. groupName) world) $ do
+        subheader_ "Add member"
+        commandHtml' (Proxy :: Proxy AddEmployeeToGroup) $
+            vHidden (g ^. groupName) :*
+            vEmployees (\e -> notElem e $ g ^.. groupEmployees . folded) world :*
+            Nil
 
     subheader_ "Members"
     fullRow_ $ table_ $ do

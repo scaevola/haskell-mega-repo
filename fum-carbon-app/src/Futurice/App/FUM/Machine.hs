@@ -1,4 +1,5 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE OverloadedStrings #-}
 -- | Implementation of the machine API.
 module Futurice.App.FUM.Machine (machineServer) where
 

@@ -42,9 +42,9 @@ forbiddenPage tr = fumPage_ "Forbidden" (AuthUser $(mkLogin "guest") RightsOther
                         maybe "-" (toHtml . show) $ e ^. Personio.employeeEndDate
 
                 commandHtml' (Proxy :: Proxy Bootstrap) $
-                    Just (e ^. Personio.employeeId) :*
-                    (e ^. Personio.employeeLogin) :*
-                    (e ^? Personio.employeeFullname) :*
-                    (e ^? Personio.employeeEmail) :*
-                    Nothing :*
+                    vJust (e ^. Personio.employeeId) :*
+                    V (e ^. Personio.employeeLogin) [] :*
+                    V (e ^? Personio.employeeFullname) [] :*
+                    V (e ^? Personio.employeeEmail) [] :*
+                    vNothing :*
                     Nil
