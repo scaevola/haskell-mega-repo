@@ -610,7 +610,6 @@ document.addEventListener("DOMContentLoaded", function () {
       def.$el = def.el.tagName === "SELECT"
         ? jQuery(def.el).select2(SELECT2_OPTS)
         : jQuery(def.el);
-      console.log(def.$el);
       def.orig = inputValue(def.$el);
       def.signal = menrvaInputValue(def.$el);
       def.signal$ = def.check ? def.signal.map(def.check) : def.signal;
@@ -699,6 +698,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // after value update!
       actions.markClean();
+
+      // force change events
+      // otherwise select2 won't update.
+      _.forEach(defs, function (def) {
+        def.$el.change();
+      });
     });
   }
 
@@ -752,6 +757,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .commit();
     };
     $el.change(cb);
+    $el.keyup(cb);
     return value$;
   }
 
