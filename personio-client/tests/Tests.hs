@@ -148,11 +148,13 @@ validations = testGroup "Validations"
         $ correctEmployeeValue
             & attributeValue "dynamic_72935" . _String .~ "permanent" -- contract type
             & attributeValue "employment_type" . _String .~ "external"
+{-
     , testValidation
         "home phone"
         (HomePhoneInvalid "123a4")
         $ correctEmployeeValue
             & attributeValue "dynamic_72936" . _String .~ "123a4"
+-}
     , testValidation
         "flowdock"
         FlowdockInvalid
@@ -242,6 +244,7 @@ validations = testGroup "Validations"
         (PrivateEmailInvalid "eskokarvinen@fi")
         $ correctEmployeeValue
             & attributeValue "dynamic_72921" . _String .~ "eskokarvinen@fi" -- private email
+{-
     , testValidation
         "private phone"
         (PrivatePhoneInvalid "1234")
@@ -252,6 +255,7 @@ validations = testGroup "Validations"
         (EmergencyContactPhoneInvalid "1234")
         $ correctEmployeeValue
             & attributeValue "dynamic_72939" . _String .~ "1234" -- Emergency contact phone
+-}
     , testValidation
         "start of assignment"
         StartOfExpatAssignmentMissing
