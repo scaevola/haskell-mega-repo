@@ -31,6 +31,7 @@ library:
     - base-compat
     - Chart
     - containers
+    - distributive
     - dynmap-cache
     - env-config
     - fum-types
@@ -43,6 +44,7 @@ library:
     - http-types
     - lens
     - lucid
+    - mtl
     - planmill-client
     - postgresql-simple
     - resource-pool
@@ -55,6 +57,8 @@ library:
     - time
     - vector
 
+    - adjunctions
+    - linear
 
 executables:
   smileys-app-server:

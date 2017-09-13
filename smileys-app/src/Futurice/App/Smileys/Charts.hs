@@ -1,15 +1,18 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.Smileys.Charts where
 
-import Control.Lens     ((.=), (^@..))
-import Data.Pool        (withResource)
-import Futurice.Cache   (cachedIO)
+import Control.Lens      ((.=))
+import Data.Distributive (Distributive (..))
+import Data.Functor.Rep  (Representable (..), distributeRep)
+import Data.Pool         (withResource)
+import Futurice.Cache    (cachedIO)
 import Futurice.Prelude
-import GHC.TypeLits     (KnownSymbol, symbolVal)
+import GHC.TypeLits      (KnownSymbol, symbolVal)
 import Prelude ()
-import Servant.Chart    (Chart (..))
+import Servant.Chart     (Chart (..))
 
 import Futurice.App.Smileys.Ctx
 import Futurice.App.Smileys.Types
@@ -17,6 +20,8 @@ import Futurice.App.Smileys.Types
 import qualified Data.Map                      as Map
 import qualified Database.PostgreSQL.Simple    as Postgres
 import qualified Graphics.Rendering.Chart.Easy as C
+
+import Futurice.Chart.Stacked as C
 
 -------------------------------------------------------------------------------
 -- Absolute
@@ -30,17 +35,9 @@ absoluteChartHandler = chartHandler chart
         C.layout_x_axis . C.laxis_title .= "day"
         C.layout_y_axis . C.laxis_title .= "smileys count"
 
-        C.plot $ pure $ strip ":(" C.red    $ values ^@.. ifolded . getter firstStrip
-        C.plot $ pure $ strip ":|" C.yellow $ values ^@.. ifolded . getter secondStrip
-        C.plot $ pure $ strip ":)" C.blue   $ values ^@.. ifolded . getter thirdStrip
-
-    strip
-        :: String -> C.Colour Double -> [(Day, (Int, Int))]
-        -> C.PlotFillBetween Day Int
-    strip title colour xs = C.def
-        & C.plot_fillbetween_title  .~ title
-        & C.plot_fillbetween_style  .~ (C.def & C.fill_color .~ C.withOpacity colour 0.5)
-        & C.plot_fillbetween_values .~ xs
+        C.plot $ fmap C.stackedToPlot $ C.stacked
+            (SmileyAcc ":(" ":|" ":)")
+            (Map.toList values)
 
 -------------------------------------------------------------------------------
 -- Relative
@@ -50,21 +47,19 @@ relativeChartHandler :: MonadIO m => Ctx -> m (Chart "relative")
 relativeChartHandler = chartHandler chart
   where
     chart values = Chart . C.toRenderable $ do
-        C.layout_title .= "relative smileys per day"
+        C.layout_title .= "absolute smileys per day"
         C.layout_x_axis . C.laxis_title .= "day"
-        C.layout_y_axis . C.laxis_title .= "smileys %"
+        C.layout_y_axis . C.laxis_title .= "smileys count"
 
-        C.plot $ pure $ strip ":(" C.red    $ values ^@.. ifolded . getter firstStripR
-        C.plot $ pure $ strip ":|" C.yellow $ values ^@.. ifolded . getter secondStripR
-        C.plot $ pure $ strip ":)" C.blue   $ values ^@.. ifolded . getter thirdStripR
+        C.plot $ fmap C.stackedToPlot $ C.stacked
+            (SmileyAcc ":(" ":|" ":)")
+            (Map.toList $ fmap scale values)
 
-    strip
-        :: String -> C.Colour Double -> [(Day, (Double, Double))]
-        -> C.PlotFillBetween Day Double
-    strip title colour xs = C.def
-        & C.plot_fillbetween_title  .~ title
-        & C.plot_fillbetween_style  .~ (C.def & C.fill_color .~ C.withOpacity colour 0.5)
-        & C.plot_fillbetween_values .~ xs
+    scale (SmileyAcc x y z)
+        | s > 0     = SmileyAcc (x/s) (y/s) (z/s)
+        | otherwise = SmileyAcc 0 1 0
+      where
+        s = x + y + z
 
 -------------------------------------------------------------------------------
 -- Common
@@ -72,7 +67,7 @@ relativeChartHandler = chartHandler chart
 
 chartHandler
     :: forall a m. (KnownSymbol a, MonadIO m)
-    => (Map Day SmileyAcc -> Chart a)
+    => (Map Day (SmileyAcc Double) -> Chart a)
     -> Ctx -> m (Chart a)
 chartHandler chart ctx = do
     input <- liftIO $ cachedIO (ctxLogger ctx) (ctxCache ctx) 600 (symbolVal (Proxy :: Proxy a)) $
@@ -91,56 +86,31 @@ chartHandler chart ctx = do
 -- Smiley accumulator (per day)
 -------------------------------------------------------------------------------
 
-data SmileyAcc = SmileyAcc !Int !Int !Int
+data SmileyAcc a = SmileyAcc !a !a !a
+  deriving (Functor, Foldable, Traversable)
 
-instance Semigroup SmileyAcc where
+data SV = Sad | Normal | Happy
+
+instance Distributive SmileyAcc where
+    distribute = distributeRep
+
+instance Representable SmileyAcc where
+    type Rep SmileyAcc = SV
+
+    tabulate f = SmileyAcc (f Sad) (f Normal) (f Happy)
+    index (SmileyAcc x _ _) Sad    = x
+    index (SmileyAcc _ x _) Normal = x
+    index (SmileyAcc _ _ x) Happy  = x
+
+instance Num a => Semigroup (SmileyAcc a) where
     SmileyAcc a b c <> SmileyAcc x y z = SmileyAcc (a + x) (b + y) (c + z)
 
-instance Monoid SmileyAcc where
+instance Num a=> Monoid (SmileyAcc a) where
     mempty = SmileyAcc 0 0 0
     mappend = (<>)
 
-smileyAcc :: SmileyValue -> SmileyAcc
+smileyAcc :: SmileyValue -> SmileyAcc Double
 smileyAcc (SmileyValue 0) = SmileyAcc 1 0 0
 smileyAcc (SmileyValue 1) = SmileyAcc 0 1 0
 smileyAcc (SmileyValue 2) = SmileyAcc 0 0 1
 smileyAcc (SmileyValue _) = SmileyAcc 0 0 0
-
-firstStrip :: SmileyAcc -> (Int, Int)
-firstStrip (SmileyAcc x _ _) = (0, x)
-
-secondStrip :: SmileyAcc -> (Int, Int)
-secondStrip (SmileyAcc x y _) = (x, x + y)
-
-thirdStrip :: SmileyAcc -> (Int, Int)
-thirdStrip (SmileyAcc x y z) = (x + y, x + y + z)
-
-firstStripR :: SmileyAcc -> (Double, Double)
-firstStripR (SmileyAcc x y z)
-    | total <= 0 = (0, 0)
-    | otherwise = (0, 100 * fromIntegral x / total')
-  where
-    total = x + y + z
-    total' = fromIntegral total
-
-secondStripR :: SmileyAcc -> (Double, Double)
-secondStripR (SmileyAcc x y z)
-    | total <= 0 = (0, 100)
-    | otherwise =
-      ( 100 * fromIntegral x / total'
-      , 100 * fromIntegral (x + y) / total'
-      )
-  where
-    total  = x + y + z
-    total' = fromIntegral total
-
-thirdStripR :: SmileyAcc -> (Double, Double)
-thirdStripR (SmileyAcc x y z)
-    | total <= 0 = (100, 100)
-    | otherwise =
-        ( 100 * fromIntegral (x + y) / total'
-        , 100 * fromIntegral (x + y + z) / total'
-        )
-  where
-    total = x + y + z
-    total' = fromIntegral total
