@@ -15,8 +15,13 @@ import qualified Personio
 validationReport :: Ctx -> IO (HtmlPage "validation-report")
 validationReport ctx = do
     today <- currentDay
+
     validations0 <- liftIO $ readTVarIO $ ctxPersonioValidations ctx
-    let validations = filter (isCurrentEmployee today) validations0
+    -- employees with some validation warnings
+    let validations1 = filter (not . null . Personio._evMessages) validations0
+    -- active only
+    let validations = filter (isCurrentEmployee today) validations1
+
     pure $ page_ "Personio data validation" $ do
         row_ $ large_ 12 $ toHtml $
             show (length validations) ++ " employees:"

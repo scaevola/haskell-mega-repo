@@ -253,11 +253,6 @@ validations = testGroup "Validations"
         $ correctEmployeeValue
             & attributeValue "dynamic_72939" . _String .~ "1234" -- Emergency contact phone
     , testValidation
-        "expat"
-        ExpatMissing
-        $ correctEmployeeValue
-            & attributeValue "dynamic_72946" . _String .~ "" -- Expat
-    , testValidation
         "start of assignment"
         StartOfExpatAssignmentMissing
         $ correctEmployeeValue
