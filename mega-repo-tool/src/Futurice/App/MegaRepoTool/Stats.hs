@@ -65,6 +65,7 @@ statsMachine
     =  directoryWalk' dirPredicate
     ~> files
     ~> filtered filePredicate
+    -- ~> autoM (\x -> print x >> return x)
     ~> autoM T.readFile
     ~> mapping fileStats
   where
@@ -75,6 +76,8 @@ statsMachine
         -- build-in-docker.sh artifacts
         , isSuffixOf ".stack-root"
         , isSuffixOf ".stack-work-docker"
+        , isSuffixOf "dist-newstyle"
+        , isSuffixOf "dist-newstyle-prod"
         -- js
         , isSuffixOf "node_modules"
         -- magic directories
