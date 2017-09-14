@@ -33,6 +33,7 @@ validationReport ctx = do
             thead_ $ tr_ $ do
                 th_ "id"
                 th_ "name"
+                th_ "fum"
                 th_ "hire-date"
                 th_ "end-date"
                 th_ "type"
@@ -41,6 +42,7 @@ validationReport ctx = do
             tbody_ $ for_ validations $ \(Personio.EmployeeValidation e msgs) -> tr_ $ do
                 td_ $ toHtml $ e ^. Personio.employeeId
                 td_ $ toHtml $ e ^. Personio.employeeFullname
+                td_ $ traverse_ toHtml $ e ^. Personio.employeeLogin
                 td_ $ toHtml $ show $ e ^. Personio.employeeHireDate
                 td_ $ toHtml $ show $ e ^. Personio.employeeEndDate
                 td_ $ toHtml $ show $ e ^. Personio.employeeContractType
