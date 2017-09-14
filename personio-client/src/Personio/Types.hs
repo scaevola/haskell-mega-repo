@@ -318,7 +318,6 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , dynamicAttributeMissing "Primary role" RoleMissing
         , dynamicAttributeMissing "Work phone" WorkPhoneMissing
         , emailValidate
-        , employmentTypeValidate
         , expatBonusAndAllowanceCurrencyValidate
         , expatValidate
         , externalContractValidate
@@ -460,13 +459,6 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                 (Just PermanentAllIn, Just External) -> tell [PermanentExternal]
                 (Just Permanent, Just External)      -> tell [PermanentExternal]
                 _                                    -> pure ()
-
-        employmentTypeValidate :: WriterT [ValidationMessage] Parser ()
-        employmentTypeValidate = do
-            eType <- lift (parseAttribute obj "employment_type")
-            case employmentTypeFromText eType of
-                Nothing -> tell [EmploymentTypeMissing]
-                Just _  -> pure ()
 
         homePhoneValidate :: WriterT [ValidationMessage] Parser ()
         homePhoneValidate = do

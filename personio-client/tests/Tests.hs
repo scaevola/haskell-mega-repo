@@ -127,16 +127,6 @@ validations = testGroup "Validations"
         $ correctEmployeeValue
             & attributeValue "dynamic_72982" . _String .~  "CAPS"
     , testValidation
-        "employment_type missing"
-        EmploymentTypeMissing
-        $ correctEmployeeValue
-            & attributeValue "employment_type" . _String .~  ""
-    , testValidation
-        "employment_type invalid"
-        EmploymentTypeMissing
-        $ correctEmployeeValue
-            & attributeValue "employment_type" . _String .~  "wrong"
-    , testValidation
         "fixed-term contract_end_date"
         FixedTermEndDateMissing
         $ correctEmployeeValue
