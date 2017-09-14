@@ -126,39 +126,38 @@ parsePersonioEmployee :: Value -> Parser Employee
 parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
     type_ <- obj .: "type"
     if type_ == ("Employee" :: Text)
-        then obj .: "attributes" >>= parseObject
+        then obj .: "attributes" >>= parseEmployeeObject
         else fail $ "Not Employee: " ++ type_ ^. unpacked
+
+parseEmployeeObject :: HashMap Text Attribute -> Parser Employee
+parseEmployeeObject obj' = Employee
+    <$> parseAttribute obj "id"
+    <*> parseAttribute obj "first_name"
+    <*> parseAttribute obj "last_name"
+    <*> fmap (fmap zonedDay) (parseAttribute obj "hire_date")
+    <*> fmap (fmap zonedDay) (parseAttribute obj "contract_end_date")
+    <*> parseDynamicAttribute obj "Primary role"
+    <*> parseAttribute obj "email"
+    <*> parseDynamicAttribute obj "Work phone"
+    <*> fmap getSupervisorId (parseAttribute obj "supervisor")
+    <*> optional (parseDynamicAttribute obj "Login name")
+    <*> fmap (fromMaybe defaultTribe . getName) (parseAttribute obj "department")
+    <*> fmap (fromMaybe OffOther . getName) (parseAttribute obj "office")
+    <*> fmap getName (parseAttribute obj "cost_centers")
+    <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
+    <*> fmap getFlowdockId (parseDynamicAttribute obj "Flowdock")
+    <*> parseAttribute obj "status"
+    <*> parseDynamicAttribute obj "HR number"
+    <*> parseAttribute obj "employment_type"
+    <*> optional (parseDynamicAttribute obj "Contract type")
+    <*> parseDynamicAttribute obj "Private phone"
+    <*> parseAttribute obj "position"
+#ifdef PERSONIO_DEBUG
+    <*> pure obj' -- for employeeRest field
+#endif
   where
     zonedDay = localDay . zonedTimeToLocalTime
-
-    parseObject :: HashMap Text Attribute -> Parser Employee
-    parseObject obj' = Employee
-        <$> parseAttribute obj "id"
-        <*> parseAttribute obj "first_name"
-        <*> parseAttribute obj "last_name"
-        <*> fmap (fmap zonedDay) (parseAttribute obj "hire_date")
-        <*> fmap (fmap zonedDay) (parseAttribute obj "contract_end_date")
-        <*> parseDynamicAttribute obj "Primary role"
-        <*> parseAttribute obj "email"
-        <*> parseDynamicAttribute obj "Work phone"
-        <*> fmap getSupervisorId (parseAttribute obj "supervisor")
-        <*> optional (parseDynamicAttribute obj "Login name")
-        <*> fmap (fromMaybe defaultTribe . getName) (parseAttribute obj "department")
-        <*> fmap (fromMaybe OffOther . getName) (parseAttribute obj "office")
-        <*> fmap getName (parseAttribute obj "cost_centers")
-        <*> fmap getGithubUsername (parseDynamicAttribute obj "Github")
-        <*> fmap getFlowdockId (parseDynamicAttribute obj "Flowdock")
-        <*> parseAttribute obj "status"
-        <*> parseDynamicAttribute obj "HR number"
-        <*> parseAttribute obj "employment_type"
-        <*> optional (parseDynamicAttribute obj "Contract type")
-        <*> parseDynamicAttribute obj "Private phone"
-        <*> parseAttribute obj "position"
-#ifdef PERSONIO_DEBUG
-        <*> pure obj' -- for employeeRest field
-#endif
-      where
-        obj = mkAttributes obj'
+    obj = mkAttributes obj'
 
 newtype SupervisorId = SupervisorId { getSupervisorId :: Maybe EmployeeId }
 
@@ -274,11 +273,7 @@ instance ToSchema ValidationMessage
 
 -- | All fields except 'evMessages' are to help connect the data.
 data EmployeeValidation = EmployeeValidation
-    { _evEmployeeId :: !EmployeeId
-    , _evFirst      :: !Text
-    , _evLast       :: !Text
-    , _evHireDate   :: !(Maybe Day)
-    , _evEndDate    :: !(Maybe Day)
+    { _evEmployee   :: !Employee
     , _evMessages   :: ![ValidationMessage]
     }
   deriving Show
@@ -299,23 +294,15 @@ instance ToJSON EmployeeValidation where
 validatePersonioEmployee :: Value -> Parser EmployeeValidation
 validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
     type_ <- obj .: "type"
-    if type_ == ("Employee" :: Text)
-        then obj .: "attributes" >>= parseObject
-        else fail $ "Not Employee: " ++ type_ ^. unpacked
+    if type_ /= ("Employee" :: Text)
+    then fail $ "Not Employee: " ++ type_ ^. unpacked
+    else do 
+        rawAttrs <- obj .: "attributes"
+        e <- parseEmployeeObject rawAttrs
+        EmployeeValidation e <$> validate e (mkAttributes rawAttrs)
   where
-    parseObject :: Attributes -> Parser EmployeeValidation
-    parseObject obj = EmployeeValidation
-        <$> parseAttribute obj "id"
-        <*> parseAttribute obj "first_name"
-        <*> parseAttribute obj "last_name"
-        <*> fmap (fmap zonedDay) (parseAttribute obj "hire_date")
-        <*> fmap (fmap zonedDay) (parseAttribute obj "contract_end_date")
-        <*> validate obj
-
-    zonedDay =  localDay . zonedTimeToLocalTime
-
-    validate :: Attributes -> Parser [ValidationMessage]
-    validate obj = execWriterT $ sequenceA_
+    validate :: Employee -> Attributes -> Parser [ValidationMessage]
+    validate e obj = execWriterT $ sequenceA_
         [ attributeMissing "first_name" FirstNameMissing
         , attributeMissing "gender" GenderMissing
         , attributeMissing "hire_date" HireDateMissing
@@ -636,18 +623,17 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
           where
             variableSalaryNotSet = do
                 variableS <- lift (parseDynamicAttribute obj "Monthly variable salary 100%")
-                if salarySet variableS
-                    then tell [ExternalMonthlyVariableSalary]
-                    else pure ()
+                when (salarySet variableS) $
+                    tell [ExternalMonthlyVariableSalary]
 
         hrNumberValidate :: WriterT [ValidationMessage] Parser ()
         hrNumberValidate = do
-            office <- lift $ fmap (fromMaybe OffOther . getName) (parseAttribute obj "office")
             hrNum <- lift (parseDynamicAttribute obj "HR number" :: Parser Int)
             case () of
-                _ | office `notElem` [OffHelsinki, OffTampere] -> pure ()
-                _ | hrNum > 0                                  -> pure ()
-                _                                              -> tell [HRNumberInvalid hrNum]
+                _ | e ^. employeeEmploymentType == Just External -> pure ()
+                _ | e ^. employeeOffice `notElem` finnishOffices -> pure ()
+                _ | hrNum > 0                                    -> pure ()
+                _                                                -> tell [HRNumberInvalid hrNum]
 
         withValidatorValidate :: Text -> ValidationMessage -> (Text -> Bool) -> WriterT [ValidationMessage] Parser ()
         withValidatorValidate attrN valMsg validation = do
@@ -668,6 +654,8 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
                 then pure ()
                 else tell [IdentificationNumberMissing]
 
+        finnishOffices :: [Office]
+        finnishOffices = [OffHelsinki, OffTampere]
 
 -- | Validate IBAN.
 --
