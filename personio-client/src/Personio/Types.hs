@@ -8,8 +8,11 @@
 {-# LANGUAGE TypeFamilies        #-}
 module Personio.Types (
     module Personio.Types, -- TODO: this exports some unnecessary stuff too.
+    module Personio.Types.Cfg,
     module Personio.Types.ContractType,
+    module Personio.Types.EmployeeId,
     module Personio.Types.EmploymentType,
+    module Personio.Types.Envelope,
     module Personio.Types.PersonalIdValidations,
     module Personio.Types.Status,
     ) where
@@ -19,114 +22,34 @@ module Personio.Types (
 
 import Control.Monad.Writer        (WriterT, execWriterT, unless)
 import Data.Aeson.Compat
-import Data.Aeson.Internal         (JSONPathElement (Key), (<?>))
-import Data.Aeson.Types
-       (FromJSON1 (..), explicitParseField, parseJSON1, typeMismatch)
+import Data.Aeson.Types            (typeMismatch)
 import Data.Char                   (ord)
 import Data.List                   (foldl')
 import Data.Maybe                  (isJust)
 import Data.Time                   (zonedTimeToLocalTime)
 import FUM.Types.Login             (Login, loginRegexp)
 import Futurice.Aeson
-import Futurice.Constants          (personioPublicUrl)
-import Futurice.EnvConfig
 import Futurice.Generics
 import Futurice.IdMap              (HasKey (..))
 import Futurice.Office
 import Futurice.Prelude
 import Futurice.Tribe
-import Lucid                       (ToHtml (..), a_, class_, href_)
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
 
+import Personio.Internal.Attribute
+import Personio.Types.Cfg
 import Personio.Types.ContractType
+import Personio.Types.EmployeeId
 import Personio.Types.EmploymentType
+import Personio.Types.Envelope
 import Personio.Types.PersonalIdValidations
 import Personio.Types.Status
 
 import qualified Chat.Flowdock.REST            as FD
-import qualified Data.Csv                      as Csv
-import qualified Data.HashMap.Strict           as HM
-import qualified Data.Swagger                  as Swagger
 import qualified Data.Text                     as T
 import qualified GitHub                        as GH
 import qualified Text.Regex.Applicative.Common as RE
-
--------------------------------------------------------------------------------
--- Data
--------------------------------------------------------------------------------
-
--- | Personio employee id.
-newtype EmployeeId = EmployeeId Word
-  deriving (Eq, Ord, Show)
-
-deriveGeneric ''EmployeeId
-
-instance Arbitrary EmployeeId where
-    arbitrary = sopArbitrary
-    shrink    = sopShrink
-
-instance Hashable EmployeeId where
-    hashWithSalt salt (EmployeeId i) = hashWithSalt salt i
-
-instance FromJSON EmployeeId where
-    parseJSON = fmap EmployeeId . parseJSON
-
-instance ToJSON EmployeeId where
-    toJSON (EmployeeId i) = toJSON i
-    toEncoding (EmployeeId i) = toEncoding i
-
-instance NFData EmployeeId where
-    rnf (EmployeeId i) = rnf i
-
-instance ToHtml EmployeeId where
-    toHtmlRaw = toHtml
-    toHtml (EmployeeId i) = do
-        let t = textShow i
-        a_ [ class_ "personio", href_ $ personioPublicUrl <> "/staff/details/" <> t ] $
-            toHtml t
-
--- | We could use 'GeneralizedNewtypeDeriving', but we don't (yet?).
-instance ToParamSchema EmployeeId where
-    toParamSchema = newtypeToParamSchema
-
-instance ToSchema EmployeeId where
-    declareNamedSchema = newtypeDeclareNamedSchema
-
-instance FromHttpApiData EmployeeId where
-    parseUrlPiece = newtypeParseUrlPiece
-
-instance ToHttpApiData EmployeeId where
-    toUrlPiece = newtypeToUrlPiece
-
-instance Csv.ToField EmployeeId where
-    toField (EmployeeId i) = Csv.toField i
-
-_EmployeeId :: Prism' Text EmployeeId
-_EmployeeId = prism' toUrlPiece (either (const Nothing) Just . parseUrlPiece)
-
--------------------------------------------------------------------------------
--- Attribute
--------------------------------------------------------------------------------
-
--- | Personio attribute, i.e. labelled value.
-data Attribute = Attribute !Text !Value deriving (Eq, Show, Generic)
-
-instance ToJSON Attribute where
-    toJSON (Attribute l v) = object [ "label" .= l, "value" .= v ]
-
-instance FromJSON Attribute where
-    parseJSON = withObjectDump "Attribute" $ \obj -> Attribute
-        <$> obj .: "label"
-        <*> obj .: "value"
-
-instance ToSchema Attribute where
-    declareNamedSchema _ = pure $ Swagger.NamedSchema (Just "Attribute") mempty
-
-instance NFData Attribute
-
-instance Arbitrary Attribute where
-    arbitrary = pure (Attribute "arbitrary" "value")
 
 -------------------------------------------------------------------------------
 -- Employee
@@ -199,26 +122,6 @@ instance ToJSON Employee where
     toJSON = sopToJSON
     toEncoding = sopToEncoding
 
-parseAttribute :: FromJSON a => HashMap Text Attribute -> Text -> Parser a
-parseAttribute obj attrName = case HM.lookup attrName obj of
-    Nothing              -> fail $ "key " ++ show attrName ++ " not present"
-    Just (Attribute _ v) -> parseJSON v <?> Key attrName
-
-parseDynamicAttribute :: FromJSON a => HashMap Text Attribute -> Text -> Parser a
-parseDynamicAttribute obj k = dynamicAttributes obj .: k
-  where
-    dynamicAttributes :: HashMap Text Attribute -> HashMap Text Value
-    dynamicAttributes o = flip mapHM o $ \aKey (Attribute l v) ->
-        if "dynamic_" `T.isPrefixOf` aKey
-            then Just (l, v)
-            else Nothing
-
-    mapHM
-            :: (Eq k2, Hashable k2)
-            => (k1 -> v1 -> Maybe (k2, v2))
-            -> HashMap k1 v1 -> HashMap k2 v2
-    mapHM f = HM.fromList . mapMaybe (uncurry f) . HM.toList
-
 parsePersonioEmployee :: Value -> Parser Employee
 parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
     type_ <- obj .: "type"
@@ -229,7 +132,7 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
     zonedDay = localDay . zonedTimeToLocalTime
 
     parseObject :: HashMap Text Attribute -> Parser Employee
-    parseObject obj = Employee
+    parseObject obj' = Employee
         <$> parseAttribute obj "id"
         <*> parseAttribute obj "first_name"
         <*> parseAttribute obj "last_name"
@@ -252,8 +155,10 @@ parsePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         <*> parseDynamicAttribute obj "Private phone"
         <*> parseAttribute obj "position"
 #ifdef PERSONIO_DEBUG
-        <*> pure obj -- for employeeRest field
+        <*> pure obj' -- for employeeRest field
 #endif
+      where
+        obj = mkAttributes obj'
 
 newtype SupervisorId = SupervisorId { getSupervisorId :: Maybe EmployeeId }
 
@@ -269,7 +174,7 @@ instance FromJSON SupervisorId where
                 then obj .: "attributes" >>= parseObject
                 else fail $ "Attribute Supervisor is not Employee: " ++ type_ ^. unpacked
 
-        parseObject :: HashMap Text Attribute -> Parser SupervisorId
+        parseObject :: Attributes -> Parser SupervisorId
         parseObject obj = SupervisorId <$> parseAttribute obj "id"
 
 newtype NamedAttribute a = NamedAttribute { getName :: Maybe a }
@@ -306,147 +211,6 @@ instance FromJSON FlowdockId where
 flowdockRegexp :: RE' Word64
 flowdockRegexp = string "https://www.flowdock.com/app/private/" *> RE.decimal
 
----------------------------------------------------------------------------
--- Envelope
--------------------------------------------------------------------------------
-
-newtype Envelope a = Envelope { getEnvelope :: a }
-
-instance FromJSON a => FromJSON (Envelope a) where
-    parseJSON = parseJSON1
-
-instance FromJSON1 Envelope where
-    liftParseJSON p _ = withObjectDump "Envelope" $ \obj -> do
-        b <- obj .: "success"
-        case b of
-            False -> do
-                err <- obj .: "error"
-                fail (errMessage err ^. unpacked)
-            True -> Envelope <$> explicitParseField p obj "data"
-
--- | API error.
-data Err = Err
-    { errCode :: !Int
-    , errMessage :: !Text
-    }
-
-instance FromJSON Err where
-    parseJSON = withObjectDump "Error" $ \obj -> Err
-        <$> obj .: "code"
-        <*> obj .: "message"
-
--------------------------------------------------------------------------------
--- Credentials
--------------------------------------------------------------------------------
-
--- | Access Token
-newtype AccessToken = AccessToken { _getAccessToken :: Text }
-    deriving (Eq, Ord, Show, Read, Typeable, Generic)
-
-makeLenses ''AccessToken
-instance Hashable AccessToken
-instance NFData AccessToken
-
-instance IsString AccessToken where
-    fromString = AccessToken . view packed
-
-instance FromJSON AccessToken where
-    parseJSON = withObjectDump "Personio.AccessToken" $ \obj ->
-        AccessToken <$> obj .: "token"
-
--- | Client id
-newtype ClientId = ClientId { _getClientId :: Text }
-    deriving (Eq, Ord, Show, Read, Typeable, Generic)
-
-makeLenses ''ClientId
-instance Hashable ClientId
-instance NFData ClientId
-
-instance IsString ClientId where
-    fromString = ClientId . view packed
-
-instance FromJSON ClientId where
-    parseJSON = withText "Personio.ClientId" $ pure . ClientId
-
--- | Client id
-newtype ClientSecret = ClientSecret { _getClientSecret :: Text }
-    deriving (Eq, Ord, Show, Read, Typeable, Generic)
-
-makeLenses ''ClientSecret
-instance Hashable ClientSecret
-instance NFData ClientSecret
-
-instance IsString ClientSecret where
-    fromString = ClientSecret . view packed
-
-instance FromJSON ClientSecret where
-    parseJSON = withText "Personio.ClientSecret" $ pure . ClientSecret
-
--------------------------------------------------------------------------------
--- Base url
--------------------------------------------------------------------------------
-
--- | Base url of Persiono service
-newtype BaseUrl = BaseUrl { _getBaseUrl :: Text }
-    deriving (Eq, Ord, Show, Read, Typeable, Generic)
-
-makeLenses ''BaseUrl
-instance Hashable BaseUrl
-instance NFData BaseUrl
-
-instance IsString BaseUrl where
-    fromString = BaseUrl . view packed
-
-instance FromJSON BaseUrl where
-    parseJSON = withText "FUM BaseUrl" $ pure . BaseUrl
-
-productionBaseUrl :: BaseUrl
-productionBaseUrl = BaseUrl "https://api.personio.de"
-
--------------------------------------------------------------------------------
--- Cfg
--------------------------------------------------------------------------------
-
-data Cfg = Cfg
-    { _cfgBaseUrl      :: !BaseUrl
-    , _cfgClientId     :: !ClientId
-    , _cfgClientSecret :: !ClientSecret
-    }
-    deriving (Eq, Ord, Show, Read, Typeable, Generic)
-
-makeLenses ''Cfg
-instance Hashable Cfg
-instance NFData Cfg
-
-class HasPersonioCfg a where
-    personioCfg :: Lens' a Cfg
-
-instance HasPersonioCfg Cfg where
-    personioCfg = id
-
--------------------------------------------------------------------------------
--- env-config instances and helpers
--------------------------------------------------------------------------------
-
-instance FromEnvVar ClientId where
-    fromEnvVar = fmap ClientId . fromEnvVar
-
-instance FromEnvVar ClientSecret where
-    fromEnvVar = fmap ClientSecret . fromEnvVar
-
--- |
---
--- @
--- cfg <- withStderrLogger $ \logger -> runLogT "configure" logger $ getConfig' "" configurePersonioCfg
--- @
-configurePersonioCfg :: ConfigParser Cfg
-configurePersonioCfg = Cfg productionBaseUrl
-    <$> envVar "PERSONIO_CLIENT_ID"
-    <*> envVar "PERSONIO_CLIENT_SECRET"
-
-instance Configure Cfg where
-    configure = configurePersonioCfg
-
 -------------------------------------------------------------------------------
 -- Validation
 -------------------------------------------------------------------------------
@@ -478,7 +242,7 @@ data ValidationMessage
     | HomeStreetAddressMissing
     | HomeTribeInvalid Text
     | HoursInvalid Scientific
-    | HRNumberInvalid Scientific
+    | HRNumberInvalid Int
     | IbanInvalid
     | IdentificationNumberMissing
     | LastNameMissing
@@ -539,7 +303,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         then obj .: "attributes" >>= parseObject
         else fail $ "Not Employee: " ++ type_ ^. unpacked
   where
-    parseObject :: HashMap Text Attribute -> Parser EmployeeValidation
+    parseObject :: Attributes -> Parser EmployeeValidation
     parseObject obj = EmployeeValidation
         <$> parseAttribute obj "id"
         <*> parseAttribute obj "first_name"
@@ -550,7 +314,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 
     zonedDay =  localDay . zonedTimeToLocalTime
 
-    validate :: HashMap Text Attribute -> Parser [ValidationMessage]
+    validate :: Attributes -> Parser [ValidationMessage]
     validate obj = execWriterT $ sequenceA_
         [ attributeMissing "first_name" FirstNameMissing
         , attributeMissing "gender" GenderMissing
@@ -878,12 +642,12 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
 
         hrNumberValidate :: WriterT [ValidationMessage] Parser ()
         hrNumberValidate = do
-            hrNum <- lift (parseDynamicAttribute obj "HR number")
-            case hrNum of
-                Number v -> if v > 0
-                    then pure ()
-                    else tell [HRNumberInvalid v]
-                _        -> lift (typeMismatch "HRNumber" hrNum)
+            office <- lift $ fmap (fromMaybe OffOther . getName) (parseAttribute obj "office")
+            hrNum <- lift (parseDynamicAttribute obj "HR number" :: Parser Int)
+            case () of
+                _ | office `notElem` [OffHelsinki, OffTampere] -> pure ()
+                _ | hrNum > 0                                  -> pure ()
+                _                                              -> tell [HRNumberInvalid hrNum]
 
         withValidatorValidate :: Text -> ValidationMessage -> (Text -> Bool) -> WriterT [ValidationMessage] Parser ()
         withValidatorValidate attrN valMsg validation = do

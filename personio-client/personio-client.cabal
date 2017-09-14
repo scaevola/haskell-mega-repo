@@ -59,10 +59,14 @@ library
       Control.Monad.Personio
       Personio
       Personio.Eval
+      Personio.Internal.Attribute
       Personio.Request
       Personio.Types
+      Personio.Types.Cfg
       Personio.Types.ContractType
+      Personio.Types.EmployeeId
       Personio.Types.EmploymentType
+      Personio.Types.Envelope
       Personio.Types.PersonalIdValidations
       Personio.Types.Status
   default-language: Haskell2010
