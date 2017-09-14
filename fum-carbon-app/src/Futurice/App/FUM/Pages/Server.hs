@@ -15,6 +15,7 @@ import Futurice.App.FUM.Pages.FromPersonio
 import Futurice.App.FUM.Pages.Index
 import Futurice.App.FUM.Pages.ListEmployees
 import Futurice.App.FUM.Pages.ListGroups
+import Futurice.App.FUM.Pages.Summary
 import Futurice.App.FUM.Pages.ViewEmployee
 import Futurice.App.FUM.Pages.ViewGroup
 import Futurice.App.FUM.Types
@@ -34,7 +35,7 @@ pagesServer ctx = indexPageImpl ctx
     :<|> listGroupsPageImpl ctx
     :<|> viewGroupPageImpl ctx
     :<|> createGroupPageImpl ctx
-
+    :<|> summaryPageImpl ctx
 
 -------------------------------------------------------------------------------
 -- Index
@@ -116,6 +117,17 @@ createGroupPageImpl
     -> Handler (HtmlPage "create-group")
 createGroupPageImpl ctx fu = withAuthUser ctx fu $ \auth world _personio ->
     pure $ createGroupPage auth world
+
+-------------------------------------------------------------------------------
+-- It
+-------------------------------------------------------------------------------
+
+summaryPageImpl
+    :: Ctx
+    -> Maybe Login
+    -> Handler (HtmlPage "summary")
+summaryPageImpl ctx fu = withAuthUser ctx fu $ \auth world _personio ->
+    pure $ summaryPage auth world
 
 -------------------------------------------------------------------------------
 -- Auth

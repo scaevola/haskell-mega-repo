@@ -44,6 +44,7 @@ dependencies:
   - periocron
   - personio-client
   - postgresql-simple
+  - pretty-compact
   - QuickCheck
   - recursion-schemes >= 5.0.1
   - reflection

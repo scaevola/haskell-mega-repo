@@ -24,6 +24,8 @@ type FumCarbonPagesApi = IndexPageEndpoint
     :<|> ListGroupsPageEndpoint
     :<|> ViewGroupPageEndpoint
     :<|> CreateGroupPageEndpoint
+    -- IT stuff
+    :<|> SummaryPageEndpoint
 
 fumCarbonPagesApi :: Proxy FumCarbonPagesApi
 fumCarbonPagesApi = Proxy
@@ -105,3 +107,15 @@ type CreateGroupPageEndpoint =
 
 createGroupPageEndpoint :: Proxy CreateGroupPageEndpoint
 createGroupPageEndpoint = Proxy
+
+-------------------------------------------------------------------------------
+-- IT
+-------------------------------------------------------------------------------
+
+type SummaryPageEndpoint =
+    "summary" :>
+    SSOUser :>
+    Get '[HTML] (HtmlPage "summary")
+
+summaryPageEndpoint :: Proxy SummaryPageEndpoint
+summaryPageEndpoint = Proxy

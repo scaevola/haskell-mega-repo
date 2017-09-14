@@ -59,6 +59,7 @@ library
     , periocron
     , personio-client
     , postgresql-simple
+    , pretty-compact
     , QuickCheck
     , recursion-schemes >= 5.0.1
     , reflection
@@ -107,6 +108,7 @@ library
       Futurice.App.FUM.Pages.ListEmployees
       Futurice.App.FUM.Pages.ListGroups
       Futurice.App.FUM.Pages.Server
+      Futurice.App.FUM.Pages.Summary
       Futurice.App.FUM.Pages.ViewEmployee
       Futurice.App.FUM.Pages.ViewGroup
       Futurice.App.FUM.Report.Validation
@@ -159,6 +161,7 @@ executable fum-carbon-server
     , periocron
     , personio-client
     , postgresql-simple
+    , pretty-compact
     , QuickCheck
     , recursion-schemes >= 5.0.1
     , reflection
@@ -222,6 +225,7 @@ test-suite unit-tests
     , periocron
     , personio-client
     , postgresql-simple
+    , pretty-compact
     , QuickCheck
     , recursion-schemes >= 5.0.1
     , reflection

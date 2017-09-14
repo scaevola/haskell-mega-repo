@@ -73,6 +73,14 @@ createGroupHref_ = href_ $ linkToText $ safeLink fumCarbonPagesApi
     createGroupPageEndpoint
 
 -------------------------------------------------------------------------------
+-- IT stuff
+-------------------------------------------------------------------------------
+
+summaryHref_ :: Attribute
+summaryHref_ = href_ $ linkToText $ safeLink fumCarbonPagesApi
+    summaryPageEndpoint
+
+-------------------------------------------------------------------------------
 -- Internals
 -------------------------------------------------------------------------------
 
