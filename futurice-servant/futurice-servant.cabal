@@ -36,6 +36,7 @@ library
     , amazonka-cloudwatch
     , amazonka-cloudwatch-logs
     , base-compat
+    , containers
     , constraints
     , dynmap-cache
     , ekg
@@ -44,9 +45,9 @@ library
     , env-config
     , exceptions
     , fum-types
+    , futurice-foundation
     , futurice-logo
     , futurice-prelude
-    , futurice-foundation
     , ghc-prim
     , gitrev >=1.2.0
     , http-types
@@ -65,10 +66,12 @@ library
     , tdigest-ekg
     , text
     , uuid-types
+    , vector
     , wai
     , wai-extra
     , wai-middleware-metrics
     , warp >= 3.2.11.1
   exposed-modules:
+      Futurice.Metrics.RateMeter
       Futurice.Servant
   default-language: Haskell2010

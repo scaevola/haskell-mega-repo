@@ -31,6 +31,7 @@ library:
     - amazonka-cloudwatch-logs
     - base-compat
     - constraints
+    - containers
     - dynmap-cache
     - ekg
     - ekg-core
@@ -38,9 +39,9 @@ library:
     - env-config
     - exceptions
     - fum-types
+    - futurice-foundation
     - futurice-logo
     - futurice-prelude
-    - futurice-foundation
     - ghc-prim
     - gitrev >=1.2.0
     - http-types
@@ -59,6 +60,7 @@ library:
     - tdigest-ekg
     - text
     - uuid-types
+    - vector
     - wai
     - wai-extra
     - wai-middleware-metrics
