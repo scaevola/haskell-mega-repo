@@ -61,9 +61,10 @@ markRateMeter minutes' value (RateMeter vec minutes) = RateMeter (U.imap f vec) 
 advanceRateMeter :: Int64 -> RateMeter -> RateMeter
 advanceRateMeter minutes' rm@(RateMeter vec minutes)
     | minutes == minutes' = rm
-    | otherwise = RateMeter (U.imap f vec) minutes'
+    | otherwise = RateMeter vec' minutes'
   where
-    offset = minutes `div` 60
+    vec' = U.imap f vec
+    offset = (minutes `div` 60) * 60
     f i x | minutes < offset + i' && offset + i' <= minutes' = 0
           | otherwise                                        = x
       where
