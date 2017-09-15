@@ -10,6 +10,7 @@ module Futurice.App.HoursApi (defaultMain) where
 
 import Control.Concurrent.STM (newTVarIO, readTVarIO)
 import Futurice.Integrations
+import Futurice.Metrics.RateMeter (mark)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
@@ -30,22 +31,24 @@ import qualified PlanMill.Worker as PM
 
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours api"
-    :<|> (\mfum        -> authorisedUser ctx mfum projectEndpoint)
-    :<|> (\mfum        -> authorisedUser ctx mfum userEndpoint)
-    :<|> (\mfum a b    -> authorisedUser ctx mfum (hoursEndpoint a b))
-    :<|> (\mfum eu     -> authorisedUser ctx mfum (entryEndpoint eu))
-    :<|> (\mfum eid eu -> authorisedUser ctx mfum (entryEditEndpoint eid eu))
-    :<|> (\mfum eid    -> authorisedUser ctx mfum (entryDeleteEndpoint eid))
+    :<|> (\mfum        -> authorisedUser ctx mfum "project" projectEndpoint)
+    :<|> (\mfum        -> authorisedUser ctx mfum "user"    userEndpoint)
+    :<|> (\mfum a b    -> authorisedUser ctx mfum "hours"   (hoursEndpoint a b))
+    :<|> (\mfum eu     -> authorisedUser ctx mfum "entry"   (entryEndpoint eu))
+    :<|> (\mfum eid eu -> authorisedUser ctx mfum "edit"    (entryEditEndpoint eid eu))
+    :<|> (\mfum eid    -> authorisedUser ctx mfum "delete"  (entryDeleteEndpoint eid))
 
 authorisedUser
     :: Ctx
     -> Maybe FUM.Login
+    -> Text
     -> Hours a
     -> Handler a
-authorisedUser ctx mfum action =
+authorisedUser ctx mfum meterName action =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername -> do
         pmData <- liftIO $ readTVarIO $ ctxFumPlanmillMap ctx
         (fumUser, pmUser) <- maybe (unauthorised fumUsername) pure $ pmData ^. at fumUsername
+        liftIO $ mark $ "Request " <> meterName
         runHours ctx pmUser (fromMaybe "" $ fumUser ^. FUM.userThumbUrl . lazy) action
   where
     unauthorised :: FUM.Login -> Handler a

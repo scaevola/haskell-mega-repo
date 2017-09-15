@@ -77,6 +77,7 @@ import Futurice.EnvConfig
        (Configure, configure, envAwsCredentials, envVar, envVarWithDefault,
        getConfig', optionalAlt)
 import Futurice.Lucid.Foundation            (vendorServer)
+import Futurice.Metrics.RateMeter           (values)
 import Futurice.Periocron
        (Job, defaultOptions, every, mkJob, spawnPeriocron)
 import Futurice.Prelude
@@ -105,6 +106,7 @@ import qualified Network.HTTP.Types       as H
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified System.Metrics           as Metrics
 import qualified System.Metrics.Json      as Metrics
+import qualified Data.Map.Strict as Map
 
 import qualified Network.AWS                          as AWS
 import qualified Network.AWS.CloudWatch.PutMetricData as AWS
@@ -244,8 +246,8 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
 
         cache       <- newDynMapCache
 
-        let group   = fromMaybe "Haskell" (_cfgCloudWatchGroup cfg )
-        let service = t
+        let awsGroup = fromMaybe "Haskell" (_cfgCloudWatchGroup cfg )
+        let service  = t
 
         menv <- for (_cfgCloudWatchCreds cfg) $ \awsCreds -> do
             env' <- AWS.newEnv awsCreds
@@ -257,11 +259,11 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
         case menv of
             Nothing -> main' logger
             Just env -> do
-                createCloudWatchLogStream env group service
-                withCloudWatchLogger env group service $ \leLogger -> main' (logger <> leLogger)
+                createCloudWatchLogStream env awsGroup service
+                withCloudWatchLogger env awsGroup service $ \leLogger -> main' (logger <> leLogger)
 
   where
-    main (Cfg cfg p ekgP _ _) menv service cache logger = do
+    main (Cfg cfg p ekgP mgroup _) menv service cache logger = do
         (ctx, jobs)    <- makeCtx cfg logger cache
         -- brings 'HasServer' instance into a scope
         Dict           <- pure $ makeDict ctx
@@ -282,10 +284,12 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
             Stats.getGCStatsEnabled
 #endif
         mutgcTVar <- newTVarIO (MutGC 0 0)
+
+        let awsGroup   = fromMaybe "Haskell" mgroup
         let mcloudwatchJob = do
                 guard statsEnabled
                 env <- menv
-                pure (cloudwatchJob mutgcTVar logger env service)
+                pure (cloudwatchJob mutgcTVar logger env awsGroup service)
 
         let jobs' = mkJob "stats" (ekgJob logger store) (every $ 5 * 60)
                   : maybeToList (mkJob "cloudwatch" <$> mcloudwatchJob <*> pure (every 60))
@@ -303,8 +307,18 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
             $ middleware ctx
             $ serve proxyApi' server'
 
-    cloudwatchJob :: TVar MutGC -> Logger -> AWS.Env -> Text -> IO ()
-    cloudwatchJob mutgcTVar logger env service = runLogT "cloudwatch" logger $ do
+    cloudwatchJob :: TVar MutGC -> Logger -> AWS.Env -> Text -> Text -> IO ()
+    cloudwatchJob mutgcTVar logger env awsGroup service = runLogT "cloudwatch" logger $ do
+        -- averages
+        meters <- liftIO values
+        logInfo "Futurice.Metrics" meters
+        let mkDatum (n, v) = AWS.metricDatum (n <> " (an hour window sum)")
+                & AWS.mdValue      ?~ fromIntegral v
+                & AWS.mdUnit       ?~ AWS.Count
+                & AWS.mdDimensions .~ [AWS.dimension "Service" service]
+        let meterDatums = map mkDatum (Map.toList meters)
+      
+        -- gcm
 #if MIN_VERSION_base(4,10,0)
         stats <- liftIO Stats.getRTSStats
 
@@ -348,8 +362,8 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
                     & AWS.mdDimensions .~ [AWS.dimension "Service" service]
 
             -- Put.
-            let pmd = AWS.putMetricData "Haskell/RTS"
-                    & AWS.pmdMetricData .~ [datum, datum2]
+            let pmd = AWS.putMetricData (awsGroup <> "/RTS")
+                    & AWS.pmdMetricData .~ datum : datum2 : meterDatums
 
             AWS.send pmd
 

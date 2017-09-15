@@ -16,16 +16,17 @@ module Futurice.App.Reports (defaultMain) where
 import Futurice.Integrations
        (Integrations, beginningOfPrev2Month, beginningOfPrevMonth,
        runIntegrations)
+import Futurice.Metrics.RateMeter (mark)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
-import Generics.SOP              (hcmap, hcollapse)
-import GHC.TypeLits              (KnownSymbol, symbolVal)
-import Network.HTTP.Client       (httpLbs, parseUrlThrow, responseBody)
-import Numeric.Interval.NonEmpty ((...))
+import Generics.SOP               (hcmap, hcollapse)
+import GHC.TypeLits               (KnownSymbol, symbolVal)
+import Network.HTTP.Client        (httpLbs, parseUrlThrow, responseBody)
+import Numeric.Interval.NonEmpty  ((...))
 import Prelude ()
 import Servant
-import Servant.Chart             (Chart (..))
+import Servant.Chart              (Chart (..))
 
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text            as T
@@ -114,33 +115,40 @@ serveFumPersonioReport ctx = cachedIO' ctx () $
 serveMissingHoursReport
     :: (KnownSymbol title, Typeable title)
     => Bool -> Ctx -> IO (MissingHoursReport title)
-serveMissingHoursReport allContracts ctx = cachedIO' ctx allContracts $ do
-    day <- currentDay
-    -- TODO: end date to the last friday
-    let interval = beginningOfPrev2Month day ... pred day
-    runIntegrations' ctx (missingHoursReport contractTypes interval)
+serveMissingHoursReport allContracts ctx = do
+    mark "Request: Missing hours"
+    cachedIO' ctx allContracts $ do
+        day <- currentDay
+        -- TODO: end date to the last friday
+        let interval = beginningOfPrev2Month day ... pred day
+        runIntegrations' ctx (missingHoursReport contractTypes interval)
   where
     contractTypes
         | allContracts = Nothing
         | otherwise    = Just (cfgMissingHoursContracts (ctxConfig ctx))
 
 serveBalancesReport :: Ctx -> IO BalanceReport
-serveBalancesReport ctx = cachedIO' ctx () $ do
-    day <- currentDay
-    let interval = beginningOfPrevMonth day ... day
-    runIntegrations' ctx (balanceReport interval)
+serveBalancesReport ctx = do
+    mark "Request: Balances"
+    cachedIO' ctx () $ do
+        day <- currentDay
+        let interval = beginningOfPrevMonth day ... day
+        runIntegrations' ctx (balanceReport interval)
 
 servePowerUsersReport :: Ctx -> IO PowerUserReport
-servePowerUsersReport ctx = cachedIO' ctx () $
-    runIntegrations' ctx powerUserReport
+servePowerUsersReport ctx = do
+    mark "Request: Power users"
+    cachedIO' ctx () $ runIntegrations' ctx powerUserReport
 
 servePowerProjectsReport :: Ctx -> IO PowerProjectsReport
-servePowerProjectsReport ctx = cachedIO' ctx () $
-    runIntegrations' ctx powerProjectsReport
+servePowerProjectsReport ctx = do
+    mark "Request: Power projects"
+    cachedIO' ctx () $ runIntegrations' ctx powerProjectsReport
 
 servePowerAbsencesReport :: Ctx -> Maybe Month -> IO PowerAbsenceReport
-servePowerAbsencesReport ctx mmonth = cachedIO' ctx mmonth $
-    runIntegrations' ctx $ powerAbsenceReport mmonth
+servePowerAbsencesReport ctx mmonth = do
+    mark "Request: Power absences"
+    cachedIO' ctx mmonth $ runIntegrations' ctx $ powerAbsenceReport mmonth
 
 serveTimereportsByTaskReport :: Ctx -> IO TimereportsByTaskReport
 serveTimereportsByTaskReport ctx = cachedIO' ctx () $
