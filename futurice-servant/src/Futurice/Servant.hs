@@ -312,7 +312,7 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
         -- averages
         meters <- liftIO values
         logInfo "Futurice.Metrics" meters
-        let mkDatum (n, v) = AWS.metricDatum (n <> " (an hour window sum)")
+        let mkDatum (n, v) = AWS.metricDatum ("Count: " <> n)
                 & AWS.mdValue      ?~ fromIntegral v
                 & AWS.mdUnit       ?~ AWS.Count
                 & AWS.mdDimensions .~ [AWS.dimension "Service" service]

@@ -51,6 +51,7 @@ for fullexe in $(cabal-plan --builddir=$BUILDDIR list-bin|grep ':exe:'|awk '{pri
         exe=$(basename $fullexe)
         mkdir -p  $ROOTDIR/build/$exe
         cp $fullexe $ROOTDIR/build/$exe/$exe
+        strip $ROOTDIR/build/$exe/$exe
         echo $GITHASH > $ROOTDIR/build/$exe/git-hash.txt
     else
         echo "Skipping $fullexe"

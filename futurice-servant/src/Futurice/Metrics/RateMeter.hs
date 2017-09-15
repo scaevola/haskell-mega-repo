@@ -5,8 +5,6 @@ import Control.Concurrent.STM
 import Futurice.Prelude
 import Prelude ()
 
-import qualified Data.Vector.Unboxed as U
-
 import System.IO.Unsafe (unsafePerformIO)
 
 -------------------------------------------------------------------------------
@@ -16,61 +14,40 @@ import System.IO.Unsafe (unsafePerformIO)
 mark :: Text -> IO ()
 mark name = mark' name 1
 
-mark' :: Text -> Int64 -> IO ()
-mark' name value = do
-    TimeSpec seconds _ <- monotonicClock
-    let minutes = seconds `div` 60
+mark' :: Text -> Word64 -> IO ()
+mark' name value = atomically $ do
+    gm <- readTVar globalMap
+    case gm ^. at name of
+        Nothing -> do
+            rmTVar <- newTVar
+                $ markRateMeter value
+                $ zeroRateMeter
+            writeTVar globalMap $ gm
+                & at name ?~ rmTVar
+        Just tvar -> do
+            modifyTVar' tvar
+                $ markRateMeter value
 
-    atomically $ do
-        gm <- readTVar globalMap
-        case gm ^. at name of
-            Nothing -> do
-                rmTVar <- newTVar
-                    $ markRateMeter minutes value
-                    $ RateMeter (U.replicate 60 0) minutes
-                writeTVar globalMap $ gm
-                    & at name ?~ rmTVar
-            Just tvar -> modifyTVar' tvar
-                $ markRateMeter minutes value
-                . advanceRateMeter minutes
-
-values :: IO (Map Text Int64)
-values = do
-    TimeSpec seconds _ <- monotonicClock
-    let minutes = seconds `div` 60
-    meters <- atomically $ readTVar globalMap >>= traverse readTVar
-    pure (averageOfRateMeter . advanceRateMeter minutes <$> meters)
+values :: IO (Map Text Word64)
+values = atomically $ readTVar globalMap >>= traverse readMeter
+  where
+    readMeter tvar = do
+        RateMeter value <- readTVar tvar
+        writeTVar tvar zeroRateMeter
+        return value
 
 -------------------------------------------------------------------------------
 -- RateMeter
 -------------------------------------------------------------------------------
 
-data RateMeter = RateMeter
-    { _rmVec :: !(U.Vector Int64)
-    , _rmMin :: !Int64
-    }
+newtype RateMeter = RateMeter Word64
   deriving Show
 
-markRateMeter :: Int64 -> Int64 -> RateMeter -> RateMeter
-markRateMeter minutes' value (RateMeter vec minutes) = RateMeter (U.imap f vec) minutes
-  where
-    idx = fromIntegral (minutes' `mod` 60) :: Int
-    f i x | i == idx  = x + value
-          | otherwise = x
+zeroRateMeter :: RateMeter
+zeroRateMeter = RateMeter 0
 
-advanceRateMeter :: Int64 -> RateMeter -> RateMeter
-advanceRateMeter minutes' rm@(RateMeter vec minutes)
-    | minutes == minutes' = rm
-    | otherwise = RateMeter (U.imap f vec) minutes'
-  where
-    offset = minutes `div` 60
-    f i x | minutes < offset + i' && offset + i' <= minutes' = 0
-          | otherwise                                        = x
-      where
-        i' = fromIntegral i
-
-averageOfRateMeter :: RateMeter -> Int64
-averageOfRateMeter (RateMeter vec _) = U.sum vec
+markRateMeter :: Word64 -> RateMeter -> RateMeter
+markRateMeter value (RateMeter value') = RateMeter (value + value')
 
 -------------------------------------------------------------------------------
 -- Internals
