@@ -26,7 +26,7 @@ selectCapacities
     :: Ctx
     -> PM.UserId -> PM.Interval Day -> LIO PM.UserCapacities
 selectCapacities ctx uid interval = do
-    res <- handleSqlError [] $ poolQuery ctx selectQuery (uid, inf interval, sup interval)
+    res <- safePoolQuery ctx selectQuery (uid, inf interval, sup interval)
     if (length res /= intervalLength)
         then do
             logInfo_ $
@@ -45,7 +45,7 @@ selectCapacities ctx uid interval = do
     fallback = do
         -- We get an extended interval
         x <- fetchFromPlanMill ctx q
-        i <- handleSqlError 0 $ poolExecuteMany ctx insertQuery (transformForInsert x)
+        i <- safePoolExecuteMany ctx insertQuery (transformForInsert x)
         when (fromIntegral i /= length x) $
             logAttention_ $ "Inserted less capacities than we got from planmill"
         -- ... so we trim the result

@@ -21,15 +21,15 @@ module Futurice.App.PlanMillProxy.Logic (
     statsEndpoint,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Data.Aeson.Compat     (object, (.=))
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, taggedDecode, taggedEncode)
 import Data.Constraint
 import Futurice.PostgresPool
+import Futurice.Prelude
 import PlanMill.Types.Query
        (Query (..), SomeQuery (..), SomeResponse (..), queryDict)
+import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.HashMap.Strict        as HM
@@ -85,7 +85,7 @@ lookupCache ps = HM.fromList (Postgres.fromBinary <$$> ps)
 haxlEndpoint :: Ctx -> [SomeQuery] -> IO [Either Text SomeResponse]
 haxlEndpoint ctx qs = runLIO ctx $ do
     -- Optimistically update view counts
-    _ <- handleSqlError 0 $ poolExecute ctx viewQuery postgresQs
+    _ <- safePoolExecute ctx viewQuery postgresQs
 
     -- Hit the cache for non-primitive queries
     cacheResult <- liftIO $ lookupCache <$> poolQuery ctx selectQuery postgresQs
@@ -145,8 +145,7 @@ haxlEndpoint ctx qs = runLIO ctx $ do
                 then pure $ Right $ MkSomeResponse q $ taggedDecode bs
                 else do
                     logAttention_ $ "Borked cache content for " <> textShow q
-                    _ <- handleSqlError 0 $
-                        poolExecute ctx deleteQuery (Postgres.Only q)
+                    _ <- safePoolExecute ctx deleteQuery (Postgres.Only q)
                     return $ Left $ "structure tags don't match"
         Nothing -> MkSomeResponse q <$$> fetch'' q
 
@@ -182,7 +181,7 @@ haxlEndpoint ctx qs = runLIO ctx $ do
 -- This means that we never delete items from cache
 updateCache :: Ctx -> IO ()
 updateCache ctx = runLIO ctx $ do
-    qs <- handleSqlError [] $ poolQuery_ ctx selectQuery
+    qs <- safePoolQuery_ ctx selectQuery
     logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
     for_ qs $ \(Postgres.Only (SomeQuery q)) -> do
         res <- fetch q
@@ -190,7 +189,7 @@ updateCache ctx = runLIO ctx $ do
             Right () -> pure ()
             Left exc -> do
                 logAttention "Update failed" $ object [ "query" .= q, "exc" .= show exc ]
-                void $ handleSqlError 0 $ poolExecute ctx deleteQuery (Postgres.Only q)
+                void $ safePoolExecute ctx deleteQuery (Postgres.Only q)
   where
     fetch :: Query a -> LIO (Either SomeException ())
     fetch q =
@@ -230,7 +229,7 @@ updateCache ctx = runLIO ctx $ do
 -- | Cleanup cache
 cleanupCache :: Ctx -> IO ()
 cleanupCache ctx = runLIO ctx $ do
-    i <- handleSqlError 0 $ poolExecute_ ctx cleanupQuery
+    i <- safePoolExecute_ ctx cleanupQuery
     logInfo_ $  "cleaned up " <> textShow i <> " cache items"
   where
     cleanupQuery :: Postgres.Query
@@ -245,8 +244,7 @@ storeInPostgres
     => ctx -> Query a -> a -> LIO ()
 storeInPostgres ctx q x = do
     -- -- logInfo_ $ "Storing in postgres" <> textShow q
-    i <- handleSqlError 0 $
-        poolExecute ctx postgresQuery (q, Postgres.Binary $ taggedEncode x)
+    i <- safePoolExecute ctx postgresQuery (q, Postgres.Binary $ taggedEncode x)
     when (i == 0) $
         logAttention_ $ "Storing in postgres failed: " <> textShow q
   where

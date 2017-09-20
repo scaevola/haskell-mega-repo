@@ -54,6 +54,7 @@ library:
     - containers
     - data-default-class
     - exceptions
+    - futurice-metrics
     - futurice-servant
     - intervals
     - monad-logger

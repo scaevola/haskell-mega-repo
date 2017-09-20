@@ -6,13 +6,12 @@ module Futurice.App.PlanMillProxy.Logic.Timereports (
     updateWithoutTimereports,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Data.Binary.Tagged        (taggedDecode, taggedEncode)
-import Futurice.PostgresPool
+import Futurice.Prelude
 import Numeric.Interval.NonEmpty (inf, sup, (...))
 import PlanMill.Queries          (usersQuery)
 import PlanMill.Types.Query      (Query (..))
+import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.Set                   as Set
@@ -31,17 +30,17 @@ selectTimereports
     :: HasPostgresPool ctx => ctx
     -> PM.UserId -> Maybe (PM.Interval Day) -> LIO PM.Timereports
 selectTimereports ctx uid minterval = do
-    res <- handleSqlError [] $ case minterval of
-        Nothing       -> poolQuery ctx selectQueryWithoutInterval (Postgres.Only uid)
-        Just interval -> poolQuery ctx selectQueryWithInterval (uid, inf interval, sup interval)
+    res <- case minterval of
+        Nothing       -> safePoolQuery ctx selectQueryWithoutInterval (Postgres.Only uid)
+        Just interval -> safePoolQuery ctx selectQueryWithInterval (uid, inf interval, sup interval)
     res' <- liftIO $ tryDeep $ return $ V.fromList $ map selectTransform res
     case res' of
         Right x -> return x
         Left exc -> do
             logAttention_ $ "selectTimereports: " <> textShow exc
-            _ <- handleSqlError 0 $ case minterval of
-                Nothing       -> poolExecute ctx deleteQueryWithoutInterval (Postgres.Only uid)
-                Just interval -> poolExecute ctx deleteQueryWithInterval (uid, inf interval, sup interval)
+            _ <- case minterval of
+                Nothing       -> safePoolExecute ctx deleteQueryWithoutInterval (Postgres.Only uid)
+                Just interval -> safePoolExecute ctx deleteQueryWithInterval (uid, inf interval, sup interval)
             return mempty
   where
     selectTransform
@@ -86,7 +85,7 @@ updateWithoutTimereports ctx = runLIO ctx $ do
     allUsers <- fetchFromPlanMill ctx usersQuery
     let allUidsSet = Set.fromList $ allUsers ^.. traverse . PM.identifier
 
-    uids <- Postgres.fromOnly <$$> handleSqlError [] (poolQuery_ ctx selectUsersQuery)
+    uids <- Postgres.fromOnly <$$> safePoolQuery_ ctx selectUsersQuery
     let uidsSet = Set.fromList uids
 
     for_ (Set.difference allUidsSet uidsSet) (updateTimereportsForUser ctx)
@@ -103,7 +102,7 @@ updateAllTimereports ctx = runLIO ctx $ do
     logInfo_ $ "Updating timereports for users"
 
     -- Select uids with oldest updated time reports
-    uids <- Postgres.fromOnly <$$> handleSqlError [] (poolQuery_ ctx selectUsersQuery)
+    uids <- Postgres.fromOnly <$$> safePoolQuery_ ctx selectUsersQuery
     logInfo_ $ "Updating timereports for users: " <>
         T.intercalate ", " (textShow . getIdent <$> uids)
 
@@ -130,8 +129,7 @@ updateTimereportsForUser ctx uid = do
 
     -- Check what timereports we have stored, remove ones not in planmill anymore
     let planmillTrids = Set.fromList (tr ^.. traverse . PM.identifier)
-    postgresTrids <- toTrids <$> handleSqlError []
-        (poolQuery ctx selectQuery $ Postgres.Only uid)
+    postgresTrids <- toTrids <$> safePoolQuery ctx selectQuery (Postgres.Only uid)
 
     let notInPlanmill = Set.difference postgresTrids planmillTrids
     when (not $ Set.null notInPlanmill) $ do
@@ -139,7 +137,7 @@ updateTimereportsForUser ctx uid = do
         logInfo_ $
             "Found " <> textShow notInPlanmillCount <>
             " timereports not in planmill anymore"
-        i <- handleSqlError 0 $ poolExecute ctx deleteQuery
+        i <- safePoolExecute ctx deleteQuery
             (Postgres.Only $ Postgres.In $ Set.toList notInPlanmill)
         when (fromIntegral i /= notInPlanmillCount) $
             logAttention_ $
@@ -147,7 +145,7 @@ updateTimereportsForUser ctx uid = do
                 " out of " <> textShow notInPlanmillCount <> " timereports"
 
     -- Insert timereports
-    _ <- handleSqlError 0 $ insertTimereports ctx tr
+    liftIO $ void $ insertTimereports ctx tr
 
     -- Done
     pure ()
