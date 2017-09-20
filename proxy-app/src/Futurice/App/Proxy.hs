@@ -196,7 +196,7 @@ server ctx = give (ctxFumAuthToken ctx) $ pure "P-R-O-X-Y"
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
-    & serverName         .~ "Proxy-app"
+    & serverName         .~ "Prox"
     & serverDescription  .~ "Proxy from the outer space"
     & serverColour       .~ (Proxy :: Proxy ('FutuAccent 'AF3 'AC3))
     & serverApp proxyAPI .~ server
