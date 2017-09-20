@@ -235,7 +235,7 @@ cleanupCache ctx = runLIO ctx $ do
     cleanupQuery :: Postgres.Query
     cleanupQuery = fromString $ unwords
         [ "DELETE FROM planmillproxy.cache"
-        , "WHERE AND viewed < -4" -- -4 makes data survive over the weekends
+        , "WHERE viewed < -4" -- -4 makes data survive over the weekends
         , ";"
         ]
 
