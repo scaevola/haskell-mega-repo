@@ -111,6 +111,8 @@ import qualified Network.AWS                          as AWS
 import qualified Network.AWS.CloudWatch.PutMetricData as AWS
 import qualified Network.AWS.CloudWatch.Types         as AWS
 
+import Data.Typeable
+
 type FuturiceAPI api colour =
     FutuFaviconAPI colour
     :<|> api
@@ -382,8 +384,13 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
 
     onException logger mreq e = do
         mark "Warp caught exception"
+        print $ typeOf e
         runLogT "warp" logger $ do
-            logAttention (textShow e) mreq
+            let te = textShow e
+            case mreq of
+                -- if there isn't request, only warn.
+                Nothing -> logInfo_ te
+                Just req  -> logAttention te req
 
     -- On exception return JSON
     -- TODO: we could return some UUID and log exception with it.
