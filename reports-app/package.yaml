@@ -38,6 +38,7 @@ dependencies:
   - fum-client
   - futurice-foundation
   - futurice-integrations
+  - futurice-metrics
   - futurice-prelude
   - futurice-reports
   - futurice-servant

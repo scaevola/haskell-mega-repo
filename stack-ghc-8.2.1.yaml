@@ -21,6 +21,7 @@ packages:
 - futurice-github/
 - futurice-integrations/
 - futurice-logo/
+- futurice-metrics/
 - futurice-prelude/
 - futurice-pure-trans/
 - futurice-reports/
@@ -51,7 +52,6 @@ packages:
 # - tdigest/tdigest-Chart/
 # - tdigest/tdigest-bench/
 - tajna/
-- tdigest-ekg/
 - theme-app/
 - location: vendor/chart/chart
   extra-dep: true

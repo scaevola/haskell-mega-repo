@@ -55,6 +55,7 @@ library
     , DRBG
     , env-config
     , exceptions
+    , futurice-metrics
     , futurice-prelude
     , futurice-pure-trans
     , generics-sop
@@ -83,7 +84,6 @@ library
     , singleton-bool >= 0.1.2.0
     , stm
     , swagger2
-    , tdigest-ekg
     , text
     , time
     , time-locale-compat
@@ -172,6 +172,7 @@ executable planmill-client
     , DRBG
     , env-config
     , exceptions
+    , futurice-metrics
     , futurice-prelude
     , futurice-pure-trans
     , generics-sop
@@ -200,7 +201,6 @@ executable planmill-client
     , singleton-bool >= 0.1.2.0
     , stm
     , swagger2
-    , tdigest-ekg
     , text
     , time
     , time-locale-compat
@@ -253,6 +253,7 @@ executable pm-cli
     , DRBG
     , env-config
     , exceptions
+    , futurice-metrics
     , futurice-prelude
     , futurice-pure-trans
     , generics-sop
@@ -281,7 +282,6 @@ executable pm-cli
     , singleton-bool >= 0.1.2.0
     , stm
     , swagger2
-    , tdigest-ekg
     , text
     , time
     , time-locale-compat
@@ -334,6 +334,7 @@ test-suite integration
     , DRBG
     , env-config
     , exceptions
+    , futurice-metrics
     , futurice-prelude
     , futurice-pure-trans
     , generics-sop
@@ -362,7 +363,6 @@ test-suite integration
     , singleton-bool >= 0.1.2.0
     , stm
     , swagger2
-    , tdigest-ekg
     , text
     , time
     , time-locale-compat
@@ -410,6 +410,7 @@ test-suite test
     , DRBG
     , env-config
     , exceptions
+    , futurice-metrics
     , futurice-prelude
     , futurice-pure-trans
     , generics-sop
@@ -438,7 +439,6 @@ test-suite test
     , singleton-bool >= 0.1.2.0
     , stm
     , swagger2
-    , tdigest-ekg
     , text
     , time
     , time-locale-compat

@@ -7,7 +7,7 @@ maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
 license: BSD3
 github: futurice/proxy-app
 category: Web
-tested-with: GHC==7.8.4, GHC==7.10.3
+tested-with: GHC==8.0.2, GHC==8.2.1
 extra-source-files:
 - README.md
 
@@ -28,6 +28,7 @@ library:
     - env-config
     - fum-client
     - futurice-github
+    - futurice-metrics
     - futurice-prelude
     - futurice-servant
     - http-client

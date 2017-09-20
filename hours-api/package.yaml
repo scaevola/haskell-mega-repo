@@ -33,6 +33,7 @@ library:
     - fum-client
     - futurice-foundation
     - futurice-integrations
+    - futurice-metrics
     - futurice-prelude
     - futurice-reports
     - futurice-servant
@@ -60,7 +61,6 @@ library:
     - servant-server
     - stm
     - swagger2
-    - tdigest-ekg
     - text
     - time
     - transformers

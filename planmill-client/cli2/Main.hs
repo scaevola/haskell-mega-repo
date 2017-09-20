@@ -16,7 +16,6 @@ import Futurice.Prelude
 import Control.Lens          (taking)
 import Control.Monad.Http    (MonadHttp (..))
 import Data.Constraint
-import Data.TDigest.Metrics  (MonadMetrics)
 import Futurice.CryptoRandom (CryptoGenError)
 import Futurice.EnvConfig    (getConfig)
 import Futurice.Trans.PureT
@@ -202,7 +201,7 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
 newtype M a = M { runM :: PureT CryptoGenError Ctx (LogT IO) a }
   deriving
     ( Functor, Applicative, Monad
-    , MonadThrow, MonadTime, MonadError CryptoGenError, MonadMetrics, MonadClock
+    , MonadThrow, MonadTime, MonadError CryptoGenError, MonadClock
     , PM.MonadCRandom CryptoGenError
     , MonadReader Ctx
     )

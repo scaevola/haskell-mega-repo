@@ -1,4 +1,3 @@
-{-# LANGUAGE ConstraintKinds   #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -7,15 +6,15 @@ module PlanMill.Eval (evalPlanMill) where
 
 import PlanMill.Internal.Prelude
 
-import Control.Monad.Http   (MonadHttp (..), httpLbs)
-import Data.Aeson.Compat    (eitherDecode)
-import Data.TDigest.Metrics (MonadMetrics (..))
-import Data.Unique          (hashUnique, newUnique)
+import Control.Monad.Http         (MonadHttp (..), httpLbs)
+import Data.Aeson.Compat          (eitherDecode)
+import Data.Unique                (hashUnique, newUnique)
+import Futurice.Metrics.RateMeter (mark)
 import Network.HTTP.Client
        (Request, RequestBody (..), method, parseRequest, path, queryString,
        requestBody, requestHeaders, responseBody, responseStatus,
        setQueryString)
-import Network.HTTP.Types   (Header, Status (..), statusIsSuccessful)
+import Network.HTTP.Types         (Header, Status (..), statusIsSuccessful)
 
 -- Qualified imports
 import qualified Data.ByteString.Base64 as Base64
@@ -35,9 +34,8 @@ evalPlanMill
         ( MonadHttp m, MonadThrow m, MonadLog m -- MonadTime m implied by MonadLog
         , MonadReader env m, HasPlanMillCfg env
         , MonadCRandom e m, ContainsCryptoGenError e
-        , MonadIO m  -- newUnique
+        , MonadIO m  -- newUnique, mark
         , MonadClock m -- clocked
-        , MonadMetrics m
         , FromJSON a
         )
     => PlanMill a -> m a
@@ -85,7 +83,7 @@ evalPlanMill pm = do
             let dur' = timeSpecToSecondsD dur
             let Status {..} = responseStatus res
             logTrace_ $ "res " <> textShow statusCode <> " " <> textShow statusMessage <> "; took " <> textShow dur'
-            writeMetric "pmreq" dur'
+            liftIO $ mark "PlanMill request"
             if isn't _Empty (responseBody res)
                 then
                     -- logTrace_ $ "response body: " <> decodeUtf8Lenient (responseBody res ^. strict)

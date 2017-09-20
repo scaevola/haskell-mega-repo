@@ -29,7 +29,6 @@ import Prelude ()
 import PlanMill.Internal.Prelude
 
 import Data.Constraint                  (Constraint, Dict (..), type (:-)(..), (\\))
-import Data.TDigest.Metrics             (MonadMetrics (..))
 import Futurice.Constraint.ForallSymbol (ForallFSymbol (..))
 import Futurice.Trans.PureT
 
@@ -135,7 +134,7 @@ instance (MonadIO m , HasPlanMillCfg env)
     planmillQuery = planmillAction . queryToRequest
 
 -------------------------------------------------------------------------------
--- More fancy instance for "PureT"
+-- Fancier instance for "PureT"
 -------------------------------------------------------------------------------
 
 instance Monad m => MonadPlanMillConstraint (PureT e r m) where
@@ -145,7 +144,7 @@ instance Monad m => MonadPlanMillConstraint (PureT e r m) where
 instance
     ( Monad m, MonadIO m, MonadBaseControl IO m
     , MonadThrow m
-    , MonadTime m, MonadClock m, MonadMetrics m
+    , MonadTime m, MonadClock m
     , ContainsCryptoGenError e, HasHttpManager r, HasCryptoPool r, HasLoggerEnv r
     , HasPlanMillCfg r
     )
