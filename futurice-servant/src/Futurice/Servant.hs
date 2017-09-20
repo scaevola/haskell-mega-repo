@@ -383,14 +383,15 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
         & Warp.setServerName (encodeUtf8 t)
 
     onException logger mreq e = do
-        mark "Warp caught exception"
         print $ typeOf e
         runLogT "warp" logger $ do
             let te = textShow e
             case mreq of
                 -- if there isn't request, only warn.
                 Nothing -> logInfo_ te
-                Just req  -> logAttention te req
+                Just req  -> do
+                    liftIO $ mark "Warp caught exception"
+                    logAttention te req
 
     -- On exception return JSON
     -- TODO: we could return some UUID and log exception with it.
