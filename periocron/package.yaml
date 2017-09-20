@@ -29,6 +29,7 @@ library:
     - clock
     - ekg-core
     - futurice-prelude
+    - futurice-metrics
     - lens
     - lifted-async
     - lifted-base

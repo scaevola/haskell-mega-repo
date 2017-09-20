@@ -23,6 +23,7 @@ import Control.Concurrent.STM      (atomically)
 import Control.Concurrent.STM.TSem (TSem, newTSem, signalTSem, waitTSem)
 import Control.Exception.Lifted    (bracket)
 import Data.Ratio                  ((%))
+import Futurice.Metrics.RateMeter  (mark)
 import Futurice.Prelude
 import Prelude ()
 import System.Metrics              (Store, createDistribution)
@@ -170,9 +171,11 @@ workerLoop options tsem js = do
                     x <- liftIO action
                     case x of
                         Right (Just ()) -> pure ()
-                        Right Nothing ->
+                        Right Nothing -> do
+                            liftIO $ mark "Periocron job timeout"
                             logAttention_ $ "Timeout"
-                        Left exc ->
+                        Left exc -> do
+                            liftIO $ mark "Periocron exception"
                             logAttention_ $ "Exception -- " <> textShow exc
       where
         enter = do
