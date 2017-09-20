@@ -66,7 +66,6 @@ import Control.Concurrent.STM
 import Control.Monad.Catch                  (fromException, handleAll)
 import Data.Constraint                      (Dict (..))
 import Data.Swagger                         hiding (port)
-import Data.TDigest.Metrics                 (registerTDigest)
 import Data.Text.Encoding                   (decodeLatin1)
 import Development.GitRev                   (gitCommitDate, gitHash)
 import Futurice.Cache
@@ -77,7 +76,7 @@ import Futurice.EnvConfig
        (Configure, configure, envAwsCredentials, envVar, envVarWithDefault,
        getConfig', optionalAlt)
 import Futurice.Lucid.Foundation            (vendorServer)
-import Futurice.Metrics.RateMeter           (values)
+import Futurice.Metrics.RateMeter           (mark, values)
 import Futurice.Periocron
        (Job, defaultOptions, every, mkJob, spawnPeriocron)
 import Futurice.Prelude
@@ -99,6 +98,7 @@ import Servant.Swagger.UI
 import System.Remote.Monitoring             (forkServer, serverMetricStore)
 
 import qualified Data.Aeson               as Aeson
+import qualified Data.Map.Strict          as Map
 import qualified FUM.Types.Login          as FUM
 import qualified Futurice.DynMap          as DynMap
 import qualified GHC.Stats                as Stats
@@ -106,7 +106,6 @@ import qualified Network.HTTP.Types       as H
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified System.Metrics           as Metrics
 import qualified System.Metrics.Json      as Metrics
-import qualified Data.Map.Strict as Map
 
 import qualified Network.AWS                          as AWS
 import qualified Network.AWS.CloudWatch.PutMetricData as AWS
@@ -273,9 +272,6 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
         -- ekg metrics
         store      <- serverMetricStore <$> forkServer "localhost" ekgP
         waiMetrics <- registerWaiMetrics store
-        -- planmill metric
-        -- TODO: we register for all, make configurable
-        registerTDigest "pmreq" [0.5, 0.9, 0.99] store
 
         statsEnabled <-
 #if MIN_VERSION_base(4,10,0)
@@ -317,7 +313,7 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
                 & AWS.mdUnit       ?~ AWS.Count
                 & AWS.mdDimensions .~ [AWS.dimension "Service" service]
         let meterDatums = map mkDatum (Map.toList meters)
-      
+
         -- gcm
 #if MIN_VERSION_base(4,10,0)
         stats <- liftIO Stats.getRTSStats
@@ -385,6 +381,7 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
         & Warp.setServerName (encodeUtf8 t)
 
     onException logger mreq e = do
+        mark "Warp caught exception"
         runLogT "warp" logger $ do
             logAttention (textShow e) mreq
 

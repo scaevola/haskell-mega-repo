@@ -24,6 +24,7 @@ packages:
   futurice-github/
   futurice-integrations/
   futurice-logo/
+  futurice-metrics/
   futurice-prelude/
   futurice-pure-trans/
   futurice-reports/
@@ -50,7 +51,6 @@ packages:
   smileys-app/
   sms-proxy/
   tajna/
-  tdigest-ekg/
   theme-app/
 
   vendor/chart/chart

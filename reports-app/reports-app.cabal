@@ -53,6 +53,7 @@ library
     , fum-client
     , futurice-foundation
     , futurice-integrations
+    , futurice-metrics
     , futurice-prelude
     , futurice-reports
     , futurice-servant
@@ -151,6 +152,7 @@ executable reports-app-server
     , fum-client
     , futurice-foundation
     , futurice-integrations
+    , futurice-metrics
     , futurice-prelude
     , futurice-reports
     , futurice-servant
