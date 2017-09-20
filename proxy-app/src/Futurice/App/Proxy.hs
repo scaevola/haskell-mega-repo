@@ -18,6 +18,7 @@ import Data.Maybe                      (isNothing)
 import Data.Pool                       (createPool, withResource)
 import Data.Reflection                 (Given (..), give)
 import Data.Text.Encoding              (decodeLatin1)
+import Futurice.Metrics.RateMeter      (mark)
 import Futurice.Prelude
 import Futurice.Servant
 import Network.Wai                     (Request, rawPathInfo)
@@ -236,34 +237,34 @@ checkCreds ctx req u p = withResource (ctxPostgresPool ctx) $ \conn -> do
         res <- Postgres.query conn (fromString credentialAndEndpointCheck)
             (u', p', endpoint) :: IO [Postgres.Only Int]
         case res of
-            []    -> logInvalidLogin u' endpoint
-            _ : _ -> do
-                _ <- logAccess conn u' endpoint
-                pure True
+            []    -> logInvalidLogin u' endpoint >> pure False
+            _ : _ -> logAccess conn u' endpoint >> pure True
 
     swaggerCheck :: Postgres.Connection -> Text -> Text -> Text -> IO Bool
     swaggerCheck conn u' p' endpoint = do
         res <- Postgres.query conn (fromString credentialCheck)
             (u', p') :: IO [Postgres.Only Int]
         case res of
-            []    -> logInvalidLogin u' endpoint
+            []    -> logInvalidLogin u' endpoint >> pure False
             _ : _ -> pure True
 
-    logInvalidLogin :: Text -> Text -> IO Bool
-    logInvalidLogin u' endpoint = runLogT "checkCreds" (ctxLogger ctx) $ do
-        logAttention "Invalid login with " $ object
-            [ "username" .= u'
-            , "endpoint" .= endpoint
-            ]
-        pure False
+    logInvalidLogin :: Text -> Text -> IO ()
+    logInvalidLogin u' endpoint = do
+        mark $ "Invalid login"
+        runLogT "checkCreds" (ctxLogger ctx) $ do
+            logAttention "Invalid login with " $ object
+                [ "username" .= u'
+                , "endpoint" .= endpoint
+                ]
 
     -- | Logs user, and requested endpoint if endpoint is not swagger-related.
     logAccess :: Postgres.Connection -> Text -> Text -> IO ()
-    logAccess conn user endp =
-        when (isNothing $ match isSwaggerReg endp) $ void $
+    logAccess conn user endpoint =
+        when (isNothing $ match isSwaggerReg endpoint) $ void $ do
+            mark $ "endpoint " <> endpoint
             Postgres.execute conn
-            "insert into proxyapp.accesslog (username, endpoint) values (?, ?);"
-            (user, endp)
+                "insert into proxyapp.accesslog (username, endpoint) values (?, ?);"
+                (user, endpoint)
 
     isSwaggerReg :: RE' Text
     isSwaggerReg = string "/swagger.json" <|> string "/swagger-ui" *> (T.pack <$> many anySym)
