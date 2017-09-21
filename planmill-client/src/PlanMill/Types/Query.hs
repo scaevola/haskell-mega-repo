@@ -494,6 +494,10 @@ instance InsertNS x ys => InsertNS x (y ': ys) where
 instance Eq SomeQuery where
     SomeQuery q == SomeQuery q' = defaultEq q q'
 
+-- | Note: not sure this is lawful, or consistent with 'Eq' instance
+instance Ord SomeQuery where
+    SomeQuery q `compare` SomeQuery q' = Aeson.encode q `compare` Aeson.encode q'
+
 instance Hashable SomeQuery where
     hashWithSalt salt (SomeQuery q) = hashWithSalt salt q
 

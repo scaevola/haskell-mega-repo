@@ -109,7 +109,8 @@ haxlEndpoint ctx qs = runLIO ctx $ do
     pure res
   where
     primitiveQs = filter isPrimitive qs
-    postgresQs  = Postgres.Only . Postgres.In $ primitiveQs
+    -- Note: we sort queries to avoid deadlocks
+    postgresQs  = Postgres.Only . Postgres.In $ sort primitiveQs
 
     -- We handle timereports and capacities specially
     isPrimitive (SomeQuery (QueryCapacities _ _))  = False
