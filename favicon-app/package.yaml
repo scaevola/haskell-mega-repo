@@ -27,7 +27,6 @@ dependencies:
 - servant
 - servant-JuicyPixels
 - servant-server
-- servant-status
 - stm
 - text
 - time

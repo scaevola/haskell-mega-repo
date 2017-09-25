@@ -25,7 +25,6 @@ import Data.Aeson.Compat     (object, (.=))
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, taggedDecode, taggedEncode)
 import Data.Constraint
-import Futurice.PostgresPool
 import Futurice.Prelude
 import PlanMill.Types.Query
        (Query (..), SomeQuery (..), SomeResponse (..), queryDict)

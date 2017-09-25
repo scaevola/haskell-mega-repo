@@ -55,7 +55,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         let jobs =
                 -- See every 5 minutes, if there's something to update in cache
                 [ mkJob "cache update"  (updateCache ctx)
-                  $ shifted (3 * 60) $ every $ 5 * 60
+                  $ shifted 10 $ every $ 5 * 60
 
                 -- Cleanup cache every three hours
                 , mkJob "cache cleanup" (cleanupCache ctx)

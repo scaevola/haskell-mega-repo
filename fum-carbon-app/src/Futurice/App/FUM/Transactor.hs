@@ -4,7 +4,7 @@ import Control.Concurrent.MVar.Lifted (withMVar)
 import Control.Concurrent.STM
        (atomically, readTVar, writeTChan, writeTVar)
 import Data.Aeson                     (toJSON)
-import Futurice.PostgresPool
+import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Stricter              (runStricterT)
 import Prelude ()

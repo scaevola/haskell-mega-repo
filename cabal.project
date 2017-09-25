@@ -1,4 +1,4 @@
-index-state: 2017-09-08T06:13:01Z
+index-state: 2017-09-26T10:34:20Z
 
 allow-newer: Chart:base
 allow-newer: flowdock-grep:base
@@ -25,6 +25,7 @@ packages:
   futurice-integrations/
   futurice-logo/
   futurice-metrics/
+  futurice-postgres/
   futurice-prelude/
   futurice-pure-trans/
   futurice-reports/
@@ -47,7 +48,6 @@ packages:
   reports-app/
   servant-Chart/
   servant-binary-tagged/
-  servant-status/
   smileys-app/
   sms-proxy/
   tajna/

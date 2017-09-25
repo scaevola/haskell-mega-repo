@@ -52,7 +52,7 @@ instance NFData a => NFData (Tri a)
 $(A.deriveJSON A.defaultOptions
     { A.constructorTagModifier = map toLower } ''Tri)
 instance S.ToSchema a => S.ToSchema (Tri a) where
-    declareNamedSchema = S.genericDeclareNamedSchema S.defaultSchemaOptions
+    declareNamedSchema = S.genericDeclareNamedSchemaUnrestricted S.defaultSchemaOptions
         { S.constructorTagModifier = map toLower }
 
 lessSure :: Tri a -> Tri a

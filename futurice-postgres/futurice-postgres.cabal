@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 
-name:           futurice-github
+name:           futurice-postgres
 version:        0
-synopsis:       Additions to the @github@ package
-description:    Additions to the @github@ package
+synopsis:       Postgres stuff
+description:    ...
 category:       Web
 homepage:       https://github.com/futurice/haskell-mega-repo#readme
 bug-reports:    https://github.com/futurice/haskell-mega-repo/issues
@@ -13,7 +13,7 @@ author:         Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer:     Oleg Grenrus <oleg.grenrus@iki.fi>
 license:        BSD3
 license-file:   LICENSE
-tested-with:    GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
+tested-with:    GHC==8.0.2, GHC==8.2.1
 build-type:     Simple
 cabal-version:  >= 1.10
 
@@ -30,21 +30,13 @@ library
   default-extensions: DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable ScopedTypeVariables
   ghc-options: -Wall
   build-depends:
-      base >=4.8   && <4.11
-    , aeson
+      base                  >=4.7 && <5
     , aeson-compat
-    , binary
-    , binary-tagged
-    , constraints
-    , dependent-sum
+    , exceptions
+    , futurice-metrics
     , futurice-prelude
-    , generics-sop
-    , github
-    , haxl
-    , lens
     , postgresql-simple
-    , swagger2
-    , text
+    , resource-pool
   exposed-modules:
-      Futurice.GitHub
+      Futurice.Postgres
   default-language: Haskell2010

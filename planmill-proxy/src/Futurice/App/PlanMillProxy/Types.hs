@@ -8,14 +8,12 @@ module Futurice.App.PlanMillProxy.Types (
     Stats (..),
     ) where
 
-import Data.Pool                  (Pool)
-import Database.PostgreSQL.Simple (Connection)
 import Futurice.Generics
-import Futurice.PostgresPool
+import Futurice.Postgres
 import Futurice.Prelude
-import Futurice.Servant           (DynMapCache)
-import PlanMill                   (Cfg)
-import PlanMill.Worker            (Workers)
+import Futurice.Servant  (DynMapCache)
+import PlanMill          (Cfg)
+import PlanMill.Worker   (Workers)
 import Prelude ()
 
 -------------------------------------------------------------------------------
@@ -38,14 +36,14 @@ instance HasPostgresPool Ctx where
 -------------------------------------------------------------------------------
 
 data Stats = Stats
-    { statsCachedAvgAge  :: Double
-    , statsCachedMinAge  :: Double
-    , statsCachedMaxAge  :: Double
-    , statsCachedTotal   :: Int
-    , statsTimereportsAvgAge  :: Double
-    , statsTimereportsMinAge  :: Double
-    , statsTimereportsMaxAge  :: Double
-    , statsTimereportsTotal   :: Int
+    { statsCachedAvgAge      :: Double
+    , statsCachedMinAge      :: Double
+    , statsCachedMaxAge      :: Double
+    , statsCachedTotal       :: Int
+    , statsTimereportsAvgAge :: Double
+    , statsTimereportsMinAge :: Double
+    , statsTimereportsMaxAge :: Double
+    , statsTimereportsTotal  :: Int
     }
   deriving Show
 

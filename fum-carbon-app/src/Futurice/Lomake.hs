@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                     #-}
 {-# LANGUAGE DataKinds               #-}
 {-# LANGUAGE FlexibleContexts        #-}
 {-# LANGUAGE GADTs                   #-}
@@ -6,9 +5,7 @@
 {-# LANGUAGE ScopedTypeVariables     #-}
 {-# LANGUAGE TypeFamilies            #-}
 {-# LANGUAGE UndecidableInstances    #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# LANGUAGE UndecidableSuperClasses #-}
-#endif
 
 -- | Simple but awesome form library.
 --
@@ -34,6 +31,7 @@ import Servant.API                (Link)
 
 import qualified Data.Aeson.Compat   as Aeson
 import qualified Data.HashMap.Strict as HM
+import qualified Data.Swagger        as S
 import qualified Generics.SOP        as SOP
 
 -------------------------------------------------------------------------------
@@ -194,7 +192,7 @@ lomakeHtml formOpts fields names values =
             , value_ $ vMaybe "" (tfoEncode opts) value
             ]
 
-    render (TextField opts) n v@VHidden {} = 
+    render (TextField opts) n v@VHidden {} =
         render (HiddenField opts) n v
     render (TextField opts) n value = do
         lift $ row_ $ large_ 12 $ label_ $ do
@@ -230,7 +228,7 @@ lomakeHtml formOpts fields names values =
                         [ value_ $ p v ]
                         (toHtml l)
       where
-        vals = case value of 
+        vals = case value of
             V _ xs | not (null xs) -> xs
             _                      -> efoValues opts
 
@@ -308,4 +306,5 @@ data LomakeResponse
 
 instance ToJSON LomakeResponse
 instance FromJSON LomakeResponse
-instance ToSchema LomakeResponse
+instance ToSchema LomakeResponse where
+    declareNamedSchema = S.genericDeclareNamedSchemaUnrestricted S.defaultSchemaOptions

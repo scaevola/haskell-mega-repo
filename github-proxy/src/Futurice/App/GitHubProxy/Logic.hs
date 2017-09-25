@@ -2,10 +2,9 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-#if __GLASGOW_HASKELL__ >= 800
 {-# OPTIONS_GHC -freduction-depth=0 #-}
-#endif
 module Futurice.App.GitHubProxy.Logic (
     -- * Endpoint
     haxlEndpoint,
@@ -14,21 +13,22 @@ module Futurice.App.GitHubProxy.Logic (
     cleanupCache,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
-import Control.Monad.Catch            (handle)
+import Data.Aeson.Types               (parseEither, parseJSON)
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo, taggedDecode, taggedEncode)
 import Data.Constraint
 import Futurice.App.GitHubProxy.H     (runH)
 import Futurice.App.GitHubProxy.Types (Ctx (..))
 import Futurice.GitHub
-       (Auth, RW (..), ReqTag, Request, SomeRequest (..), SomeResponse (..),
-       tagDict)
+       (Auth, RW (..), ReqTag, Request, SomeRequest (..), SomeResponse (..))
 import Futurice.Integrations.Classes  (MonadGitHub (..))
-import Futurice.PostgresPool
+import Futurice.Metrics.RateMeter     (mark)
+import Futurice.Postgres
+import Futurice.Prelude
 import Futurice.Servant
        (CachePolicy (..), DynMapCache, genCachedIO)
+import Futurice.TypeTag
+import Prelude ()
 
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.HashMap.Strict        as HM
@@ -70,7 +70,7 @@ runLIO = runLogT'
 haxlEndpoint :: Ctx -> [SomeRequest] -> IO [Either Text SomeResponse]
 haxlEndpoint ctx qs = runLIO ctx $ do
     -- Optimistically update view counts
-    _ <- handleSqlError 0 $ poolExecute ctx viewQuery postgresQs
+    _ <- safePoolExecute ctx viewQuery postgresQs
 
     -- Hit the cache for non-primitive queries
     cacheResult <- liftIO $ lookupCache <$> poolQuery ctx selectQuery postgresQs
@@ -92,7 +92,8 @@ haxlEndpoint ctx qs = runLIO ctx $ do
     -- return
     pure res
   where
-    postgresQs  = Postgres.Only . Postgres.In $ qs
+    -- sort to prevent deadlocks
+    postgresQs  = Postgres.Only . Postgres.In $ sort qs
 
     -- Fetch provides context for fetch', i.e. this is boilerplate :(
     fetch
@@ -102,10 +103,10 @@ haxlEndpoint ctx qs = runLIO ctx $ do
         case (binaryDict, semVerDict, structDict, nfdataDict) of
             (Dict, Dict, Dict, Dict) -> fetch' cacheResult tag req
       where
-        binaryDict = tagDict (Proxy :: Proxy Binary) tag
-        semVerDict = tagDict (Proxy :: Proxy HasSemanticVersion) tag
-        structDict = tagDict (Proxy :: Proxy HasStructuralInfo) tag
-        nfdataDict = tagDict (Proxy :: Proxy NFData) tag
+        binaryDict = typeTagDict (Proxy :: Proxy Binary) tag
+        semVerDict = typeTagDict (Proxy :: Proxy HasSemanticVersion) tag
+        structDict = typeTagDict (Proxy :: Proxy HasStructuralInfo) tag
+        nfdataDict = typeTagDict (Proxy :: Proxy NFData) tag
 
     fetch'
         :: forall a. (NFData a, Binary a, HasSemanticVersion a, HasStructuralInfo a)
@@ -119,8 +120,7 @@ haxlEndpoint ctx qs = runLIO ctx $ do
                 then pure $ Right $ MkSomeResponse tag $ taggedDecode bs
                 else do
                     logAttention_ $ "Borked cache content for " <> textShow sreq
-                    _ <- handleSqlError 0 $
-                        poolExecute ctx deleteQuery (Postgres.Only sreq)
+                    _ <- safePoolExecute ctx deleteQuery (Postgres.Only sreq)
                     return $ Left $ "structure tags don't match"
         Nothing -> MkSomeResponse tag <$$> fetch'' tag req
       where
@@ -152,7 +152,7 @@ haxlEndpoint ctx qs = runLIO ctx $ do
     selectQuery :: Postgres.Query
     selectQuery = fromString $ unwords $
         [ "SELECT query, data FROM githubproxy.cache"
-        , "WHERE query in ?"
+        , "WHERE query IN ?"
         , ";"
         ]
 
@@ -160,19 +160,29 @@ haxlEndpoint ctx qs = runLIO ctx $ do
 -- This means that we never delete items from cache
 updateCache :: Ctx -> IO ()
 updateCache ctx = runLIO ctx $ do
-    qs <- handleSqlError [] $ poolQuery_ ctx selectQuery
+    qs <- safePoolQuery_ ctx selectQuery
     logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
-    for_ qs $ \(Postgres.Only (MkSomeRequest tag req)) -> fetch tag req
+    for_ qs $ \(k :: Text, val) -> case parseEither parseJSON val of
+        Right (MkSomeRequest tag req) -> do
+            r <- fetch tag req
+            case r of
+                Right () -> pure ()
+                Left exc -> do
+                    liftIO $ mark "Exception"
+                    logAttention "Exception" (show exc)
+        Left err -> do
+            logAttention "Invalid query" (val, err)
+            void $ safePoolExecute ctx deleteQuery (Postgres.Only k)
   where
     fetch :: ReqTag a -> Request 'RA a -> LIO (Either SomeException ())
     fetch tag req  =
         case (binaryDict, semVerDict, structDict, nfdataDict) of
             (Dict, Dict, Dict, Dict) -> fetch' tag req
       where
-        binaryDict = tagDict (Proxy :: Proxy Binary) tag
-        semVerDict = tagDict (Proxy :: Proxy HasSemanticVersion) tag
-        structDict = tagDict (Proxy :: Proxy HasStructuralInfo) tag
-        nfdataDict = tagDict (Proxy :: Proxy NFData) tag
+        binaryDict = typeTagDict (Proxy :: Proxy Binary) tag
+        semVerDict = typeTagDict (Proxy :: Proxy HasSemanticVersion) tag
+        structDict = typeTagDict (Proxy :: Proxy HasStructuralInfo) tag
+        nfdataDict = typeTagDict (Proxy :: Proxy NFData) tag
 
     fetch'
       :: (Binary a, HasStructuralInfo a, HasSemanticVersion a)
@@ -184,17 +194,21 @@ updateCache ctx = runLIO ctx $ do
     -- Fetch queries which are old enough, and viewed at least once
     selectQuery :: Postgres.Query
     selectQuery = fromString $ unwords $
-        [ "SELECT (query) FROM githubproxy.cache"
+        [ "SELECT query :: text, query FROM githubproxy.cache"
         , "WHERE current_timestamp - updated > (" ++ genericAge ++ " :: interval) * (1 + variance) AND viewed > 0"
         , "ORDER BY viewed"
         , "LIMIT 1000"
         , ";"
         ]
 
+    -- Used to delete invalid items (cannot decode)
+    deleteQuery :: Postgres.Query
+    deleteQuery = "DELETE FROM githubproxy.cache WHERE query = ?;"
+
 -- | Cleanup cache
 cleanupCache :: Ctx -> IO ()
 cleanupCache ctx = runLIO ctx $ do
-    i <- handleSqlError 0 $ poolExecute_ ctx cleanupQuery
+    i <- safePoolExecute_ ctx cleanupQuery
     logInfo_ $  "cleaned up " <> textShow i <> " cache items"
   where
     cleanupQuery :: Postgres.Query
@@ -209,8 +223,7 @@ storeInPostgres
     => ctx -> ReqTag a -> Request 'RA a -> a -> LIO ()
 storeInPostgres ctx tag req x = do
     -- -- logInfo_ $ "Storing in postgres" <> textShow q
-    i <- handleSqlError 0 $
-        poolExecute ctx postgresQuery (MkSomeRequest tag req, Postgres.Binary $ taggedEncode x)
+    i <- safePoolExecute ctx postgresQuery (MkSomeRequest tag req, Postgres.Binary $ taggedEncode x)
     when (i == 0) $
         logAttention_ $ "Storing in postgres failed: " <> textShow (MkSomeRequest tag req)
   where
@@ -229,22 +242,15 @@ storeInPostgres ctx tag req x = do
 
 -- | Run query on real planmill backend.
 fetchFromGitHub :: Logger -> DynMapCache -> Auth -> ReqTag a -> Request 'RA a -> LIO a
-fetchFromGitHub logger cache auth tag req = case (typeableDict, eqDict) of
-    (Dict, Dict) -> liftIO
+fetchFromGitHub logger cache auth tag req = case (typeableDict, nfdataDict, eqDict) of
+    (Dict, Dict, Dict) -> liftIO
         -- TODO: add cache cleanup
         $ genCachedIO RequestNew logger cache (10 * 60) req
-        $ runH auth $ githubReq req
+        $ runH logger auth $ githubReq req
   where
-    typeableDict = tagDict (Proxy :: Proxy Typeable) tag
-    eqDict = tagDict (Proxy :: Proxy Eq) tag
-
-handleSqlError :: a -> IO a -> LIO a
-handleSqlError x action = handle (omitSqlError x) $ liftIO action
-
-omitSqlError :: a -> Postgres.SqlError -> LIO a
-omitSqlError a err = do
-    logAttention_ $ textShow err
-    return a
+    typeableDict = typeTagDict (Proxy :: Proxy Typeable) tag
+    nfdataDict = typeTagDict (Proxy :: Proxy NFData) tag
+    eqDict = typeTagDict (Proxy :: Proxy Eq) tag
 
 runLogT' :: Ctx -> LogT IO a -> IO a
 runLogT' ctx = runLogT "github-proxy" (ctxLogger ctx)

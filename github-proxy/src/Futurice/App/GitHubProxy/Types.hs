@@ -5,13 +5,11 @@ module Futurice.App.GitHubProxy.Types (
     Ctx (..),
     ) where
 
-import Prelude ()
+import Futurice.Postgres
 import Futurice.Prelude
-import Data.Pool                  (Pool)
-import Database.PostgreSQL.Simple (Connection)
-import Futurice.PostgresPool
-import Futurice.Servant           (DynMapCache)
-import GitHub.Auth                (Auth)
+import Futurice.Servant  (DynMapCache)
+import GitHub.Auth       (Auth)
+import Prelude ()
 
 -------------------------------------------------------------------------------
 -- Context

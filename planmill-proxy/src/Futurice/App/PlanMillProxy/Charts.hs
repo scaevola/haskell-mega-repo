@@ -5,15 +5,15 @@ module Futurice.App.PlanMillProxy.Charts (
     ) where
 
 import Control.Lens                   ((.=))
-import Futurice.PostgresPool
+import Futurice.Postgres
 import Futurice.Prelude
 import Graphics.Rendering.Chart.Utils (isValidNumber)
 import Prelude ()
 import Servant.Chart                  (Chart (..))
 
 import qualified Database.PostgreSQL.Simple    as Postgres
-import qualified Graphics.Rendering.Chart.Easy as C
 import qualified Futurice.Chart.Histogram      as FC
+import qualified Graphics.Rendering.Chart.Easy as C
 
 import Futurice.App.PlanMillProxy.Types (Ctx (..))
 

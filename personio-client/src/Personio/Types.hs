@@ -26,6 +26,8 @@ import Data.Aeson.Types            (typeMismatch)
 import Data.Char                   (ord)
 import Data.List                   (foldl')
 import Data.Maybe                  (isJust)
+import Data.Swagger
+       (defaultSchemaOptions, genericDeclareNamedSchemaUnrestricted)
 import Data.Time                   (zonedTimeToLocalTime)
 import FUM.Types.Login             (Login, loginRegexp)
 import Futurice.Aeson
@@ -269,7 +271,8 @@ data ValidationMessage
 
 instance ToJSON ValidationMessage
 instance FromJSON ValidationMessage
-instance ToSchema ValidationMessage
+instance ToSchema ValidationMessage where
+    declareNamedSchema = genericDeclareNamedSchemaUnrestricted defaultSchemaOptions
 
 -- | All fields except 'evMessages' are to help connect the data.
 data EmployeeValidation = EmployeeValidation
@@ -296,7 +299,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
     type_ <- obj .: "type"
     if type_ /= ("Employee" :: Text)
     then fail $ "Not Employee: " ++ type_ ^. unpacked
-    else do 
+    else do
         rawAttrs <- obj .: "attributes"
         e <- parseEmployeeObject rawAttrs
         EmployeeValidation e <$> validate e (mkAttributes rawAttrs)

@@ -8,7 +8,6 @@ import Prelude ()
 import Futurice.Prelude
 import Data.Binary.Tagged        (taggedDecode, taggedEncode)
 import Data.Time                 (addDays)
-import Futurice.PostgresPool
 import Numeric.Interval.NonEmpty (inf, sup, (...))
 import PlanMill.Types.Query      (Query (..))
 

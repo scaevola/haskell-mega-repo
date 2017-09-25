@@ -5,9 +5,8 @@
 {-# OPTIONS_GHC -freduction-depth=0 #-}
 #endif
 module Futurice.App.PlanMillProxy.Logic.Common (
-    HasPostgresPool,
-    poolExecuteMany,
-    module Futurice.App.PlanMillProxy.Logic.Common
+    module Futurice.Postgres,
+    module Futurice.App.PlanMillProxy.Logic.Common,
     ) where
 
 import Control.Monad.Catch        (handle)
@@ -18,7 +17,7 @@ import Data.Binary.Tagged
        structuralInfo, structuralInfoSha1ByteStringDigest)
 import Data.Constraint
 import Futurice.Metrics.RateMeter (mark)
-import Futurice.PostgresPool
+import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant           (CachePolicy (..), genCachedIO)
 import GHC.TypeLits               (natVal)
@@ -53,6 +52,9 @@ type LIO = LogT IO
 runLIO :: Ctx -> LIO a -> IO a
 runLIO =  runLogT'
 
+runLogT' :: Ctx -> LogT IO a -> IO a
+runLogT' ctx = runLogT "logic" (ctxLogger ctx)
+
 -------------------------------------------------------------------------------
 -- Utiltities
 -------------------------------------------------------------------------------
@@ -71,52 +73,6 @@ fetchFromPlanMill ctx q = case (typeableDict, fromJsonDict, nfdataDict) of
     ws     = ctxWorkers ctx
     logger = ctxLogger ctx
     cache  = ctxCache ctx
-
-handleSqlError :: Postgres.Query -> a -> IO a -> LIO a
-handleSqlError q x action = handle (omitSqlError q x) $ liftIO action
-
-omitSqlError :: Postgres.Query -> a -> Postgres.SqlError -> LIO a
-omitSqlError q a err = do
-    liftIO $ mark "Omitted sql error"
-    logAttention (textShow err) (show q)
-    return a
-
-runLogT' :: Ctx -> LogT IO a -> IO a
-runLogT' ctx = runLogT "logic" (ctxLogger ctx)
-
--------------------------------------------------------------------------------
--- Safe pool stuff
--------------------------------------------------------------------------------
-
-safePoolQuery
-    :: (Postgres.ToRow q, Postgres.FromRow r, HasPostgresPool ctx)
-    => ctx -> Postgres.Query -> q -> LIO [r]
-safePoolQuery ctx query row = handleSqlError query [] $
-    poolQuery ctx query row
-
-safePoolQuery_
-    :: (Postgres.FromRow r, HasPostgresPool ctx)
-    => ctx -> Postgres.Query -> LIO [r]
-safePoolQuery_ ctx query = handleSqlError query [] $
-    poolQuery_ ctx query
-
-safePoolExecute
-    :: (Postgres.ToRow q, HasPostgresPool ctx)
-    => ctx -> Postgres.Query -> q -> LIO Int64
-safePoolExecute ctx query row = handleSqlError query 0 $
-    poolExecute ctx query row
-
-safePoolExecute_
-    :: (HasPostgresPool ctx)
-    => ctx -> Postgres.Query -> LIO Int64
-safePoolExecute_ ctx query = handleSqlError query 0 $ 
-    poolExecute_ ctx query
-
-safePoolExecuteMany
-    :: (Postgres.ToRow q, HasPostgresPool ctx)
-    => ctx -> Postgres.Query -> [q] -> LIO Int64
-safePoolExecuteMany ctx query rows = handleSqlError query 0 $
-    poolExecuteMany ctx query rows
 
 -------------------------------------------------------------------------------
 -- binary-tagged additions

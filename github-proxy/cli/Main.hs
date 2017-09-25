@@ -7,14 +7,15 @@
 #endif
 module Main (main) where
 
-import Prelude ()
-import Futurice.Prelude
 import Data.Constraint
 import Futurice.EnvConfig            (envVar, getConfig')
 import Futurice.Has                  (FlipIn)
 import Futurice.Integrations.Classes (MonadGitHub (..))
 import Futurice.Integrations.GitHub  (GHR (..), initDataSource)
+import Futurice.Prelude
+import Futurice.TypeTag              (typeTagDict)
 import Network.HTTP.Client           (Request, applyBasicAuth, parseUrlThrow)
+import Prelude ()
 
 import qualified Futurice.GitHub as GH
 import qualified Haxl.Core       as H
@@ -63,9 +64,9 @@ instance MonadGitHub H where
     githubReq req = case (showDict, typeableDict) of
         (Dict, Dict) -> H (H.dataFetch $ GHR tag req)
       where
-        tag = GH.mkTag
-        showDict     = GH.tagDict (Proxy :: Proxy Show) tag
-        typeableDict = GH.tagDict (Proxy :: Proxy Typeable) tag
+        tag = GH.mkReqTag
+        showDict     = typeTagDict (Proxy :: Proxy Show) tag
+        typeableDict = typeTagDict (Proxy :: Proxy Typeable) tag
 
 runH :: Logger -> Manager -> Request -> H a -> IO a
 runH lgr mgr req (H haxl) = do
