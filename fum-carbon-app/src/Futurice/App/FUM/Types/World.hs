@@ -33,7 +33,7 @@ data World = World
     , _worldMailboxes  :: !(IdMap Mailbox)
     , _worldGroups     :: !(IdMap Group)
     , _worldSudoGroup  :: !(Maybe GroupName) -- change to Group!
-    -- * lazy fields
+    -- lazy fields
     , _worldEmployeeGroups :: Map Login (IdMap Group)
     }
 
