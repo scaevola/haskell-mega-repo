@@ -80,16 +80,17 @@ evalPlanMill pm = do
             auth <- getAuth
             let req'' = addHeader (authHeader auth) req'
             (dur, res) <- clocked $ httpLbs req''
+            let status@Status {..} = responseStatus res
+            let body = responseBody res
             let dur' = timeSpecToSecondsD dur
-            let Status {..} = responseStatus res
             logTrace_ $ "res " <> textShow statusCode <> " " <> textShow statusMessage <> "; took " <> textShow dur'
             liftIO $ mark "PlanMill request"
-            if isn't _Empty (responseBody res)
+            if isn't _Empty body
                 then
                     -- logTrace_ $ "response body: " <> decodeUtf8Lenient (responseBody res ^. strict)
-                    if statusIsSuccessful (responseStatus res)
-                        then parseResult url $ responseBody res
-                        else throwM $ parseError url $ responseBody res
+                    if statusIsSuccessful status
+                        then parseResult url body
+                        else throwM $ parseError url body
                 else do
                     logTrace_ "empty response"
                     d

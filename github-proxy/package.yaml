@@ -25,8 +25,10 @@ dependencies:
   - constraints
   - env-config
   - futurice-github
-  - futurice-prelude
   - futurice-integrations
+  - futurice-metrics
+  - futurice-postgres
+  - futurice-prelude
   - github
   - http-client
   - http-client-tls

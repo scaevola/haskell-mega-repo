@@ -46,6 +46,7 @@ library
     , fail
     , fum-types
     , futurice-foundation
+    , futurice-postgres
     , futurice-prelude
     , futurice-servant
     , generics-sop
@@ -148,6 +149,7 @@ executable fum-carbon-server
     , fail
     , fum-types
     , futurice-foundation
+    , futurice-postgres
     , futurice-prelude
     , futurice-servant
     , generics-sop
@@ -212,6 +214,7 @@ test-suite unit-tests
     , fail
     , fum-types
     , futurice-foundation
+    , futurice-postgres
     , futurice-prelude
     , futurice-servant
     , generics-sop

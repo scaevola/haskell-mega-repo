@@ -53,7 +53,6 @@ library:
     - servant-cassava
     - servant-lucid
     - servant-server
-    - servant-status
     - servant-swagger
     - servant-swagger-ui == 0.2.*
     - stm

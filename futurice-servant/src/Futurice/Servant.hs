@@ -90,7 +90,6 @@ import Prelude ()
 import Servant
 import Servant.CSV.Cassava                  (CSV)
 import Servant.Futurice.Favicon             (FutuFaviconAPI, serveFutuFavicon)
-import Servant.Futurice.Status              hiding (info)
 import Servant.HTML.Lucid                   (HTML)
 import Servant.Server.Internal              (passToServer)
 import Servant.Swagger
@@ -118,16 +117,6 @@ type FuturiceAPI api colour =
     :<|> api
     :<|> SwaggerSchemaUI "swagger-ui" "swagger.json"
     :<|> "vendor" :> Raw
-    :<|> StatusAPI
-
-cacheStats :: DynMapCache -> StatusInfoIO
-cacheStats dmap = gcStatusInfo <> dynmapStats
-  where
-    dynmapStats :: StatusInfoIO
-    dynmapStats = SIIO $ group "cache" . metric "size" <$> dynmapSize
-
-    dynmapSize :: IO Int
-    dynmapSize = atomically $ DynMap.size dmap
 
 swaggerDoc
     :: HasSwagger api
@@ -152,12 +141,11 @@ futuriceServer
     -> Proxy api
     -> Server api
     -> Server (FuturiceAPI api colour)
-futuriceServer t d cache papi server
+futuriceServer t d _cache papi server
     = serveFutuFavicon
     :<|> server
     :<|> swaggerSchemaUIServer (swaggerDoc t d papi)
     :<|> vendorServer
-    :<|> serveStatus (cacheStats cache)
 
 -------------------------------------------------------------------------------
 -- main boilerplate
@@ -287,7 +275,7 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
         let mcloudwatchJob = do
                 guard statsEnabled
                 env <- menv
-                pure (cloudwatchJob mutgcTVar logger env awsGroup service)
+                pure (cloudwatchJob cache mutgcTVar logger env awsGroup service)
 
         let jobs' = mkJob "stats" (ekgJob logger store) (every $ 5 * 60)
                   : maybeToList (mkJob "cloudwatch" <$> mcloudwatchJob <*> pure (every 60))
@@ -305,8 +293,8 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
             $ middleware ctx
             $ serve proxyApi' server'
 
-    cloudwatchJob :: TVar MutGC -> Logger -> AWS.Env -> Text -> Text -> IO ()
-    cloudwatchJob mutgcTVar logger env awsGroup service = runLogT "cloudwatch" logger $ do
+    cloudwatchJob :: DynMapCache -> TVar MutGC -> Logger -> AWS.Env -> Text -> Text -> IO ()
+    cloudwatchJob cache mutgcTVar logger env awsGroup service = runLogT "cloudwatch" logger $ do
         -- averages
         meters <- liftIO values
         logInfo "Futurice.Metrics" meters
@@ -315,6 +303,14 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
                 & AWS.mdUnit       ?~ AWS.Count
                 & AWS.mdDimensions .~ [AWS.dimension "Service" service]
         let meterDatums = map mkDatum (Map.toList meters)
+
+        -- Cache size
+        cacheSize <- liftIO $ dynMapCacheSize cache
+        logInfo "Cache size" cacheSize
+        let cacheDatum = AWS.metricDatum "Gauge: Cache size"
+                & AWS.mdValue      ?~ fromIntegral cacheSize
+                & AWS.mdUnit       ?~ AWS.Count
+                & AWS.mdDimensions .~ [AWS.dimension "Service" service]
 
         -- gcm
 #if MIN_VERSION_base(4,10,0)
@@ -361,7 +357,7 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
 
             -- Put.
             let pmd = AWS.putMetricData (awsGroup <> "/RTS")
-                    & AWS.pmdMetricData .~ datum : datum2 : meterDatums
+                    & AWS.pmdMetricData .~ datum : datum2 : cacheDatum : meterDatums
 
             AWS.send pmd
 
@@ -427,6 +423,9 @@ data MutGC = MutGC !Double !Double
 
 newDynMapCache :: IO DynMapCache
 newDynMapCache = DynMap.newIO
+
+dynMapCacheSize :: DynMapCache -> IO Int
+dynMapCacheSize = atomically . DynMap.size
 
 -------------------------------------------------------------------------------
 -- SSO User

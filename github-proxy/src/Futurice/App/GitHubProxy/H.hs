@@ -1,23 +1,27 @@
-{-# LANGUAGE CPP          #-}
-{-# LANGUAGE DataKinds    #-}
-{-# LANGUAGE TypeFamilies #-}
-#if __GLASGOW_HASKELL__ >= 800
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
 {-# OPTIONS_GHC -freduction-depth=0 #-}
-#endif
 module Futurice.App.GitHubProxy.H (
     H, runH,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Monad.Operational     (Program, interpretWithMonad, singleton)
-import Futurice.Constraint.Unit1     (Unit1)
+import Data.Aeson                    (object)
+import Futurice.GitHub               (requestToJSON)
 import Futurice.Integrations.Classes (MonadGitHub (..))
+import Futurice.Metrics.RateMeter    (mark)
+import Futurice.Prelude
 import GitHub.Auth                   (Auth)
+import Prelude ()
 
 import qualified GitHub as GH
 
-newtype H a = H { unH :: Program (GH.Request 'GH.RA) a }
+data R a where
+    R :: NFData a => GH.Request 'GH.RA a -> R a
+
+newtype H a = H { unH :: Program R a }
 
 instance Functor H where
     fmap f (H x) = H (fmap f x)
@@ -33,14 +37,20 @@ instance Monad H where
     H f >>= k = H $ f >>= unH . k
 
 instance MonadGitHub H where
-    type MonadGitHubC H = Unit1
-    githubReq req = H (singleton req)
+    type MonadGitHubC H = NFData
+    githubReq req = H (singleton (R req))
 
-runH :: Auth -> H a -> IO a
-runH auth (H m) = do
+runH :: Logger -> Auth -> H a -> IO a
+runH logger auth (H m) = do
     mgr <- newManager tlsManagerSettings
     interpretWithMonad (interpret mgr) m
   where
-    interpret :: Manager -> GH.Request 'GH.RA x -> IO x
-    interpret mgr req = do 
-        GH.executeRequestWithMgr mgr auth req >>= either throwM pure
+    interpret :: Manager -> R x -> IO x
+    interpret mgr (R req) = runLogT "github" logger $ do
+        logTrace "Request" $ object $ requestToJSON req
+        liftIO $ mark "GitHub request"
+        (dur, res) <- liftIO $ clocked $
+            GH.executeRequestWithMgr mgr auth req >>= either throwM pure
+        let dur' = timeSpecToSecondsD dur
+        logTrace ("GitHub request took " <> textShow dur') dur
+        return res

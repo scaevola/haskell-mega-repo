@@ -7,11 +7,12 @@
 -- | Interface to @github-proxy@.
 module Futurice.Integrations.GitHub where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Concurrent.Async  (async, waitCatch)
+import Data.GADT.Compare         (geq)
 import Data.Type.Equality        ((:~:) (..))
+import Futurice.Prelude
 import Numeric.Interval.NonEmpty (clamp, (...))
+import Prelude ()
 
 import qualified Codec.Compression.GZip as GZip
 import qualified Data.Aeson             as Aeson
@@ -121,7 +122,7 @@ instance H.DataSource u GHR where
             putResults rest bss
 
         coerceResponse :: GH.ReqTag a -> GH.SomeResponse -> Either SomeException a
-        coerceResponse t (GH.MkSomeResponse t' r) = case GH.eqTag t t' of
+        coerceResponse t (GH.MkSomeResponse t' r) = case geq t t' of
             Just Refl -> pure r
             Nothing   -> throwM (GitHubBatchError "Unmatching response")
 

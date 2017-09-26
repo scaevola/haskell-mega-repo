@@ -53,9 +53,9 @@ evalPersonioReq personioReq = do
             pure (employees, validations)
   where
     personioHttpLbs token url = do
-        (dur, req) <- clocked $ H.parseUrlThrow url
+        req <- H.parseUrlThrow url
         logTrace "personio request" url
-        res <- httpLbs req
+        (dur, res) <- clocked $ httpLbs req
             { H.requestHeaders
                 = ("Authorization", encodeUtf8 $ "Bearer " <> token)
                 : H.requestHeaders req

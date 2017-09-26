@@ -22,6 +22,7 @@ packages:
 - futurice-integrations/
 - futurice-logo/
 - futurice-metrics/
+- futurice-postgres/
 - futurice-prelude/
 - futurice-pure-trans/
 - futurice-reports/
@@ -45,7 +46,6 @@ packages:
 - reports-app/
 - servant-Chart/
 - servant-binary-tagged/
-- servant-status/
 - smileys-app/
 - sms-proxy/
 # - tdigest/tdigest/
@@ -59,15 +59,19 @@ packages:
 extra-deps:
 - aeson-1.2.1.0
 - aeson-extra-0.4.1.0
-- binary-orphans-0.1.7.0
+- binary-orphans-0.1.8.0
 - cassava-0.5.1.0
 - extra-1.6
+- file-embed-0.0.10.1
+- github-0.17.0
 - haxl-0.5.1.0
 - lattices-1.6.0
 - log-base-0.7.2.0
 - Only-0.1
+- pretty-compact-3.0
 - QuickCheck-2.10.0.1
 - quickcheck-instances-0.3.16
+- swagger2-2.1.6
 - text-short-0.1
 - these-0.7.4
 flags:

@@ -10,7 +10,7 @@ import Control.Concurrent.STM  (TChan, TVar, newBroadcastTChanIO, newTVarIO)
 import Data.Pool               (Pool, createPool)
 import Futurice.CryptoRandom   (CryptoGen, mkCryptoGen)
 import Futurice.IdMap          (IdMap)
-import Futurice.PostgresPool   (HasPostgresPool (..), poolQuery_)
+import Futurice.Postgres       (HasPostgresPool (..), poolQuery_)
 import Futurice.Prelude
 import Futurice.Stricter       (StricterT, execStricterT)
 import Prelude ()

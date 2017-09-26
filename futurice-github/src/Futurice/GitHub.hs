@@ -7,10 +7,8 @@
 module Futurice.GitHub (
     -- * Tags
     ReqTag,
-    tagDict,
-    SomeTag (..),
-    mkTag,
-    eqTag,
+    mkReqTag,
+    typeTagDict,
     -- * Types
     GHTypes,
     -- * Request / Response
@@ -18,31 +16,37 @@ module Futurice.GitHub (
     SomeResponse (..),
     -- * Re-exports
     module GitHub,
+    -- * Internals
+    requestToJSON,
     ) where
 
 import Prelude ()
 
-import Futurice.Prelude   hiding (Pair)
-import Control.Lens       (( # ))
+import Control.Lens       (review)
 import Data.Aeson.Compat
-       (AesonException (..), FromJSON (..), Object, ToJSON (..), eitherDecode,
-       encode, object, (.:), (.=))
+       (FromJSON (..), Object, ToJSON (..), object, (.:), (.=))
 import Data.Aeson.Types   (Pair, Parser)
 import Data.Binary.Tagged
        (HasSemanticVersion, HasStructuralInfo (..), StructuralInfo (..))
 import Data.Constraint    (Dict (..))
+import Data.GADT.Compare  (GOrdering (..), gcompare, geq)
 import Data.Swagger       (NamedSchema (..), ToSchema (..))
 import Data.Type.Equality
 import Futurice.Aeson     (withObjectDump)
 import Futurice.Has       (In, inj)
 import Futurice.List      (Append, TMap, splitAppend, tmapToNSComp)
-import Generics.SOP
-       ((:.:) (..), All, SList (..), SListI (..), hcollapse, hcpure)
+import Futurice.Prelude   hiding (Pair)
+import Futurice.TypeTag
+import Generics.SOP       ((:.:) (..), SListI (..), hcollapse, hcpure)
 
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
 
 import GitHub
+
+-------------------------------------------------------------------------------
+-- Enumeration
+-------------------------------------------------------------------------------
 
 -- | Types of requests that can be serialised.
 type GHTypes = Append Scalars (TMap Vector Collections)
@@ -63,86 +67,19 @@ type Collections =
     , SimpleUser
     ]
 
--- | An alias to ':~:'
-type Is = (:~:)
-
 -------------------------------------------------------------------------------
 -- Tag
 -------------------------------------------------------------------------------
 
--- | Tag of serialisable requests.
-type ReqTag a = NS (Is a) GHTypes
+type ReqTag a = TT GHTypes a
 
--- | Existential tag.
-data SomeTag where
-    MkSomeTag :: ReqTag a -> SomeTag
-
-instance Show SomeTag where
-    showsPrec d (MkSomeTag t) = showParen (d > 10)
-        $ showString "MkSomeTag (intToSomeRep "
-        . showsPrec 11 (hindex t)
-        . showString ")"
-
-instance ToJSON SomeTag where
-    toJSON (MkSomeTag t) = toJSON (hindex t)
-
-instance FromJSON SomeTag where
-    parseJSON v = do
-        n <- parseJSON v
-        maybe (fail $ "Invalid tag number: " ++ show n) (pure . mk) (intToSomeRep n)
-      where
-        mk :: SomeRep GHTypes -> SomeTag
-        mk (MkSomeRep ns) = MkSomeTag ns
-
-instance Binary SomeTag where
-    put (MkSomeTag t) = put (hindex t)
-    get = do
-        n <- get
-        maybe (fail $ "Invalid tag number: " ++ show n) (pure . mk) (intToSomeRep n)
-      where
-        mk :: SomeRep GHTypes -> SomeTag
-        mk (MkSomeRep ns) = MkSomeTag ns
-
--- | Create tag for a type in 'GHTypes'.
-mkTag :: In a GHTypes => ReqTag a
-mkTag = inj # Refl
-
--- | Like 'geq'.
-eqTag :: ReqTag a -> ReqTag b -> Maybe (a :~: b)
-eqTag = eqRep
-
--------------------------------------------------------------------------------
--- SomeRep is auxiliary type
--------------------------------------------------------------------------------
-
-data SomeRep xs where
-    MkSomeRep :: NS (Is a) xs -> SomeRep xs
-
-succSomeRep :: SomeRep xs -> SomeRep (x ': xs)
-succSomeRep (MkSomeRep ns) = MkSomeRep (S ns)
-
-intToSomeRep :: forall xs. SListI xs => Int -> Maybe (SomeRep xs)
-intToSomeRep n = case sList :: SList xs of
-    SNil  -> Nothing
-    SCons -> case n of
-        0 -> Just (MkSomeRep (Z Refl))
-        _ -> succSomeRep <$> intToSomeRep (n - 1)
-
-hindex :: NS f xs -> Int
-hindex (Z _) = 0
-hindex (S n) = 1 + hindex n
-
-eqRep :: NS (Is a) xs -> NS (Is b) xs -> Maybe (a :~: b)
-eqRep (Z Refl) (Z Refl) = Just Refl
-eqRep (S n) (S m)       = eqRep n m
-eqRep _ _               = Nothing
+-- TODO: move to futurice-prelude
+mkReqTag :: In a GHTypes => ReqTag a
+mkReqTag = TT (review inj Refl)
 
 -------------------------------------------------------------------------------
 -- Request
 -------------------------------------------------------------------------------
-
-tagDict :: All c GHTypes => Proxy c -> ReqTag a -> Dict (c a)
-tagDict = repDict
 
 -- | Existential request.
 data SomeRequest where
@@ -150,34 +87,40 @@ data SomeRequest where
 
 instance Eq SomeRequest where
     MkSomeRequest t r == MkSomeRequest t' r' = fromMaybe False $ do
-        Refl <- eqRep t t'
-        case tagDict (Proxy :: Proxy Eq) t of
+        Refl <- geq t t'
+        case typeTagDict (Proxy :: Proxy Eq) t of
             Dict -> pure (r == r')
+
+instance Ord SomeRequest where
+    MkSomeRequest t r `compare` MkSomeRequest t' r' =
+        case gcompare t t' of
+            GLT -> LT
+            GGT -> GT
+            GEQ -> case typeTagDict (Proxy :: Proxy Ord) t of
+                Dict -> compare r r'
 
 instance Hashable SomeRequest where
     hashWithSalt salt (MkSomeRequest t r) = salt
-        `hashWithSalt` (hindex t)
+        `hashWithSalt` (SomeTT t)
         `hashWithSalt` r
 
 instance Show SomeRequest where
-    showsPrec d (MkSomeRequest _ r) = showParen (d > 10)
-        $ showString "MkSomeRequest mkTag "
+    showsPrec d (MkSomeRequest t r) = showParen (d > 10)
+        $ showString "MkSomeRequest "
+        . showsPrec 11 t
+        . showChar ' '
         . showsPrec 11 r
 
 instance ToJSON SomeRequest where
     toJSON (MkSomeRequest t r) = object $
-        [ "tag" .= MkSomeTag t
+        [ "tag" .= SomeTT t
         ] ++ requestToJSON r
 
 instance Postgres.ToField SomeRequest where
-    toField = Postgres.toField . encode
+    toField = Postgres.toJSONField
 
 instance Postgres.FromField SomeRequest where
-    fromField f mbs = do
-        bs <- Postgres.fromField f mbs
-        case eitherDecode bs of
-            Right x  -> pure x
-            Left err -> Postgres.conversionError (AesonException err)
+    fromField = Postgres.fromJSONField
 
 instance ToSchema SomeRequest where
     declareNamedSchema _ = pure $ NamedSchema (Just "Some github request") mempty
@@ -201,9 +144,9 @@ simpleRequestToJSON (PagedQuery ps qs fc) =
 
 instance FromJSON SomeRequest where
     parseJSON = withObjectDump "GH.SomeRequest" $ \obj -> do
-        MkSomeTag tag <- obj .: "tag"
+        SomeTT tag <- obj .: "tag"
         typ <- obj .: "type" :: Parser Text
-        case repDict (Proxy :: Proxy FromJSON) tag of
+        case typeTagDict (Proxy :: Proxy FromJSON) tag of
             Dict -> case typ of
                 "query" -> do
                     req <- queryParseJSON obj
@@ -242,18 +185,18 @@ data SomeResponse where
 
 instance NFData SomeResponse where
     rnf (MkSomeResponse t x) = do
-        case repDict (Proxy :: Proxy NFData) t of
+        case typeTagDict (Proxy :: Proxy NFData) t of
             Dict -> rnf x
 
 instance Binary SomeResponse where
     put (MkSomeResponse t x) = do
-        put (MkSomeTag t)
-        case repDict (Proxy :: Proxy Binary) t of
+        put (SomeTT t)
+        case typeTagDict (Proxy :: Proxy Binary) t of
             Dict -> put x
 
     get = do
-        MkSomeTag t <- get
-        case repDict (Proxy :: Proxy Binary) t of
+        SomeTT t <- get
+        case typeTagDict (Proxy :: Proxy Binary) t of
             Dict -> do
                 x <- get
                 pure $ MkSomeResponse t x
@@ -294,17 +237,14 @@ fetchCountParseJSON :: Maybe Word -> FetchCount
 fetchCountParseJSON Nothing  = FetchAll
 fetchCountParseJSON (Just n) = FetchAtLeast n
 
-repDict :: All c xs => Proxy c -> NS (Is a) xs -> Dict (c a)
-repDict _ (Z Refl) = Dict
-repDict p (S n)    = repDict p n
-
 data IsVector a where
     MkIsVector :: IsVector (Vector b)
 
-ghtypeIsVector :: NS (Is a) GHTypes -> Maybe (IsVector a)
-ghtypeIsVector = repIsVector'
+ghtypeIsVector :: ReqTag a -> Maybe (IsVector a)
+ghtypeIsVector (TT t) = repIsVector'
     (Proxy :: Proxy Scalars)
     (Proxy :: Proxy Collections)
+    t
 
 repIsVector'
     :: forall xs ys a. (SListI xs, SListI ys)

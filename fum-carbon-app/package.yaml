@@ -31,6 +31,7 @@ dependencies:
   - fail
   - fum-types
   - futurice-foundation
+  - futurice-postgres
   - futurice-prelude
   - futurice-servant
   - generics-sop

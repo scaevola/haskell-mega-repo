@@ -19,6 +19,7 @@ import Data.Constraint
 import Futurice.Constraint.Unit1 (Unit1)
 import Futurice.EnvConfig
 import Futurice.Has              (FlipIn)
+import Futurice.TypeTag
 import Futurice.Prelude
 import Generics.SOP.Lens         (uni)
 import Network.HTTP.Client
@@ -229,9 +230,9 @@ instance gh ~ I => MonadGitHub (Integrations pm fum gh fd pe) where
     githubReq req = case (showDict, typeableDict) of
         (Dict, Dict) -> Integr (lift $ H.dataFetch $ GH.GHR tag req)
       where
-        tag = GH.mkTag
-        showDict     = GH.tagDict (Proxy :: Proxy Show) tag
-        typeableDict = GH.tagDict (Proxy :: Proxy Typeable) tag
+        tag = GH.mkReqTag
+        showDict     = typeTagDict (Proxy :: Proxy Show) tag
+        typeableDict = typeTagDict (Proxy :: Proxy Typeable) tag
 
 -------------------------------------------------------------------------------
 -- MonadPersonio

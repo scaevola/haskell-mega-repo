@@ -55,6 +55,7 @@ library:
     - data-default-class
     - exceptions
     - futurice-metrics
+    - futurice-postgres
     - futurice-servant
     - intervals
     - monad-logger

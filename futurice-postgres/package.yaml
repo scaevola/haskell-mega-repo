@@ -1,13 +1,13 @@
-name: futurice-github
+name: futurice-postgres
 version: "0"
-synopsis: Additions to the @github@ package
-description: Additions to the @github@ package
+synopsis: Postgres stuff
+description: ...
 author: Oleg Grenrus <oleg.grenrus@iki.fi>
 maintainer: Oleg Grenrus <oleg.grenrus@iki.fi>
 license: BSD3
 github: futurice/haskell-mega-repo
 category: Web
-tested-with: GHC==7.8.4, GHC==7.10.3, GHC==8.0.1
+tested-with: GHC==8.0.2, GHC==8.2.1
 extra-source-files:
 - README.md
 
@@ -24,19 +24,10 @@ library:
   source-dirs: src
   other-modules: []
   dependencies:
-    - base >=4.8   && <4.11
-    - aeson
+    - base                  >=4.7 && <5
     - aeson-compat
-    - binary
-    - binary-tagged
-    - constraints
-    - dependent-sum
+    - exceptions
+    - futurice-metrics
     - futurice-prelude
-    - generics-sop
-    - github
-    - haxl
-    - lens
     - postgresql-simple
-    - swagger2
-    - text
-
+    - resource-pool
