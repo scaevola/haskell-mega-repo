@@ -143,7 +143,7 @@ dockerfile exe = T.unlines $
     , "ADD " <> exe <> " /app"
     , "RUN chown -R app:app /app"
     , "USER app"
-    , "CMD [\"/app/" <> exe <> "\", \"+RTS\", \"-N4\", \"-A32m\", \"-T\", \"-qg\"]"
+    , "CMD [\"/app/" <> exe <> "\", \"+RTS\", \"-N4\", \"-A32m\", \"-T\", \"-qg\", \"-I0\"]"
     -- -qg disables parallel GC
     -- -I0 disables idle GC
     ]
