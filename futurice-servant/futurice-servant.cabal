@@ -39,9 +39,6 @@ library
     , constraints
     , containers
     , dynmap-cache
-    , ekg
-    , ekg-core
-    , ekg-json
     , env-config
     , exceptions
     , fum-types
@@ -68,7 +65,6 @@ library
     , vector
     , wai
     , wai-extra
-    , wai-middleware-metrics
     , warp >= 3.2.11.1
   exposed-modules:
       Futurice.Servant

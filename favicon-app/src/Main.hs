@@ -29,7 +29,7 @@ iconEndpoint :: Proxy IconAPI
 iconEndpoint = Proxy
 
 data Config = Config
-type Ctx = (Logger, DynMapCache)
+type Ctx = (Logger, Cache)
 
 instance Configure Config where
     configure = pure Config
@@ -47,7 +47,7 @@ main = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp api     .~ server
     & serverEnvPfx      .~ "FAVICON"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
     makeCtx _cfg logger cache = return ((logger, cache), [])
 
 -------------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Futurice.App.Reports.UtzChart (utzChart) where
+module Futurice.App.Reports.UtzChart (utzChartData, utzChartRender) where
 
 import Prelude ()
 import Futurice.Prelude
@@ -17,29 +17,28 @@ import qualified Graphics.Rendering.Chart.Easy as C
 import qualified PlanMill                      as PM
 import qualified PlanMill.Queries              as PMQ
 
-utzChart
+utzChartData
     :: forall m. ( MonadTime m, MonadPlanMillQuery m)
-    => m (Chart "utz")
-utzChart = Chart . C.toRenderable <$> c
+    => m (Map (Integer, Int) Double)
+utzChartData = do 
+    today <- currentDay
+    uids <- view PM.identifier <$$> PMQ.users
+    trs' <- bindForM (chopInterval $ interval today) $ \i ->
+        traverse (PMQ.timereports i) uids
+    let trs = trs' ^.. folded . folded . folded
+    pure $ timereportUtzPerWeek trs
   where
-    c :: m (C.EC (C.Layout Double Double) ())
-    c = do
-        today <- currentDay
-        uids <- view PM.identifier <$$> PMQ.users
-        trs' <- bindForM (chopInterval $ interval today) $ \i ->
-            traverse (PMQ.timereports i) uids
-        let trs = trs' ^.. folded . folded . folded
-        let utzs = timereportUtzPerWeek trs
-        pure $ do
-            C.layout_title .= "UTZ per week"
-            C.plot $ C.line "2017"
-                [[(fromIntegral w, fromMaybe 0 $ utzs ^? ix (2017, w)) | w <- [1..53]]]
-            C.plot $ C.line "2016"
-                [[(fromIntegral w, fromMaybe 0 $ utzs ^? ix (2016, w)) | w <- [1..53]]]
-            C.plot $ C.line "2015"
-                [[(fromIntegral w, fromMaybe 0 $ utzs ^? ix (2015, w)) | w <- [1..53]]]
-
     interval today = $(mkDay "2015-01-01") PM.... today
+
+utzChartRender :: Map (Integer, Int) Double -> Chart "utz"
+utzChartRender utzs = Chart . C.toRenderable $ do
+    C.layout_title .= "UTZ per week"
+    C.plot $ C.line "2017"
+        [[(w, fromMaybe 0 $ utzs ^? ix (2017, w)) | w <- [1..53]]]
+    C.plot $ C.line "2016"
+        [[(w, fromMaybe 0 $ utzs ^? ix (2016, w)) | w <- [1..53]]]
+    C.plot $ C.line "2015"
+        [[(w, fromMaybe 0 $ utzs ^? ix (2015, w)) | w <- [1..53]]]
 
 -- bindForM and chopInterval used to cut the parallelism, as we ask "for everything"
 -- TODO: move to integrations

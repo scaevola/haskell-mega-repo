@@ -78,7 +78,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp fumCarbonApi .~ server
     & serverEnvPfx           .~ "FUMAPP"
 
-makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
 makeCtx Config {..} lgr _cache = do
     mgr <- newManager tlsManagerSettings
 

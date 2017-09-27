@@ -46,7 +46,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp smsProxyApi .~ server
     & serverEnvPfx          .~ "SMSPROXY"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
     makeCtx cfg lgr _cache = do
         mgr <- newManager tlsManagerSettings
         return (Ctx lgr cfg mgr, [])

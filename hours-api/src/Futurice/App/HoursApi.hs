@@ -67,7 +67,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
     & serverEnvPfx          .~ "FUTUHOURSAPI"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
     makeCtx config lgr cache = do
         mgr <- newManager tlsManagerSettings
             { managerConnCount = 100

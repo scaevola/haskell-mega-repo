@@ -36,7 +36,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverColour          .~  (Proxy :: Proxy ('FutuAccent 'AF2 'AC2))
     & serverEnvPfx          .~ "FUTUHOURSMOCK"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
     makeCtx _ _ _ = do
         ctx <- newCtx
         pure (ctx, [])

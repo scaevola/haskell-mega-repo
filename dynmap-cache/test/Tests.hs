@@ -18,15 +18,14 @@ main = defaultMain tests
 
 tests :: TestTree
 tests = testGroup "cached"
-    [ testCase "cold start: broken" coldStartBroken
-    , testCase "cold start: fixed" coldStartFixed
+    [ testCase "cold start: fixed" coldStartFixed
     , testCase "DynMap: same key, different value types" dynmapExample
     ]
 
-coldStart :: (Cache.DynMapCache -> NominalDiffTime -> Char -> IO () -> IO ())
+coldStart :: (Cache.Cache -> NominalDiffTime -> Char -> IO () -> IO ())
           -> IO Int
 coldStart cached = do
-    cache <- DynMap.newIO :: IO Cache.DynMapCache
+    cache <- Cache.newCache
     ref <- newTVarIO 0 :: IO (TVar Int)
     -- Cache parameters
     let key = 'k'
@@ -42,11 +41,6 @@ coldStart cached = do
     -- And see how many times the action is run
     readTVarIO ref
 
-coldStartBroken :: IO ()
-coldStartBroken = do
-    value <- coldStart Cache.cached
-    assertBool ("Should over 13 (close to 26): " ++ show value) (value > 13)
-
 coldStartFixed :: IO ()
 coldStartFixed = withStderrLogger $ \logger -> do
     value <- coldStart $ Cache.cachedIO logger
@@ -55,14 +49,16 @@ coldStartFixed = withStderrLogger $ \logger -> do
 dynmapExample :: IO ()
 dynmapExample = do
     dm <- DynMap.newIO
+    -- Values
+    let u = I ()
+    let xi = I (1 :: Int)
+    let xd = I (2 :: Double)
     -- Insert
-    atomically $ DynMap.insert u (I 1 :: I Int) dm
-    atomically $ DynMap.insert u (I 2 :: I Double) dm
+    atomically $ DynMap.insert u xi dm
+    atomically $ DynMap.insert u xd dm
     -- Lookup
-    mi <- atomically $ DynMap.lookup u Proxy dm
-    md <- atomically $ DynMap.lookup u Proxy dm
+    mi <- atomically (DynMap.lookup u dm)
+    md <- atomically (DynMap.lookup u dm)
     -- Test
-    mi @?= Just (I 1 :: I Int)
-    md @?= Just (I 2 :: I Double)
-  where
-    u = I ()
+    mi @?= Just xi
+    md @?= Just xd

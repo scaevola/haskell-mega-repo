@@ -1,7 +1,7 @@
 module Futurice.App.HoursApi.Ctx where
 
 import Control.Concurrent.STM (TVar)
-import Futurice.Cache         (DynMapCache)
+import Futurice.Cache         (Cache)
 import Futurice.Integrations
 import Futurice.Prelude
 import Prelude ()
@@ -13,7 +13,7 @@ import qualified PlanMill.Worker as PM
 data Ctx = Ctx
     { ctxMockUser        :: !(Maybe FUM.Login)
     , ctxFumPlanmillMap  :: !(TVar (HashMap FUM.Login (FUM.User, PM.User)))
-    , ctxCache           :: !DynMapCache
+    , ctxCache           :: !Cache
     , ctxLogger          :: !Logger
     , ctxManager         :: !Manager
     , ctxWorkers         :: !PM.Workers

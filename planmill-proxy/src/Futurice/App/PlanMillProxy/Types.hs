@@ -11,7 +11,7 @@ module Futurice.App.PlanMillProxy.Types (
 import Futurice.Generics
 import Futurice.Postgres
 import Futurice.Prelude
-import Futurice.Servant  (DynMapCache)
+import Futurice.Servant  (Cache)
 import PlanMill          (Cfg)
 import PlanMill.Worker   (Workers)
 import Prelude ()
@@ -21,7 +21,7 @@ import Prelude ()
 -------------------------------------------------------------------------------
 
 data Ctx = Ctx
-    { ctxCache        :: !DynMapCache
+    { ctxCache        :: !Cache
     , ctxPlanmillCfg  :: !Cfg
     , ctxPostgresPool :: !(Pool Connection)  -- TODO: write a lib to handle these
     , ctxLogger       :: !Logger

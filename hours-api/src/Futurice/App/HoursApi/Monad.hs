@@ -20,7 +20,7 @@ import Data.List                 (maximumBy)
 import Data.Maybe                (isJust)
 import Data.Ord                  (comparing)
 import Data.Time                 (addDays)
-import Futurice.Cache            (DynMapCache, cachedIO)
+import Futurice.Cache            (Cache, cachedIO)
 import Futurice.Constraint.Unit1 (Unit1)
 import Futurice.Integrations     (IntegrationsConfig (..))
 import Futurice.Prelude
@@ -131,7 +131,7 @@ instance Hashable (PlanMillRequest a) where
       salt `hashWithSalt` (1 :: Int) `hashWithSalt` r
 
 instance Haxl.StateKey PlanMillRequest where
-    data State PlanMillRequest = PlanMillDataState Logger DynMapCache PM.Workers
+    data State PlanMillRequest = PlanMillDataState Logger Cache PM.Workers
 
 instance Haxl.DataSourceName PlanMillRequest where
   dataSourceName _ = "PlanMillRequest"
@@ -142,8 +142,16 @@ instance Haxl.DataSource u PlanMillRequest where
             PlanMillRequest pm -> PM.submitPlanMillE workers pm >>= Haxl.putResult v
             PlanMillRequestCached pm -> do
                 let res' = PM.submitPlanMillE workers pm
-                res <- cachedIO lgr cache 300 {- 5 minutes -} pm res'
-                Haxl.putResult v res
+                res <- cachedIO lgr cache 300 {- 5 minutes -} pm (fmap Wrap res')
+                Haxl.putResult v (unwrap res)
+
+-- | We need this type, because there isn't NFData SomeException
+newtype Wrapped a = Wrap { unwrap :: Either SomeException a }
+
+instance NFData a => NFData (Wrapped a) where
+    rnf (Wrap (Right x))                = rnf x
+    rnf (Wrap (Left (SomeException e))) = seq e ()
+    
 
 -------------------------------------------------------------------------------
 -- Instance

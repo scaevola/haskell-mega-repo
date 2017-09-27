@@ -33,7 +33,6 @@ library
       base                  >=4.7   && <4.11
     , base-compat
     , clock
-    , ekg-core
     , futurice-prelude
     , futurice-metrics
     , lens

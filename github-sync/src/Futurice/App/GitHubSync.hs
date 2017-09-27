@@ -63,7 +63,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverColour            .~  (Proxy :: Proxy ('FutuAccent 'AF3 'AC1))
     & serverEnvPfx            .~ "GITHUBSYNC"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
     makeCtx cfg lgr _cache = do
         mgr <- newManager tlsManagerSettings
         let ctx = Ctx cfg lgr mgr

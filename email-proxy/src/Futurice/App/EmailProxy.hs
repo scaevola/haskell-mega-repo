@@ -33,7 +33,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp emailProxyApi .~ server
     & serverEnvPfx            .~ "EMAILPROXY"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
     makeCtx cfg logger _cache = do
         mgr <- newManager tlsManagerSettings
         return (Ctx logger cfg mgr, [])

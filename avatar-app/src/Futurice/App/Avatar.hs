@@ -23,7 +23,7 @@ import Futurice.App.Avatar.API
 import Futurice.App.Avatar.Config (Config (..))
 import Futurice.App.Avatar.Logic  (avatar)
 
-type Ctx = (Logger, DynMapCache, Manager)
+type Ctx = (Logger, Cache, Manager)
 
 type DynamicImage' = Headers '[Header "Cache-Control" Text] DynamicImage
 
@@ -76,7 +76,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp avatarApi .~ server
     & serverEnvPfx        .~ "AVATAR"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
     makeCtx _cfg logger cache = do
         mgr <- newManager tlsManagerSettings
         return ((logger, cache, mgr), [])
