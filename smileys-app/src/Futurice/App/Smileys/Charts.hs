@@ -7,8 +7,8 @@ module Futurice.App.Smileys.Charts where
 import Control.Lens      ((.=))
 import Data.Distributive (Distributive (..))
 import Data.Functor.Rep  (Representable (..), distributeRep)
-import Data.Pool         (withResource)
-import Futurice.Cache    (cachedIO)
+import Futurice.Cache    (cached)
+import Futurice.Postgres
 import Futurice.Prelude
 import GHC.TypeLits      (KnownSymbol, symbolVal)
 import Prelude ()
@@ -19,7 +19,6 @@ import Futurice.App.Smileys.Ctx
 import Futurice.App.Smileys.Types
 
 import qualified Data.Map                      as Map
-import qualified Database.PostgreSQL.Simple    as Postgres
 import qualified Graphics.Rendering.Chart.Easy as C
 
 import Futurice.Chart.Stacked as C
@@ -67,21 +66,22 @@ relativeChartHandler = chartHandler chart
 -------------------------------------------------------------------------------
 
 chartHandler
-    :: forall a m. (KnownSymbol a, MonadIO m)
+    :: forall a. KnownSymbol a
     => (Map Day (SmileyAcc Double) -> Chart a)
-    -> Ctx -> m (Chart a)
-chartHandler chart ctx = do
-    input <- liftIO $ cachedIO (ctxLogger ctx) (ctxCache ctx) 600 (symbolVal (Proxy :: Proxy a)) $
-        withResource (ctxPostgresPool ctx) $ \conn ->
-            Postgres.query_ conn $ fromString $ unwords
-                [ "SELECT day, smiley"
-                , "FROM smileys.trail"
-                , "WHERE"
-                , "  (current_timestamp - day + '1 month' :: interval <= '3 months' :: interval)"
-                , "  AND GREATEST(day - created, created - day) < '9 days' :: interval"
-                ]
-    pure $ chart $
-        Map.fromListWith (<>) $ fmap (second smileyAcc) input
+    -> Ctx -> Handler (Chart a)
+chartHandler chart ctx = liftIO $ runLogT "chart" (ctxLogger ctx) $ do
+    xs <- cached (ctxCache ctx) 600 (symbolVal (Proxy :: Proxy a)) $ do
+        input <- safePoolQuery_ ctx $ fromString $ unwords
+            [ "SELECT day, smiley"
+            , "FROM smileys.trail"
+            , "WHERE"
+            , "  (current_timestamp - day + '1 month' :: interval <= '3 months' :: interval)"
+            , "  AND GREATEST(day - created, created - day) < '9 days' :: interval"
+            ]
+
+        pure $ Map.fromListWith (<>) $ fmap (second smileyAcc) input
+
+    pure (chart xs)
 
 -------------------------------------------------------------------------------
 -- Smiley accumulator (per day)
@@ -89,6 +89,9 @@ chartHandler chart ctx = do
 
 data SmileyAcc a = SmileyAcc !a !a !a
   deriving (Functor, Foldable, Traversable)
+
+instance NFData (SmileyAcc a) where
+    rnf (SmileyAcc _ _ _) = ()
 
 data SV = Sad | Normal | Happy
 
