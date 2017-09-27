@@ -12,6 +12,7 @@ import Futurice.Cache    (cachedIO)
 import Futurice.Prelude
 import GHC.TypeLits      (KnownSymbol, symbolVal)
 import Prelude ()
+import Servant           (Handler)
 import Servant.Chart     (Chart (..))
 
 import Futurice.App.Smileys.Ctx
@@ -27,7 +28,7 @@ import Futurice.Chart.Stacked as C
 -- Absolute
 -------------------------------------------------------------------------------
 
-absoluteChartHandler :: MonadIO m => Ctx -> m (Chart "absolute")
+absoluteChartHandler :: Ctx -> Handler (Chart "absolute")
 absoluteChartHandler = chartHandler chart
   where
     chart values = Chart . C.toRenderable $ do
@@ -43,7 +44,7 @@ absoluteChartHandler = chartHandler chart
 -- Relative
 -------------------------------------------------------------------------------
 
-relativeChartHandler :: MonadIO m => Ctx -> m (Chart "relative")
+relativeChartHandler :: Ctx -> Handler (Chart "relative")
 relativeChartHandler = chartHandler chart
   where
     chart values = Chart . C.toRenderable $ do

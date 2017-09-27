@@ -42,6 +42,7 @@ library
     , fum-types
     , futurice-foundation
     , futurice-prelude
+    , futurice-postgres
     , futurice-servant
     , generics-sop
     , http-client

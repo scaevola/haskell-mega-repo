@@ -2,10 +2,9 @@ module Futurice.App.Smileys.Ctx (
     Ctx(..),
     ) where
 
-import Data.Pool                  (Pool)
-import Database.PostgreSQL.Simple (Connection)
-import FUM.Types.Login            (Login)
-import Futurice.Cache             (Cache)
+import FUM.Types.Login   (Login)
+import Futurice.Cache    (Cache)
+import Futurice.Postgres
 import Futurice.Prelude
 import Prelude ()
 
@@ -19,3 +18,6 @@ data Ctx = Ctx
     , ctxLogger       :: !Logger
     , ctxMockUser     :: !(Maybe Login)
     }
+
+instance HasPostgresPool Ctx where
+    postgresPool = ctxPostgresPool 

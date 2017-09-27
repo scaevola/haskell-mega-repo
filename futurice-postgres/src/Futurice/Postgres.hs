@@ -10,6 +10,8 @@ module Futurice.Postgres (
     HasPostgresPool(..),
     Pool,
     Postgres.Connection,
+    -- * Construction
+    createPostgresPool,
     -- * Query
     poolQuery,
     poolQuery_,
@@ -28,7 +30,7 @@ module Futurice.Postgres (
     ) where
 
 import Control.Monad.Catch        (Handler (..), catches)
-import Data.Pool                  (Pool, withResource)
+import Data.Pool                  (Pool, createPool, withResource)
 import Data.Typeable              (typeRep)
 import Futurice.Metrics.RateMeter (mark)
 import Futurice.Prelude
@@ -46,6 +48,19 @@ class HasPostgresPool a where
 
 instance conn ~ Postgres.Connection => HasPostgresPool (Pool conn) where
     postgresPool = id
+
+-------------------------------------------------------------------------------
+-- Creation
+-------------------------------------------------------------------------------
+
+createPostgresPool :: Postgres.ConnectInfo -> IO (Pool Postgres.Connection)
+createPostgresPool ci = createPool
+    (Postgres.connect ci)
+    Postgres.close
+    2 60 5
+    -- 2 stripes
+    -- 1 minute
+    -- 5 connections per pool
 
 -------------------------------------------------------------------------------
 -- Execute

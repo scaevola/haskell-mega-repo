@@ -11,11 +11,9 @@ module Futurice.App.Smileys (defaultMain) where
 import Futurice.Prelude
 import Prelude ()
 
-import Data.Pool        (createPool)
 import Futurice.Servant
+import Futurice.Postgres
 import Servant
-
-import qualified Database.PostgreSQL.Simple as Postgres
 
 -- Smileys modules
 import Futurice.App.Smileys.API
@@ -42,12 +40,9 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
   where
     makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
     makeCtx Config {..} logger cache = do
-        postgresPool <- createPool
-            (Postgres.connect cfgPostgresConnInfo)
-            Postgres.close
-            1 10 5
+        pp <- createPostgresPool cfgPostgresConnInfo
         let ctx = Ctx
-                  { ctxPostgresPool = postgresPool
+                  { ctxPostgresPool = pp
                   , ctxMockUser     = cfgMockUser
                   , ctxLogger       = logger
                   , ctxCache        = cache

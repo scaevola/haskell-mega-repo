@@ -6,29 +6,26 @@ module Futurice.App.Smileys.Logic (
     postOwnSmileys,
     ) where
 
-import Data.Pool        (withResource)
 import FUM.Types.Login  (Login)
 import Futurice.Prelude
 import Prelude ()
-import Servant          (ServantErr (..), err403)
+import Servant          (Handler, err403)
+import Futurice.Postgres
 
 import Futurice.App.Smileys.Ctx
 import Futurice.App.Smileys.Types
 
-import qualified Database.PostgreSQL.Simple as Postgres
-
 getOwnSmileys
-    :: (MonadIO m, MonadBaseControl IO m, MonadTime m, MonadError ServantErr m)
-    => Ctx
+    :: Ctx
     -> Maybe Login
     -> Maybe Day
     -> Maybe Day
-    -> m [Smileys]
+    -> Handler [Smileys]
 getOwnSmileys ctx mfum start end =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername ->
-        withResource (ctxPostgresPool ctx) $ \conn -> do
+        liftIO $ runLogT "logic" (ctxLogger ctx) $ do
             today <- currentDay
-            getSmileysImpl conn (fromMaybe today start) (fromMaybe today end) (Just fumUsername)
+            getSmileysImpl ctx (fromMaybe today start) (fromMaybe today end) (Just fumUsername)
 
 getSmileys
     :: (MonadIO m, MonadBaseControl IO m, MonadTime m)
@@ -38,45 +35,44 @@ getSmileys
     -> Maybe Login
     -> m [Smileys]
 getSmileys ctx start end mFumUsername =
-    withResource (ctxPostgresPool ctx) $ \conn -> do
+    liftIO $ runLogT "logic" (ctxLogger ctx) $ do
         today <- currentDay
-        getSmileysImpl conn (fromMaybe today start) (fromMaybe today end) mFumUsername
+        getSmileysImpl ctx (fromMaybe today start) (fromMaybe today end) mFumUsername
 
 getSmileysImpl
-    :: MonadIO m
-    => Postgres.Connection
+    :: Ctx
     -> Day
     -> Day
     -> Maybe Login
-    -> m [Smileys]
-getSmileysImpl conn s e Nothing = liftIO $ Postgres.query conn
+    -> LogT IO [Smileys]
+getSmileysImpl ctx s e Nothing = safePoolQuery ctx
     "SELECT entries, username, smiley, day FROM smileys.trail WHERE day >= ? AND day <= ?;"
     (s, e)
-getSmileysImpl conn s e (Just fumUsername) = liftIO $ Postgres.query conn
+getSmileysImpl ctx s e (Just fumUsername) = safePoolQuery ctx
     "SELECT entries, username, smiley, day FROM smileys.trail WHERE day >= ? AND day <= ? AND username = ?;"
     (s, e, fumUsername)
 
 postOwnSmileys
-    :: (MonadIO m, MonadBaseControl IO m, MonadError ServantErr m)
-    => Ctx
+    :: Ctx
     -> Maybe Login
     -> PostSmiley
-    -> m Res
+    -> Handler Res
 postOwnSmileys ctx mfum req =
     mcase (mfum <|> ctxMockUser ctx) (throwError err403) $ \fumUsername ->
-        withResource (ctxPostgresPool ctx) $ \conn -> do
+        liftIO $ runLogT "logic" (ctxLogger ctx) $ do
             let insertQuery = fromString $ unwords
-                 [ "INSERT INTO smileys.trail as c (entries, username, smiley, day)"
-                 , "VALUES (?, ?, ?, ?) ON CONFLICT (username, day) DO UPDATE"
-                 , "SET entries = EXCLUDED.entries, smiley = EXCLUDED.smiley"
-                 ]
+                     [ "INSERT INTO smileys.trail as c (entries, username, smiley, day)"
+                     , "VALUES (?, ?, ?, ?) ON CONFLICT (username, day) DO UPDATE"
+                     , "SET entries = EXCLUDED.entries, smiley = EXCLUDED.smiley"
+                     ]
 
-            _ <- liftIO $ Postgres.execute conn insertQuery Smileys
+            _ <- safePoolExecute ctx insertQuery Smileys
                   { _smileysEntries  = _postSmileyEntries req
                   , _smileysUsername = fumUsername
                   , _smileysDate     = _postSmileyDate req
                   , _smileysSmiley   = _postSmileySmiley req
                   }
+
             pure Res
                 { _resStatus = "OK"
                 , _resUnused = ()
