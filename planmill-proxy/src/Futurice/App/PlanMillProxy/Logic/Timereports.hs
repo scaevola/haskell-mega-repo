@@ -114,7 +114,7 @@ updateAllTimereports ctx = runLIO ctx $ do
     selectUsersQuery = fromString $ unwords $
         [ "SELECT u.uid FROM "
         , "(SELECT uid, MIN(updated) as updated FROM planmillproxy.timereports GROUP BY uid) AS u"
-        , "WHERE updated < date_trunc('day', now() at time zone 'Europe/Helsinki') at time zone 'Europe/Helsinki' + '2 hours' :: interval"
+        , "WHERE updated < ((current_date at time zone 'Europe/Helsinki' + '2 hours' :: interval) at time zone 'Europe/Helsinki')"
         , "ORDER BY u.updated ASC LIMIT 67"
         , ";"
         ]
