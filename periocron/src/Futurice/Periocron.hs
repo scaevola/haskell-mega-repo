@@ -26,15 +26,12 @@ import Data.Ratio                  ((%))
 import Futurice.Metrics.RateMeter  (mark)
 import Futurice.Prelude
 import Prelude ()
-import System.Metrics              (Store, createDistribution)
 import System.Timeout              (timeout)
 import Text.Printf                 (printf)
 
 import Control.Concurrent.Async.Lifted.Safe (async)
 
-import qualified Data.Text                   as T
 import qualified System.Clock                as Clock
-import qualified System.Metrics.Distribution as Distr
 
 -------------------------------------------------------------------------------
 -- Internals
@@ -108,31 +105,28 @@ mkJob lbl action intervals = Job
 -------------------------------------------------------------------------------
 
 -- | A job we keep in the state
-data WorkerJob = WorkerJob !TSem !Distr.Distribution !Text (IO (Either SomeException (Maybe ())))
+data WorkerJob = WorkerJob !TSem !Text (IO (Either SomeException (Maybe ())))
 
-mergeJobs :: TimeSpec -> [(Job, TSem, Distr.Distribution)] -> [(TimeSpec, WorkerJob)]
+mergeJobs :: TimeSpec -> [(Job, TSem)] -> [(TimeSpec, WorkerJob)]
 mergeJobs now jobs = mergeOrdered $ mk <$> jobs
   where
-    mk (Job lbl action intervals, tsem, distr) =
-        ((now +) <$> intervals, WorkerJob tsem distr lbl action)
+    mk (Job lbl action intervals, tsem) =
+        ((now +) <$> intervals, WorkerJob tsem lbl action)
 
 -------------------------------------------------------------------------------
 -- Worker
 -------------------------------------------------------------------------------
 
 -- | Create a thread with periocron daemon.
-spawnPeriocron :: Options -> Store -> [Job] -> IO ThreadId
-spawnPeriocron options store jobs = do
+spawnPeriocron :: Options -> [Job] -> IO ThreadId
+spawnPeriocron options jobs = do
     now   <- getMonotonicClock
     tsem  <- atomically $ newTSem (_optionsConcurrentJobs options)
     jobs' <- for jobs $ \job -> do
         tsem' <- atomically $ newTSem 1
-        distr <- createDistribution ("periocron." <> jobLabel' job) store
-        pure (job, tsem', distr)
+        pure (job, tsem')
     let workerJobs = mergeJobs now jobs'
     forkIO $ workerLoop options tsem workerJobs
-  where
-    jobLabel' = T.replace " " "_" . T.toLower . jobLabel
 
 type WorkerState = (Integer, TimeSpec, [(TimeSpec, WorkerJob)])
 
@@ -164,7 +158,7 @@ workerLoop options tsem js = do
         pure (jobCounter', now, rest)
 
     executeJob :: Integer -> WorkerJob -> LogT IO ()
-    executeJob jobId (WorkerJob tsem' distr label action) =
+    executeJob jobId (WorkerJob tsem' label action) =
         void $ async $ do
             logLocalDomain ("job-" <> textShow jobId) $
                 bracket enter exit $ \_ -> do
@@ -189,8 +183,7 @@ workerLoop options tsem js = do
             endTime <- getMonotonicClock
             let d = Clock.diffTimeSpec endTime startTime
             let d' = fromRational $ Clock.toNanoSecs d % 1000000000 :: Double
-            logInfo_ $ "Done '" <> label <> "'; took " <> printf "%.06f" d' ^. packed <> "s = " <> textShow d
-            liftIO $ Distr.add distr d'
+            logInfo ("Done '" <> label <> "'; took " <> printf "%.06f" d' ^. packed <> "s") d
             liftIO $ atomically $ do
                 signalTSem tsem
                 signalTSem tsem'

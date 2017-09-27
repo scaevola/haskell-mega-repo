@@ -69,7 +69,7 @@ import Data.Swagger                         hiding (port)
 import Data.Text.Encoding                   (decodeLatin1)
 import Development.GitRev                   (gitCommitDate, gitHash)
 import Futurice.Cache
-       (CachePolicy (..), Cache, newCache, cacheSize, cachedIO, genCachedIO)
+       (Cache, CachePolicy (..), cacheSize, cachedIO, genCachedIO, newCache)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
 import Futurice.EnvConfig
@@ -83,8 +83,7 @@ import Futurice.Prelude
 import Log.Backend.CloudWatchLogs
        (createCloudWatchLogStream, withCloudWatchLogger)
 import Network.Wai
-       (Middleware, requestHeaders, responseLBS)
-import Network.Wai.Metrics                  (metrics, registerWaiMetrics)
+       (Middleware, requestHeaders, responseLBS, responseStatus)
 import Network.Wai.Middleware.RequestLogger (logStdoutDev)
 import Prelude ()
 import Servant
@@ -94,16 +93,14 @@ import Servant.HTML.Lucid                   (HTML)
 import Servant.Server.Internal              (passToServer)
 import Servant.Swagger
 import Servant.Swagger.UI
-import System.Remote.Monitoring             (forkServer, serverMetricStore)
 
-import qualified Data.Aeson               as Aeson
-import qualified Data.Map.Strict          as Map
-import qualified FUM.Types.Login          as FUM
-import qualified GHC.Stats                as Stats
-import qualified Network.HTTP.Types       as H
-import qualified Network.Wai.Handler.Warp as Warp
-import qualified System.Metrics           as Metrics
-import qualified System.Metrics.Json      as Metrics
+import qualified Data.Aeson                as Aeson
+import qualified Data.Map.Strict           as Map
+import qualified FUM.Types.Login           as FUM
+import qualified GHC.Stats                 as Stats
+import qualified Network.HTTP.Types        as H
+import qualified Network.HTTP.Types.Status as HTTP
+import qualified Network.Wai.Handler.Warp  as Warp
 
 import qualified Network.AWS                          as AWS
 import qualified Network.AWS.CloudWatch.PutMetricData as AWS
@@ -251,16 +248,12 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
                 withCloudWatchLogger env awsGroup service $ \leLogger -> main' (logger <> leLogger)
 
   where
-    main (Cfg cfg p ekgP mgroup _) menv service cache logger = do
+    main (Cfg cfg p _ekgP mgroup _) menv service cache logger = do
         (ctx, jobs)    <- makeCtx cfg logger cache
         -- brings 'HasServer' instance into a scope
         Dict           <- pure $ makeDict ctx
         let server'    =  futuriceServer t d cache proxyApi (server ctx)
                        :: Server (FuturiceAPI api colour)
-
-        -- ekg metrics
-        store      <- serverMetricStore <$> forkServer "localhost" ekgP
-        waiMetrics <- registerWaiMetrics store
 
         statsEnabled <-
 #if MIN_VERSION_base(4,10,0)
@@ -276,20 +269,19 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
                 env <- menv
                 pure (cloudwatchJob cache mutgcTVar logger env awsGroup service)
 
-        let jobs' = mkJob "stats" (ekgJob logger store) (every $ 5 * 60)
-                  : maybeToList (mkJob "cloudwatch" <$> mcloudwatchJob <*> pure (every 60))
+        let jobs' = maybeToList (mkJob "cloudwatch" <$> mcloudwatchJob <*> pure (every 60))
                   ++ jobs
-        _ <- spawnPeriocron (defaultOptions logger) store jobs'
+        _ <- spawnPeriocron (defaultOptions logger) jobs'
 
         runLogT "futurice-servant" logger $ do
             logInfo_ $ "Starting " <> t <> " at port " <> textShow p
             logInfo_ $ "-          http://localhost:" <> textShow p <> "/"
             logInfo_ $ "- swagger: http://localhost:" <> textShow p <> "/swagger-ui/"
-            logInfo_ $ "- ekg:     http://localhost:" <> textShow ekgP <> "/"
+            -- logInfo_ $ "- ekg:     http://localhost:" <> textShow ekgP <> "/"
 
         Warp.runSettings (settings p logger)
-            $ metrics waiMetrics
             $ middleware ctx
+            $ waiMiddleware
             $ serve proxyApi' server'
 
     cloudwatchJob :: Cache -> TVar MutGC -> Logger -> AWS.Env -> Text -> Text -> IO ()
@@ -362,10 +354,13 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
 
         logInfo_ $ "cloudwatch response " <> textShow rs
 
-    ekgJob :: Logger -> Metrics.Store -> IO ()
-    ekgJob logger store = runLogT "ekg" logger $ do
-        sample <- liftIO $ Metrics.sampleAll store
-        logInfo "ekg sample" (Metrics.sampleToJson sample)
+    waiMiddleware :: Middleware
+    waiMiddleware app req res = do
+        mark "WAI: incoming request"
+        app req $ \r -> do
+            let code = HTTP.statusCode (responseStatus r)
+            mark $ "WAI: response " <> textShow (code `div` 100) <> "xx"
+            res r
 
     handler logger e = do
         runLogT "futurice-servant" logger $ logAttention_ $ textShow e
