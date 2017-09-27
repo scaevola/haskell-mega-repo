@@ -261,7 +261,7 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
 #else
             Stats.getGCStatsEnabled
 #endif
-        mutgcTVar <- newTVarIO (MutGC 0 0)
+        mutgcTVar <- newTVarIO (MutGC 0 0 0 0)
 
         let awsGroup   = fromMaybe "Haskell" mgroup
         let mcloudwatchJob = do
@@ -297,7 +297,6 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
 
         -- Cache size
         cs <- cacheSize cache
-        logInfo "Cache size" cs
         let cacheDatum = AWS.metricDatum "Gauge: Cache size"
                 & AWS.mdValue      ?~ fromIntegral cs
                 & AWS.mdUnit       ?~ AWS.Count
@@ -311,6 +310,9 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
 
         let currMut = Stats.mutator_cpu_ns stats
         let currTot = Stats.cpu_ns stats
+
+        let currWMut = Stats.mutator_elapsed_ns stats
+        let currWTot = Stats.elapsed_ns stats
 #else
         stats <- liftIO Stats.getGCStats
 
@@ -318,25 +320,39 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
 
         let currMut = Stats.mutatorCpuSeconds stats
         let currTot = Stats.cpuSeconds stats
+
+        let currWMut = Stats.mutatorWallSeconds stats
+        let currWTot = Stats.wallSeconds stats
 #endif
 
-        MutGC prevMut prevTot <- liftIO $ atomically $
-            swapTVar mutgcTVar (MutGC currMut currTot)
+        MutGC prevMut prevTot prevWMut prevWTot <- liftIO $ atomically $
+            swapTVar mutgcTVar (MutGC currMut currTot currWMut currWTot)
 
-        let mutSec = currMut - prevMut
-        let totSec = currTot - prevTot
-        let productivity' = realToFrac mutSec / realToFrac totSec :: Double
-        -- filter out invalid (e.g NaN) values
-        let productivity
-                | 0 <= productivity' &&  productivity' <= 100 = productivity'
-                | otherwise = 0
+        let mutSec  = currMut - prevMut
+        let totSec  = currTot - prevTot
 
-        -- TODO: create outside the job?
+        let mutWSec = currWMut - prevWMut
+        let totWSec = currWTot - prevWTot
+
+        let clampPercentage x
+              | x < 0     = 0
+              | x > 1     = 100
+              | otherwise = 100 * x
+
+        let productivity = clampPercentage (realToFrac mutSec  / realToFrac totSec  :: Double)
+        let prodWall     = clampPercentage (realToFrac mutWSec / realToFrac totWSec :: Double)
+
+        logInfo "RTS stats" $ Aeson.object
+            [ "live bytes"         Aeson..= liveBytes
+            , "productivity cpu"   Aeson..= productivity
+            , "productivity wall"  Aeson..= prodWall
+            , "cache size"         Aeson..= cs
+            ]
 
         rs <- liftIO $ AWS.runResourceT $ AWS.runAWS env $ do
 
             -- Residency
-            let datum = AWS.metricDatum "Live bytes"
+            let datum1 = AWS.metricDatum "Live bytes"
                     & AWS.mdValue      ?~ fromIntegral liveBytes
                     & AWS.mdUnit       ?~ AWS.Bytes
                     & AWS.mdDimensions .~ [AWS.dimension "Service" service]
@@ -345,10 +361,17 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
                     & AWS.mdValue      ?~ productivity
                     & AWS.mdUnit       ?~ AWS.Percent
                     & AWS.mdDimensions .~ [AWS.dimension "Service" service]
+            -- Productivity Wall
+            let datum3 = AWS.metricDatum "Productivity Wall"
+                    & AWS.mdValue      ?~ prodWall
+                    & AWS.mdUnit       ?~ AWS.Percent
+                    & AWS.mdDimensions .~ [AWS.dimension "Service" service]
 
             -- Put.
+            let datums = datum1 : datum2 : datum3
+                       : cacheDatum : meterDatums
             let pmd = AWS.putMetricData (awsGroup <> "/RTS")
-                    & AWS.pmdMetricData .~ datum : datum2 : cacheDatum : meterDatums
+                    & AWS.pmdMetricData .~ datums
 
             AWS.send pmd
 
@@ -406,9 +429,9 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
 -------------------------------------------------------------------------------
 
 #if MIN_VERSION_base(4,10,0)
-data MutGC = MutGC !Stats.RtsTime !Stats.RtsTime
+data MutGC = MutGC !Stats.RtsTime !Stats.RtsTime !Stats.RtsTime !Stats.RtsTime
 #else
-data MutGC = MutGC !Double !Double
+data MutGC = MutGC !Double !Double !Double !Double
 #endif
 
 -------------------------------------------------------------------------------
