@@ -54,7 +54,7 @@ packages:
 - tajna/
 - theme-app/
 - location: vendor/chart/chart
-  extra-dep: true
+  #  extra-dep: true
 allow-newer: true
 extra-deps:
 - binary-orphans-0.1.8.0

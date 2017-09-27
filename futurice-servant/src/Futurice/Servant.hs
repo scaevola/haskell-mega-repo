@@ -50,8 +50,8 @@ module Futurice.Servant (
     Application,
     Middleware,
     -- ** Cache
-    DynMapCache,
-    newDynMapCache,
+    Cache,
+    newCache,
     cachedIO,
     genCachedIO,
     CachePolicy(..),
@@ -69,7 +69,7 @@ import Data.Swagger                         hiding (port)
 import Data.Text.Encoding                   (decodeLatin1)
 import Development.GitRev                   (gitCommitDate, gitHash)
 import Futurice.Cache
-       (CachePolicy (..), DynMapCache, cachedIO, genCachedIO)
+       (CachePolicy (..), Cache, newCache, cacheSize, cachedIO, genCachedIO)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
 import Futurice.EnvConfig
@@ -99,7 +99,6 @@ import System.Remote.Monitoring             (forkServer, serverMetricStore)
 import qualified Data.Aeson               as Aeson
 import qualified Data.Map.Strict          as Map
 import qualified FUM.Types.Login          as FUM
-import qualified Futurice.DynMap          as DynMap
 import qualified GHC.Stats                as Stats
 import qualified Network.HTTP.Types       as H
 import qualified Network.Wai.Handler.Warp as Warp
@@ -137,7 +136,7 @@ futuriceServer
     :: forall api colour. (HasSwagger api)
     => Text  -- ^ title
     -> Text  -- ^ description
-    -> DynMapCache
+    -> Cache
     -> Proxy api
     -> Server api
     -> Server (FuturiceAPI api colour)
@@ -210,7 +209,7 @@ serverColour = lens (const Proxy) $ \sc _ -> coerce sc
 futuriceServerMain
     :: forall cfg ctx api colour.
        (Configure cfg, HasSwagger api, HasServer api '[], SColour colour)
-    => (cfg -> Logger -> DynMapCache -> IO (ctx, [Job]))
+    => (cfg -> Logger -> Cache -> IO (ctx, [Job]))
        -- ^ Initialise the context for application, add periocron jobs
     -> ServerConfig I colour ctx api
        -- ^ Server configuration
@@ -221,7 +220,7 @@ futuriceServerMain'
     :: forall cfg ctx api colour.
        (Configure cfg, HasSwagger api, SColour colour)
     => (ctx -> Dict (HasServer api '[]))
-    -> (cfg -> Logger -> DynMapCache -> IO (ctx, [Job]))
+    -> (cfg -> Logger -> Cache -> IO (ctx, [Job]))
        -- ^ Initialise the context for application, add periocron jobs
     -> ServerConfig I colour ctx api
        -- ^ Server configuration
@@ -233,7 +232,7 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
             logInfo_ $ "Hello, " <> t <> " is alive"
             getConfigWithPorts (envpfx ^. from packed)
 
-        cache       <- newDynMapCache
+        cache       <- newCache
 
         let awsGroup = fromMaybe "Haskell" (_cfgCloudWatchGroup cfg )
         let service  = t
@@ -293,7 +292,7 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
             $ middleware ctx
             $ serve proxyApi' server'
 
-    cloudwatchJob :: DynMapCache -> TVar MutGC -> Logger -> AWS.Env -> Text -> Text -> IO ()
+    cloudwatchJob :: Cache -> TVar MutGC -> Logger -> AWS.Env -> Text -> Text -> IO ()
     cloudwatchJob cache mutgcTVar logger env awsGroup service = runLogT "cloudwatch" logger $ do
         -- averages
         meters <- liftIO values
@@ -305,10 +304,10 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
         let meterDatums = map mkDatum (Map.toList meters)
 
         -- Cache size
-        cacheSize <- liftIO $ dynMapCacheSize cache
-        logInfo "Cache size" cacheSize
+        cs <- cacheSize cache
+        logInfo "Cache size" cs
         let cacheDatum = AWS.metricDatum "Gauge: Cache size"
-                & AWS.mdValue      ?~ fromIntegral cacheSize
+                & AWS.mdValue      ?~ fromIntegral cs
                 & AWS.mdUnit       ?~ AWS.Count
                 & AWS.mdDimensions .~ [AWS.dimension "Service" service]
 
@@ -416,16 +415,6 @@ data MutGC = MutGC !Stats.RtsTime !Stats.RtsTime
 #else
 data MutGC = MutGC !Double !Double
 #endif
-
--------------------------------------------------------------------------------
--- Other stuff
--------------------------------------------------------------------------------
-
-newDynMapCache :: IO DynMapCache
-newDynMapCache = DynMap.newIO
-
-dynMapCacheSize :: DynMapCache -> IO Int
-dynMapCacheSize = atomically . DynMap.size
 
 -------------------------------------------------------------------------------
 -- SSO User
