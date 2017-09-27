@@ -1,7 +1,11 @@
 {-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections   #-}
-module Futurice.App.Reports.MissingHoursChart (missingHoursChart) where
+module Futurice.App.Reports.MissingHoursChart (
+    MissingHoursChartData,
+    missingHoursChartData,
+    missingHoursChartRender,
+    ) where
 
 import Prelude ()
 import Futurice.Prelude
@@ -20,47 +24,49 @@ import qualified Data.Map.Strict               as Map
 import qualified Graphics.Rendering.Chart.Easy as C
 import qualified PlanMill                      as PM
 
-missingHoursChart
+type MissingHoursChartData = (Integer, Int, Int, PM.Interval Day, Map Tribe (Sum Count, Map YearWeek (NDT 'Hours Centi)))
+
+missingHoursChartData
     :: forall m env.
         ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m
         , MonadReader env m, HasFUMEmployeeListName env
         )
     => Set (PM.EnumValue PM.User "contractType")
-    -> m (Chart "missing-hours")
-missingHoursChart contractTypes = Chart . C.toRenderable <$> c
-  where
-    c :: m (C.EC (C.Layout Day Double) ())
-    c = do
-        -- interval: from beginning of the year
-        today <- currentDay
-        let (currYear, currWeek, _) = toWeekDate today
-        let weekA = max 1 (currWeek - 13)
-            weekB = max 1 (currWeek - 1)
-        let interval =
-                fromWeekDate currYear weekA 1 ...
-                fromWeekDate currYear weekB 7
+    -> m MissingHoursChartData
+missingHoursChartData contractTypes = do
+    -- interval: from beginning of the year
+    today <- currentDay
+    let (currYear, currWeek, _) = toWeekDate today
+    let weekA = max 1 (currWeek - 13)
+        weekB = max 1 (currWeek - 1)
+    let interval =
+            fromWeekDate currYear weekA 1 ...
+            fromWeekDate currYear weekB 7
 
-        -- people: do not include only some contracts
-        fpm0 <- snd <$$> fumPlanmillMap
-        let fpm1 :: [PM.User]
-            fpm1 = filter (\e -> contractTypes ^. contains (PM.uContractType e)) (toList fpm0)
+    -- people: do not include only some contracts
+    fpm0 <- snd <$$> fumPlanmillMap
+    let fpm1 :: [PM.User]
+        fpm1 = filter (\e -> contractTypes ^. contains (PM.uContractType e)) (toList fpm0)
 
-        -- timereports
-        trs' <- for fpm1 $ \u -> (,)
-            <$> planmillEmployee (u ^. PM.identifier)
-            <*> missingHoursForUser interval u
-        let trs = arrangeReports trs'
+    -- timereports
+    trs' <- for fpm1 $ \u -> (,)
+        <$> planmillEmployee (u ^. PM.identifier)
+        <*> missingHoursForUser interval u
+    let trs = arrangeReports trs'
 
-        pure $ do
-            C.layout_title .= "Missing hours per employee per week: " ++ show interval
-            flip evalStateT lineStyles $ ifor_ trs $ \tribe (count, hours) -> do
-                let scale :: NDT 'Hours Centi -> Double
-                    scale x = realToFrac (getNDT x) / fromIntegral (getSum count)
-                lineStyle <- nextLineStyle
-                lift $ C.plot $ line' lineStyle (tribe ^. unpacked) $ singleton $ do
-                    week <- [weekA .. weekB]
-                    let day = fromWeekDate currYear week 1
-                    pure (day, maybe 0 scale $ hours ^? ix (currYear, week))
+    pure (currYear, weekA, weekB, interval, trs)
+
+missingHoursChartRender :: MissingHoursChartData -> Chart "missing-hours"
+missingHoursChartRender (currYear, weekA, weekB, interval, trs) = Chart . C.toRenderable $ do
+    C.layout_title .= "Missing hours per employee per week: " ++ show interval
+    flip evalStateT lineStyles $ ifor_ trs $ \tribe (count, hours) -> do
+        let scale :: NDT 'Hours Centi -> Double
+            scale x = realToFrac (getNDT x) / fromIntegral (getSum count)
+        lineStyle <- nextLineStyle
+        lift $ C.plot $ line' lineStyle (tribe ^. unpacked) $ singleton $ do
+            week <- [weekA .. weekB]
+            let day = fromWeekDate currYear week 1
+            pure (day, maybe 0 scale $ hours ^? ix (currYear, week))
 
 type Tribe = Text
 type Count = Int

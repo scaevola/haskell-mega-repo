@@ -31,5 +31,5 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp themeApi .~ server
     & serverEnvPfx       .~ "THEMEAPP"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO ((), [Job])
+    makeCtx :: Config -> Logger -> Cache -> IO ((), [Job])
     makeCtx _ _ _ = pure ((), [])

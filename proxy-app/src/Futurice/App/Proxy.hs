@@ -210,7 +210,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverMiddleware   .~ (\ctx -> basicAuth' (checkCreds ctx) "P-R-O-X-Y")
     & serverEnvPfx       .~ "PROXYMGMT"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
     makeCtx Config {..} logger _cache = do
         mgr                  <- newManager tlsManagerSettings
         postgresPool         <- createPool

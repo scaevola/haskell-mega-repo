@@ -2,13 +2,12 @@ module Futurice.App.Smileys.Ctx (
     Ctx(..),
     ) where
 
-import Futurice.Cache   (DynMapCache)
-import Futurice.Prelude
-import Prelude ()
-
 import Data.Pool                  (Pool)
 import Database.PostgreSQL.Simple (Connection)
 import FUM.Types.Login            (Login)
+import Futurice.Cache             (Cache)
+import Futurice.Prelude
+import Prelude ()
 
 -------------------------------------------------------------------------------
 -- Context
@@ -16,7 +15,7 @@ import FUM.Types.Login            (Login)
 
 data Ctx = Ctx
     { ctxPostgresPool :: !(Pool Connection)
-    , ctxCache        :: !DynMapCache
+    , ctxCache        :: !Cache
     , ctxLogger       :: !Logger
     , ctxMockUser     :: !(Maybe Login)
     }

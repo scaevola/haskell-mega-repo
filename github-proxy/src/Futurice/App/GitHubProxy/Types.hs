@@ -7,7 +7,7 @@ module Futurice.App.GitHubProxy.Types (
 
 import Futurice.Postgres
 import Futurice.Prelude
-import Futurice.Servant  (DynMapCache)
+import Futurice.Servant  (Cache)
 import GitHub.Auth       (Auth)
 import Prelude ()
 
@@ -16,7 +16,7 @@ import Prelude ()
 -------------------------------------------------------------------------------
 
 data Ctx = Ctx
-    { ctxCache        :: !DynMapCache
+    { ctxCache        :: !Cache
     , ctxGitHubAuth   :: !Auth
     , ctxPostgresPool :: !(Pool Connection)  -- TODO: write a lib to handle these
     , ctxLogger       :: !Logger

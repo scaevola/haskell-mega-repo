@@ -26,7 +26,7 @@ import Futurice.Metrics.RateMeter     (mark)
 import Futurice.Postgres
 import Futurice.Prelude
 import Futurice.Servant
-       (CachePolicy (..), DynMapCache, genCachedIO)
+       (CachePolicy (..), Cache, genCachedIO)
 import Futurice.TypeTag
 import Prelude ()
 
@@ -241,7 +241,7 @@ storeInPostgres ctx tag req x = do
 -------------------------------------------------------------------------------
 
 -- | Run query on real planmill backend.
-fetchFromGitHub :: Logger -> DynMapCache -> Auth -> ReqTag a -> Request 'RA a -> LIO a
+fetchFromGitHub :: Logger -> Cache -> Auth -> ReqTag a -> Request 'RA a -> LIO a
 fetchFromGitHub logger cache auth tag req = case (typeableDict, nfdataDict, eqDict) of
     (Dict, Dict, Dict) -> liftIO
         -- TODO: add cache cleanup

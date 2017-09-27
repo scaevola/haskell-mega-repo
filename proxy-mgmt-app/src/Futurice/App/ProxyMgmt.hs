@@ -35,7 +35,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp proxyMgmtApi .~ server
     & serverEnvPfx           .~ "PROXYMGMT"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
     makeCtx Config {..} _logger _cache = do
         postgresPool <- createPool
             (Postgres.connect cfgPostgresConnInfo)

@@ -49,7 +49,8 @@ import Futurice.App.Reports.GithubUsers
 import Futurice.App.Reports.Markup
 import Futurice.App.Reports.MissingHours
        (MissingHoursReport, missingHoursReport)
-import Futurice.App.Reports.MissingHoursChart (missingHoursChart)
+import Futurice.App.Reports.MissingHoursChart
+       (MissingHoursChartData, missingHoursChartData, missingHoursChartRender)
 import Futurice.App.Reports.PlanmillEmployees
        (PlanmillEmployeesReport, planmillEmployeesReport)
 import Futurice.App.Reports.PowerAbsences
@@ -59,10 +60,10 @@ import Futurice.App.Reports.PowerProjects
 import Futurice.App.Reports.PowerUser         (PowerUserReport, powerUserReport)
 import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport, timereportsByTaskReport)
-import Futurice.App.Reports.UtzChart          (utzChart)
+import Futurice.App.Reports.UtzChart          (utzChartData, utzChartRender)
 
 -- /TODO/ Make proper type
-type Ctx = (DynMapCache, Manager, Logger, Config)
+type Ctx = (Cache, Manager, Logger, Config)
 
 newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
 
@@ -82,7 +83,7 @@ runIntegrations' (_, mgr, lgr, cfg) m = do
 -- Endpoints
 -------------------------------------------------------------------------------
 
--- Note: we cachedIO with () :: () as a key. It's ok as 'DynMapCache'
+-- Note: we cachedIO with () :: () as a key. It's ok as 'Cache'
 -- uses both @key@ and @value@ TypeRep's as key to non-typed map.
 
 
@@ -158,7 +159,7 @@ servePlanmillEmployeesReport :: Ctx -> IO PlanmillEmployeesReport
 servePlanmillEmployeesReport ctx = cachedIO' ctx () $
     runIntegrations' ctx planmillEmployeesReport
 
-cachedIO' :: (Eq k, Hashable k, Typeable k, Typeable v) => Ctx -> k -> IO v -> IO v
+cachedIO' :: (Eq k, Hashable k, Typeable k, NFData v, Typeable v) => Ctx -> k -> IO v -> IO v
 cachedIO' (cache, _, logger, _) = cachedIO logger cache 600
 
 -- All report endpoints
@@ -179,19 +180,21 @@ reports =
     Nil
 
 serveChart
-    :: (Typeable key, KnownSymbol key)
-    => Integrations I I I I I (Chart key)
+    :: (Typeable key, KnownSymbol key, Typeable v, NFData v)
+    => Integrations I I I I I v
+    -> (v -> Chart key)
     -> Ctx
     -> IO (Chart key)
-serveChart f ctx = cachedIO' ctx () $
-    runIntegrations' ctx f
+serveChart f g ctx = do
+    v <- cachedIO' ctx () $ runIntegrations' ctx f
+    pure (g v)
 
--- TODO: introduce "HasMissingHoursContracts"
-missingHoursChart'
+-- TODO: introduce "HasMissingHoursContracts"?
+missingHoursChartData'
     :: Ctx
-    -> Integrations I I I I I (Chart "missing-hours")
-missingHoursChart' ctx =
-    missingHoursChart (cfgMissingHoursContracts (ctxConfig ctx))
+    -> Integrations I I I I I MissingHoursChartData
+missingHoursChartData' ctx =
+    missingHoursChartData (cfgMissingHoursContracts (ctxConfig ctx))
 
 makeServer :: Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)
 makeServer _   Nil = pure indexPage
@@ -202,8 +205,8 @@ makeServer ctx (ReportEndpoint r :* rs) =
 -- | API server
 server :: Ctx -> Server ReportsAPI
 server ctx = makeServer ctx reports
-    :<|> liftIO (serveChart utzChart ctx)
-    :<|> liftIO (serveChart (missingHoursChart' ctx) ctx)
+    :<|> liftIO (serveChart utzChartData utzChartRender ctx)
+    :<|> liftIO (serveChart (missingHoursChartData' ctx) missingHoursChartRender ctx)
     :<|> liftIO (servePowerUsersReport ctx)
     :<|> liftIO (servePowerProjectsReport ctx)
     :<|> liftIO . servePowerAbsencesReport ctx
@@ -216,7 +219,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     & serverApp reportsApi .~ server
     & serverEnvPfx         .~ "REPORTSAPP"
   where
-    makeCtx :: Config -> Logger -> DynMapCache -> IO (Ctx, [Job])
+    makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
     makeCtx cfg lgr cache = do
         manager <- newManager tlsManagerSettings
         let ctx = (cache, manager, lgr, cfg)
