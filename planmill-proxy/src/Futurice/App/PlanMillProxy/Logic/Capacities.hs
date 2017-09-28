@@ -90,17 +90,16 @@ selectCapacities ctx uid interval = do
 
 updateCapacities :: Ctx -> IO ()
 updateCapacities ctx = runLIO ctx $ do
-    old <- liftIO $ poolQuery_ ctx selectQuery
+    now <- currentTime
+    old <- liftIO $ poolQuery ctx selectQuery (Postgres.Only $ previousThreeThirty now)
     for_ old $ \(uid, mi, ma) ->
         void $ selectCapacities ctx uid (mi ... ma)
   where
-    -- select intervals which are 6...12 hours old data
-    -- clamp the max date to be in current-day + (1 month ... 6 month) interval
     selectQuery :: Postgres.Query
     selectQuery = fromString $ unwords $
         [ "SELECT uid, MIN(day) as min, LEAST(GREATEST(current_date + '1 month' :: interval, MAX(day)), current_date + '6 months' :: interval) :: date as max"
         , "FROM planmillproxy.capacity"
-        , "WHERE current_timestamp - updated > (" ++ capacityAge ++ " :: interval) * (1 + variance)"
+        , "WHERE updated < ?"
         , "GROUP BY uid"
         , ";"
         ]

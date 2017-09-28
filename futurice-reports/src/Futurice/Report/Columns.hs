@@ -449,7 +449,7 @@ instance ToHtml ReportGenerated where
         "Generated at "
         toHtml . formatHumanHelsinkiTime . getReportGenerated $ r
         hr_ []
-        i_ "Note: PlanMill data is updated at night around 03:00."
+        i_ "Note: PlanMill data is updated at night around 03:30 – 05:00 (Finnish time)."
     toHtmlRaw = toHtml
 
 -------------------------------------------------------------------------------

@@ -17,22 +17,22 @@ module Futurice.Cache (
     genCachedIO,
     CachePolicy (..),
     cacheSize,
+    cleanupCache,
     ) where
 
 import Control.Concurrent.Async    (Async, async, wait, waitCatchSTM)
 import Control.Concurrent.STM      (STM, atomically)
 import Control.DeepSeq             (NFData)
-import Control.Exception           (evaluate)
-import Control.Exception           (SomeException)
+import Control.Exception           (SomeException, evaluate)
 import Control.Monad               (when)
 import Control.Monad.Base          (MonadBase (..))
 import Control.Monad.Catch         (throwM)
+import Control.Monad.Time          (MonadTime (..))
 import Control.Monad.Trans.Control (MonadBaseControl (..))
 import Data.Functor.Identity       (Identity (..))
 import Data.Hashable               (Hashable (..))
 import Data.NF                     (NF, getNF, makeNF)
-import Data.Time
-       (NominalDiffTime, UTCTime, addUTCTime, getCurrentTime)
+import Data.Time                   (NominalDiffTime, UTCTime, addUTCTime)
 import Data.Typeable               (Typeable)
 import Log                         (Logger, MonadLog, logAttention_, runLogT)
 import Prelude ()
@@ -92,6 +92,10 @@ waitE :: MonadBase IO m => E (NF x) -> m x
 waitE (R x) = pure (getNF x)
 waitE (L a) = fmap getNF $ liftBase $ wait a
 
+-------------------------------------------------------------------------------
+-- Cached actions
+-------------------------------------------------------------------------------
+
 -- | Cached action. Doesn't suffer from cold cache ....
 --
 -- Simple example:
@@ -147,7 +151,7 @@ genCached
     :: forall k v m.
         ( Typeable k, Eq k, Hashable k
         , Typeable v, NFData v
-        , MonadLog m, MonadBaseControl IO m, StM m v ~ v
+        , MonadLog m, MonadTime m, MonadBaseControl IO m, StM m v ~ v
         )
     => CachePolicy
     -> Cache            -- ^ Cache
@@ -156,7 +160,7 @@ genCached
     -> m v             -- ^ Value action
     -> m v
 genCached policy cache ttl key action = do
-    now <- liftBase $ getCurrentTime -- todo: use MonadTime
+    now <- liftBase $ currentTime
     let expirationMoment = ttl `addUTCTime` now
     -- Errors are cached for 60 seconds
     let errorExpirationMoment = 60 `addUTCTime` now
@@ -216,3 +220,18 @@ genCached policy cache ttl key action = do
         Just (e, needUpdate) -> do
             when needUpdate cachedAction
             waitE e
+
+-------------------------------------------------------------------------------
+-- Cleanup
+-------------------------------------------------------------------------------
+
+cleanupCache
+    :: MonadBase IO m
+    => Cache   -- ^ cache
+    -> UTCTime -- ^ cut off moment, elements older than that are removed
+    -> m ()
+cleanupCache (Cache dynmap) stamp = liftBase $ DynMap.filter p dynmap
+  where
+    p :: Leaf v -> Bool
+    p (Leaf stamp' _) = stamp' > stamp
+    -- keep elements with @stamp'@ larger than given @stamp@

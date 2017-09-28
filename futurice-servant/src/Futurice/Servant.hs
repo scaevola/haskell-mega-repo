@@ -67,9 +67,11 @@ import Control.Monad.Catch                  (fromException, handleAll)
 import Data.Constraint                      (Dict (..))
 import Data.Swagger                         hiding (port)
 import Data.Text.Encoding                   (decodeLatin1)
+import Data.Time                            (addUTCTime)
 import Development.GitRev                   (gitCommitDate, gitHash)
 import Futurice.Cache
-       (Cache, CachePolicy (..), cacheSize, cachedIO, genCachedIO, newCache)
+       (Cache, CachePolicy (..), cacheSize, cachedIO, cleanupCache,
+       genCachedIO, newCache)
 import Futurice.Colour
        (AccentColour (..), AccentFamily (..), Colour (..), SColour)
 import Futurice.EnvConfig
@@ -78,7 +80,7 @@ import Futurice.EnvConfig
 import Futurice.Lucid.Foundation            (vendorServer)
 import Futurice.Metrics.RateMeter           (mark, values)
 import Futurice.Periocron
-       (Job, defaultOptions, every, mkJob, spawnPeriocron)
+       (Job, defaultOptions, every, mkJob, shifted, spawnPeriocron)
 import Futurice.Prelude
 import Log.Backend.CloudWatchLogs
        (createCloudWatchLogStream, withCloudWatchLogger)
@@ -269,7 +271,8 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
                 env <- menv
                 pure (cloudwatchJob cache mutgcTVar logger env awsGroup service)
 
-        let jobs' = maybeToList (mkJob "cloudwatch" <$> mcloudwatchJob <*> pure (every 60))
+        let jobs' = mkJob "dynmap-cache-cleanup" (cacheCleanupJob cache logger) (shifted 5 $ every (15 * 60))
+                  : maybeToList (mkJob "cloudwatch" <$> mcloudwatchJob <*> pure (every 60))
                   ++ jobs
         _ <- spawnPeriocron (defaultOptions logger) jobs'
 
@@ -283,6 +286,25 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
             $ middleware ctx
             $ waiMiddleware
             $ serve proxyApi' server'
+
+    cacheCleanupJob :: Cache -> Logger -> IO ()
+    cacheCleanupJob cache logger = runLogT "cache-cleanup" logger $ do
+        now <- currentTime
+        -- Cutoff one hour in the past.
+        -- so the items with expiration moment over an hour ago will be removed.
+        -- We don't use current moment, to make 'ReturnOld' policy items work
+        let stamp = addUTCTime (-3600) now
+
+        sizeBefore <- cacheSize cache
+        cleanupCache cache stamp
+        sizeAfter <- cacheSize cache
+
+        logInfo "DynMap cache cleaned up" $ Aeson.object
+            [ "size-before" Aeson..= sizeBefore
+            , "size-after"  Aeson..= sizeAfter
+            , "now"         Aeson..= now
+            , "stamp"       Aeson..= stamp
+            ]
 
     cloudwatchJob :: Cache -> TVar MutGC -> Logger -> AWS.Env -> Text -> Text -> IO ()
     cloudwatchJob cache mutgcTVar logger env awsGroup service = runLogT "cloudwatch" logger $ do

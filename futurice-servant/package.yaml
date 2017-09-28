@@ -55,6 +55,7 @@ library:
     - stm
     - swagger2
     - text
+    - time
     - uuid-types
     - vector
     - wai

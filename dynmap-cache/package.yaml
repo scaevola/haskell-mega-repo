@@ -27,6 +27,7 @@ dependencies:
   - hashable
   - log-base
   - monad-control
+  - monad-time
   - nf
   - stm
   - tagged

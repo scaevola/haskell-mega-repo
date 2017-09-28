@@ -99,10 +99,12 @@ updateWithoutTimereports ctx = runLIO ctx $ do
 updateAllTimereports
     :: Ctx -> IO ()
 updateAllTimereports ctx = runLIO ctx $ do
+    now <- currentTime
     logInfo_ $ "Updating timereports for users"
 
     -- Select uids with oldest updated time reports
-    uids <- Postgres.fromOnly <$$> safePoolQuery_ ctx selectUsersQuery
+    uids <- Postgres.fromOnly <$$> safePoolQuery ctx selectUsersQuery
+        (Postgres.Only $ previousThreeThirty now)
     logInfo_ $ "Updating timereports for users: " <>
         T.intercalate ", " (textShow . getIdent <$> uids)
 
@@ -114,7 +116,7 @@ updateAllTimereports ctx = runLIO ctx $ do
     selectUsersQuery = fromString $ unwords $
         [ "SELECT u.uid FROM "
         , "(SELECT uid, MIN(updated) as updated FROM planmillproxy.timereports GROUP BY uid) AS u"
-        , "WHERE updated < (((current_date at time zone 'Europe/Helsinki') :: date + '2 hours' :: interval) at time zone 'Europe/Helsinki')"
+        , "WHERE updated < ?"
         , "ORDER BY u.updated ASC LIMIT 67"
         , ";"
         ]

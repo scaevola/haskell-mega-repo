@@ -18,16 +18,18 @@ module Futurice.DynMap (
     insert,
     size,
     sizeIO,
+    filter,
     ) where
 
 import Control.Concurrent.STM
-       (STM, TVar, modifyTVar', newTVar, newTVarIO, readTVar, readTVarIO,
-       writeTVar)
+       (STM, TVar, atomically, modifyTVar', newTVar, newTVarIO, readTVar,
+       readTVarIO, writeTVar)
+import Data.Foldable          (traverse_)
 import Data.GADT.Compare      (GCompare (..), GEq (..))
 import Data.Hashable          (Hashable)
 import Futurice.Reflection    (TypeRep, Typeable, typeRep)
 import Prelude ()
-import Prelude.Compat         hiding (lookup)
+import Prelude.Compat         hiding (filter, lookup)
 
 import qualified Data.Dependent.Map  as DMap
 import qualified Data.HashMap.Strict as HM
@@ -98,3 +100,13 @@ sizeImpl r (DynMap tvarO) = do
     f (_ DMap.:=> V tvarI) = do
         hm <- r tvarI
         pure (HM.size hm)
+
+filter :: (forall v. fv v -> Bool) -> DynMap fk fv -> IO ()
+filter p (DynMap tvarO) = do
+    dmap <- readTVarIO tvarO
+    traverse_ f (DMap.toAscList dmap)
+  where
+    f ( _ DMap.:=> V tvarI) = atomically $ modifyTVar' tvarI $ HM.filter p
+
+
+
