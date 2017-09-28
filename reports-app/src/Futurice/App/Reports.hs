@@ -20,7 +20,7 @@ import Futurice.Metrics.RateMeter (mark)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
-import Generics.SOP               (hcmap, hcollapse)
+import Generics.SOP               (All, hcmap, hcollapse)
 import GHC.TypeLits               (KnownSymbol, symbolVal)
 import Network.HTTP.Client        (httpLbs, parseUrlThrow, responseBody)
 import Numeric.Interval.NonEmpty  ((...))
@@ -117,7 +117,6 @@ serveMissingHoursReport
     :: (KnownSymbol title, Typeable title)
     => Bool -> Ctx -> IO (MissingHoursReport title)
 serveMissingHoursReport allContracts ctx = do
-    mark "Request: Missing hours"
     cachedIO' ctx allContracts $ do
         day <- currentDay
         -- TODO: end date to the last friday
@@ -130,7 +129,6 @@ serveMissingHoursReport allContracts ctx = do
 
 serveBalancesReport :: Ctx -> IO BalanceReport
 serveBalancesReport ctx = do
-    mark "Request: Balances"
     cachedIO' ctx () $ do
         day <- currentDay
         let interval = beginningOfPrevMonth day ... day
@@ -138,17 +136,14 @@ serveBalancesReport ctx = do
 
 servePowerUsersReport :: Ctx -> IO PowerUserReport
 servePowerUsersReport ctx = do
-    mark "Request: Power users"
     cachedIO' ctx () $ runIntegrations' ctx powerUserReport
 
 servePowerProjectsReport :: Ctx -> IO PowerProjectsReport
 servePowerProjectsReport ctx = do
-    mark "Request: Power projects"
     cachedIO' ctx () $ runIntegrations' ctx powerProjectsReport
 
 servePowerAbsencesReport :: Ctx -> Maybe Month -> IO PowerAbsenceReport
 servePowerAbsencesReport ctx mmonth = do
-    mark "Request: Power absences"
     cachedIO' ctx mmonth $ runIntegrations' ctx $ powerAbsenceReport mmonth
 
 serveTimereportsByTaskReport :: Ctx -> IO TimereportsByTaskReport
@@ -196,11 +191,21 @@ missingHoursChartData'
 missingHoursChartData' ctx =
     missingHoursChartData (cfgMissingHoursContracts (ctxConfig ctx))
 
-makeServer :: Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)
+makeServer
+    :: All RClass reports
+    => Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)
 makeServer _   Nil = pure indexPage
-makeServer ctx (ReportEndpoint r :* rs) =
-    let s = liftIO (r ctx)
+makeServer ctx (r :* rs) =
+    let s = handler r
     in s :<|> s :<|> s :<|> makeServer ctx rs
+  where
+    handler :: forall r. RClass r => ReportEndpoint r -> Handler (RReport r)
+    handler re@(ReportEndpoint re') = liftIO $ do
+        mark $ "Report: " <> path re
+        re' ctx
+
+    path :: forall r. RClass r => ReportEndpoint r -> Text
+    path _ = symbolVal (Proxy :: Proxy (RName r)) ^. packed
 
 -- | API server
 server :: Ctx -> Server ReportsAPI
