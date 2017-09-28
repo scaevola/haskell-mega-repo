@@ -181,7 +181,8 @@ haxlEndpoint ctx qs = runLIO ctx $ do
 -- This means that we never delete items from cache
 updateCache :: Ctx -> IO ()
 updateCache ctx = runLIO ctx $ do
-    qs <- safePoolQuery_ ctx selectQuery
+    now <- currentTime
+    qs <- safePoolQuery ctx selectQuery (Postgres.Only $ previousThreeThirty now)
     logInfo_ $ "Updating " <> textShow (length qs) <> " cache items"
     for_ qs $ \(Postgres.Only (SomeQuery q)) -> do
         res <- fetch q
@@ -213,7 +214,7 @@ updateCache ctx = runLIO ctx $ do
     selectQuery = fromString $ unwords
         [ "SELECT (query) FROM planmillproxy.cache"
         -- , "WHERE current_timestamp - updated > (" ++ genericAge ++ " :: interval) * (1 + variance) AND viewed > 0"
-        , "WHERE updated < date_trunc('day', now() at time zone 'Europe/Helsinki') at time zone 'Europe/Helsinki' + '2 hours' :: interval"
+        , "WHERE updated < ?"
         , "ORDER BY updated"
         , "LIMIT 1000"
         , ";"
