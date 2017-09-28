@@ -30,15 +30,6 @@ import Futurice.App.PlanMillProxy.Types (Ctx (..))
 -- Intervals
 -------------------------------------------------------------------------------
 
-genericAge :: String
-genericAge = "'6 hours'"
-
-capacityAge :: String
-capacityAge = "'12 hours'"
-
--- Timereports are updated by updating oldest ones, so no age guarantee
--- atm
-
 -- | Get previous @03:30@ (in @Europe/Helsinki@ timezone) from the given
 -- timestamp.
 previousThreeThirty :: UTCTime -> UTCTime
