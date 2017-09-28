@@ -42,6 +42,7 @@ library
     , hashable
     , log-base
     , monad-control
+    , monad-time
     , nf
     , stm
     , tagged
@@ -76,6 +77,7 @@ test-suite unit-tests
     , hashable
     , log-base
     , monad-control
+    , monad-time
     , nf
     , stm
     , tagged
