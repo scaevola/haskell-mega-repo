@@ -43,6 +43,7 @@ packages:
   personio-client/
   planmill-client/
   planmill-proxy/
+  planmill-sync/
   proxy-app/
   proxy-mgmt-app/
   reports-app/
