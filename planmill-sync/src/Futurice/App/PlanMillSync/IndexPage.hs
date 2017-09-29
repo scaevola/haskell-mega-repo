@@ -31,7 +31,7 @@ indexPage
     -> [PMUser]
     -> [P.Employee]
     -> HtmlPage "index"
-indexPage _now planmills personios = page_ "PlanMill sync" $ do
+indexPage now planmills personios = page_ "PlanMill sync" $ do
     fullRow_ $ h1_ "Personio ⇒ PlanMill sync"
 
     fullRow_ $ h2_ "Cross-check of people in PlanMill and Personio"
@@ -120,7 +120,7 @@ indexPage _now planmills personios = page_ "PlanMill sync" $ do
             let endDifferent = case (pEnd, pmEnd) of
                     (Nothing, Nothing) -> False
                     (Nothing, Just _)  -> False
-                    (Just _,  Nothing) -> True
+                    (Just a,  Nothing) -> a > utctDay now -- TODO?
                     (Just a, Just b)   -> a /= b
 
             when (endDifferent || startDifferent) $ do
