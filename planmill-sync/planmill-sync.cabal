@@ -39,15 +39,17 @@ library
     , futurice-integrations
     , futurice-prelude
     , futurice-servant
-    , planmill-client
     , haxl
     , lens
+    , mtl
     , personio-client
+    , planmill-client
     , regex-applicative
     , regex-applicative-text
-    , these
     , servant
     , servant-lucid
+    , text
+    , these
     , servant-server
   exposed-modules:
       Futurice.App.PlanMillSync
@@ -55,6 +57,7 @@ library
       Futurice.App.PlanMillSync.Config
       Futurice.App.PlanMillSync.Ctx
       Futurice.App.PlanMillSync.IndexPage
+      Futurice.App.PlanMillSync.Types
   default-language: Haskell2010
 
 executable planmill-sync-server

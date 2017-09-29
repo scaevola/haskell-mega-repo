@@ -34,15 +34,17 @@ library:
     - futurice-integrations
     - futurice-prelude
     - futurice-servant
-    - planmill-client
     - haxl
     - lens
+    - mtl
     - personio-client
+    - planmill-client
     - regex-applicative
     - regex-applicative-text
-    - these
     - servant
     - servant-lucid
+    - text
+    - these
     - servant-server
 
 executables:
