@@ -11,6 +11,7 @@ import Data.Map.Lens               (toMapOf)
 import Data.Maybe                  (isNothing)
 import Data.These                  (_These)
 import Futurice.Lucid.Foundation
+import Futurice.Office             (Office (..))
 import Futurice.Prelude
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym)
@@ -37,7 +38,7 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
     fullRow_ $ h2_ "Cross-check of people in PlanMill and Personio"
     fullRow_ $ div_ [ class_ "callout alert "] $ ul_ $ do
         li_ $ "PlanMill data updates at night, so it can be out-of-date if there are recent changes."
-        li_ $ do 
+        li_ $ do
             "When values are differeent, both are shown: "
             b_ "Personio ≠ PlanMill"
             "."
@@ -48,13 +49,15 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
             td_ "Personio"
             td_ "Planmill"
             td_ "Name"
-            td_ "Tribe"
-            td_ "Office"
+            -- td_ "Tribe"
+            -- td_ "Office"
             td_ "Contract type"
             td_ "Contract span"
 
             td_ "PM Superior"
             td_ "Cost center = PM Team"
+            td_ "PM Account"
+            td_ "PM email"
 
         tbody_ $ do
             let elements0 = itoListWithOf (ifolded . _These) processBoth employees
@@ -71,8 +74,8 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
         td_ $ toHtml $ p ^. P.employeeId
         td_ $ toHtml $ pmu ^. PM.identifier
         td_ $ toHtml $ p ^. P.employeeFullname
-        td_ $ toHtml $ p ^. P.employeeTribe
-        td_ $ toHtml $ p ^. P.employeeOffice
+        -- td_ $ toHtml $ p ^. P.employeeTribe
+        -- td_ $ toHtml $ p ^. P.employeeOffice
 
         -- Contract type
         cell_ $ case p ^. P.employeeContractType of
@@ -146,6 +149,24 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
                 " ≠ "
                 traverse_ (toHtml . PM.tName) pmt
 
+        -- PM Account
+        cell_ $ case pmAccount pm of
+            Nothing -> markErrorCell
+            Just a  -> do
+                let name = PM.saName a
+                when (name /= officeToAccount (p ^. P.employeeOffice)) $ do
+                    markErrorCell
+                    toHtml (p ^. P.employeeOffice)
+                    " ≠ "
+                toHtml name
+
+        -- PM email
+        cell_ $ case PM.uEmail pmu of
+            Nothing -> markErrorCell
+            Just e  ->
+                if (e == FUM.loginToText login <> "@futurice.com")
+                then "OK"
+                else markErrorCell >> toHtml e
 
     planmillMap :: Map FUM.Login PMUser
     planmillMap = toMapOf (folded . getter f . _Just . ifolded) planmills
@@ -165,72 +186,18 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
 
     employees :: Map FUM.Login (These PMUser P.Employee)
     employees = align planmillMap personioMap
+-------------------------------------------------------------------------------
+-- Account
+-------------------------------------------------------------------------------
 
-{-
-
-    fullRow_ $ h2_ "Only in PlanMill, not in Personio"
-    fullRow_ $ i_ "People in PlanMill organisation, not mentioned in Personio"
-    fullRow_ $ do
-        table_ $ do
-            thead_ $ tr_ $ do
-                td_ mempty
-                td_ "Username"
-                td_ "Real name"
-                td_ $ "Personio" >> sup_ "?"
-                td_ $ "FUM" >> sup_ "?"
-                td_ $ "Contract end date"  >> sup_ "?"
-            tbody_ $ for_ githubs $ \u -> do
-                let login = GH.userLogin u
-                unless (personioLogins ^. contains login) $ tr_ $ do
-                    td_ $ checkbox_ False []
-                    td_ $ toHtml $ GH.userLogin u
-                    td_ $ maybe "" toHtml $ GH.userName u
-
-                    case personioMap ^? ix login of
-                        Nothing -> td_ mempty >> td_ mempty >> td_ mempty
-                        Just e -> do
-                            td_ $ toHtml $ e ^. P.employeeId
-                            td_ $ traverse_ toHtml $ e ^. P.employeeLogin
-                            td_ $ traverse_ (toHtml . show) $ e ^. P.employeeEndDate
-
-        div_ [ class_ "button-group" ] $
-            button_ [ class_ "button alert"] "Remove"
-
-
-    fullRow_ $ h2_ "Not in PlanMill, only in Personio"
-    fullRow_ $ i_ "People with PlanMill information in Personio, but not added to PlanMill"
-
-    fullRow_ $ do
-        table_ $ do
-            thead_ $ tr_ $ do
-                td_ mempty
-                td_ "Personio"
-                td_ "Name"
-                td_ "PlanMill"
-            tbody_ $ for_ personios $ \e ->
-                for_ (e ^. P.employeeGithub) $ \glogin ->
-                    when (P.employeeIsActive now e && not (githubLogins ^. contains glogin)) $ tr_ $ do
-                        td_ $ checkbox_ False []
-                        td_ $ toHtml $ e ^. P.employeeId
-                        td_ $ toHtml $ e ^. P.employeeFullname
-                        td_ $ toHtml glogin
-
-        div_ [ class_ "button-group" ] $
-            button_ [ class_ "button warning"] "Add"
-  where
-    githubLogins :: Set (GH.Name GH.User)
-    githubLogins = setOf (folded . getter GH.userLogin) githubs
-
-    personioLogins :: Set (GH.Name GH.User)
-    personioLogins = setOf (folded . filtered (P.employeeIsActive now) . P.employeeGithub . _Just) personios
-        -- add pinned users to personio set, so we don't remove them
-        <> setOf folded pinned
-
-    personioMap :: Map (GH.Name GH.User) P.Employee
-    personioMap = toMapOf (folded . getter f . _Just . ifolded) personios
-      where
-        f e = (,e) <$> e ^. P.employeeGithub
--}
+officeToAccount :: Office -> Text
+officeToAccount OffHelsinki  = "Futurice Oy"
+officeToAccount OffTampere   = "Futurice Oy"
+officeToAccount OffBerlin    = "Futurice GmbH"
+officeToAccount OffMunich    = "Futurice GmbH"
+officeToAccount OffLondon    = "Futurice Ltd"
+officeToAccount OffStockholm = "Futu Sweden AB"
+officeToAccount OffOther     = "???"
 
 -------------------------------------------------------------------------------
 -- Contract type

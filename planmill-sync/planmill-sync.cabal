@@ -39,6 +39,7 @@ library
     , futurice-integrations
     , futurice-prelude
     , futurice-servant
+    , futurice-tribes
     , haxl
     , lens
     , mtl
