@@ -46,6 +46,7 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
         thead_ $ tr_ $ do
             td_ "Login"
             td_ "Personio"
+            td_ "Planmill"
             td_ "Name"
             td_ "Tribe"
             td_ "Office"
@@ -68,6 +69,7 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
 
         td_ $ toHtml login
         td_ $ toHtml $ p ^. P.employeeId
+        td_ $ toHtml $ pmu ^. PM.identifier
         td_ $ toHtml $ p ^. P.employeeFullname
         td_ $ toHtml $ p ^. P.employeeTribe
         td_ $ toHtml $ p ^. P.employeeOffice

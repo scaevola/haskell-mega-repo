@@ -22,13 +22,24 @@ module PlanMill.Types.User (
     Teams,
     ) where
 
+import Data.Aeson.Extra.SymTag         (SymTag)
+import Futurice.Constants              (planmillPublicUrl)
+import Lucid                           (a_, class_, href_, toHtml)
 import PlanMill.Internal.Prelude
 import PlanMill.Types.Account          (AccountId)
 import PlanMill.Types.CapacityCalendar (CapacityCalendarId)
 import PlanMill.Types.Enumeration      (EnumValue)
-import PlanMill.Types.Identifier       (HasIdentifier (..), Identifier)
+import PlanMill.Types.Identifier
+       (HasIdentifier (..), Identifier (..), IdentifierToHtml (..))
 
-import Data.Aeson.Extra.SymTag (SymTag)
+instance IdentifierToHtml User where
+    identifierToHtml (Ident i) = a_ attrs (toHtml t)
+      where
+        t = textShow i
+        attrs =
+            [ class_ "planmill"
+            , href_ $ planmillPublicUrl <> "?category=Employee directory.Contact.Single contact.Summary&Id=" <> t
+            ]
 
 data User = User
     { _uId               :: !UserId

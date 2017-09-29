@@ -1,9 +1,11 @@
-{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Futurice.Constants (
     fumPublicUrl,
     fumPublicUrlStr,
     personioPublicUrl,
     personioPublicUrlStr,
+    planmillPublicUrl,
+    planmillPublicUrlStr,
     ) where
 
 import Futurice.Prelude
@@ -33,3 +35,9 @@ personioPublicUrl = I.personioPublicUrl constants
 
 personioPublicUrlStr :: String
 personioPublicUrlStr = personioPublicUrl ^. unpacked
+
+planmillPublicUrl :: Text
+planmillPublicUrl = I.planmillPublicUrl constants
+
+planmillPublicUrlStr :: String
+planmillPublicUrlStr = planmillPublicUrl ^. unpacked

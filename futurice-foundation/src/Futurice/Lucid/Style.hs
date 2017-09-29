@@ -28,6 +28,8 @@ css = do
         color "#46289A"
     ".personio" ?
         color "#005A4B"
+    ".planmill" ?
+        color "#500A5A"
 
     -- mimicking foundation styles
     ".select2" ? do
