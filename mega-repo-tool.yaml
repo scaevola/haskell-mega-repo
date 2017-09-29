@@ -24,6 +24,9 @@ apps:
   planmill-proxy:
     docker: planmill-proxy
     executable: planmill-proxy-server
+  planmill-sync:
+    docker: planmill-sync
+    executable: planmill-sync-server
   github-proxy:
     docker: github-proxy
     executable: github-proxy-server
