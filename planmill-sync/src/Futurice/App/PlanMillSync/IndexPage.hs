@@ -1,14 +1,21 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections     #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TupleSections         #-}
+
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE UndecidableInstances  #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Futurice.App.PlanMillSync.IndexPage (indexPage) where
 
-import Control.Lens                (IndexedGetting, ifoldMapOf, (.=))
-import Control.Monad.State.Strict  (State, runState)
+import Control.Lens                (IndexedGetting, ifoldMapOf)
+import Control.Monad.Writer.CPS    (Writer, runWriter)
 import Data.Char                   (isDigit)
 import Data.Map.Lens               (toMapOf)
 import Data.Maybe                  (isNothing)
+import Data.Monoid                 (Any (..))
+import Data.Ord                    (Down (..))
 import Data.These                  (_These)
 import Futurice.Lucid.Foundation
 import Futurice.Office             (Office (..))
@@ -51,6 +58,7 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
             td_ "Name"
             -- td_ "Tribe"
             -- td_ "Office"
+            td_ "Status"
             td_ "Ext"
             td_ "Contract type"
             td_ "Contract span"
@@ -62,11 +70,11 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
 
         tbody_ $ do
             let elements0 = itoListWithOf (ifolded . _These) processBoth employees
-            let elements1 = map (\h -> runState (commuteHtmlT h) True) elements0
-            let elements2 = map fst $ sortOn snd elements1
+            let elements1 = map (runWriter . commuteHtmlT) elements0
+            let elements2 = map fst $ sortOn (Down . snd) elements1
             traverse_ id elements2
   where
-    processBoth :: MonadState Bool m => FUM.Login -> (PMUser, P.Employee) -> HtmlT m ()
+    processBoth :: MonadWriter Any m => FUM.Login -> (PMUser, P.Employee) -> HtmlT m ()
     processBoth login (pm, p) = tr_ $ do
         let pmu = pmUser pm
         let pmt = pmTeam pm
@@ -78,22 +86,45 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
         -- td_ $ toHtml $ p ^. P.employeeTribe
         -- td_ $ toHtml $ p ^. P.employeeOffice
 
+        cell_ $ do
+            let pActive = P.employeeIsActive now p
+
+            if pActive then "Active" else "Inactive"
+
+            unless (pActive == (p ^. P.employeeStatus `elem` [P.Active, P.Leave])) $
+                markPersonioCell $ mconcat
+                    [ "Personio status and contract dates disagree"
+                    , "Status: "
+                    , P.statusToText (p ^. P.employeeStatus)
+                    ]
+
+            unless (pActive == (pmPassive pm == "Active")) $ do
+                markFixableCell $ mconcat
+                    [ "PlanMill active status doesn't agree with Personio status: Personio "
+                    , P.statusToText (p ^. P.employeeStatus)
+                    , " ≇ PM "
+                    , pmPassive pm
+                    ]
+                " ≠ "
+                toHtml $ pmPassive pm
+
         cell_ $ case p ^. P.employeeEmploymentType of
-            Nothing -> markErrorCell
+            Nothing -> markPersonioCell "Personio employee should have employment type set"
             Just P.Internal -> pure ()
             Just P.External -> "Ext"
 
         -- Contract type
         cell_ $ case p ^. P.employeeContractType of
-            Nothing -> markErrorCell
+            Nothing -> markPersonioCell "Personio employee should have contract type set"
             Just pContract -> do
+                let pEmploymentType = p ^. P.employeeEmploymentType
                 toHtml (show pContract)
 
-                when (p ^. P.employeeEmploymentType == Just P.External && pContract /= P.FixedTerm) $
-                    markErrorCell
+                when (pEmploymentType == Just P.External && pContract /= P.FixedTerm) $
+                    markPersonioCell "Externals should have contract type FixedTerm"
 
-                unless (contractTypeOk pContract (pmContract pm)) $ do
-                    markErrorCell
+                unless (contractTypeOk pEmploymentType pContract (pmContract pm)) $ do
+                    markErrorCell "Contract types don't agree"
                     " ≠ "
                     toHtml (pmContract pm)
 
@@ -109,8 +140,8 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
             let pmEnd = PM.uDepartDate pmu
 
             -- there should be starting date(s)!
-            when (isNothing pStart) markErrorCell
-            when (isNothing pmStart) markErrorCell
+            when (isNothing pStart) $ markErrorCell "Employee should have hire date in Personio"
+            when (isNothing pmStart) $ markErrorCell "Employee should have hire date in PlanMill"
 
             when (p ^. P.employeeContractType == Just P.FixedTerm) $ do
                 pure ()
@@ -139,13 +170,13 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
                     (Just a, Just b)   -> a /= b
 
             when (endDifferent || startDifferent) $ do
-                markErrorCell
+                markErrorCell "Contract dates differ"
                 " ≠ "
                 toHtml $ formatDateSpan pmStart pmEnd
 
         -- superior
         cell_ $ for_ (PM.uSuperior pmu) $ \sv -> do
-            markErrorCell
+            markFixableCell "PlanMill employee shouldn't have supervisor set"
             toHtml (show sv)
 
         -- Cost centers
@@ -155,28 +186,30 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
             let ccEqual = planmillCC == personioCC
             traverse_ toHtml $  p ^. P.employeeCostCenter
             unless ccEqual $ do
-                markErrorCell
+                markErrorCell "Cost centers should be equal"
                 " ≠ "
                 traverse_ (toHtml . PM.tName) pmt
 
         -- PM Account
         cell_ $ case pmAccount pm of
-            Nothing -> markErrorCell
+            Nothing -> markErrorCell "PlanMill employee doesn't have account set"
             Just a  -> do
                 let name = PM.saName a
                 when (name /= officeToAccount (p ^. P.employeeOffice)) $ do
-                    markErrorCell
+                    markErrorCell "PM Account doesn't agree with Personio Office value"
                     toHtml (p ^. P.employeeOffice)
                     " ≠ "
                 toHtml name
 
         -- PM email
         cell_ $ case PM.uEmail pmu of
-            Nothing -> markErrorCell
+            Nothing -> markFixableCell "PlanMill employee doesn't have email set"
             Just e  ->
                 if (e == FUM.loginToText login <> "@futurice.com")
                 then "OK"
-                else markErrorCell >> toHtml e
+                else do
+                    markFixableCell "Email should be `login`@futurice.com"
+                    toHtml e
 
     planmillMap :: Map FUM.Login PMUser
     planmillMap = toMapOf (folded . getter f . _Just . ifolded) planmills
@@ -196,6 +229,7 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
 
     employees :: Map FUM.Login (These PMUser P.Employee)
     employees = align planmillMap personioMap
+
 -------------------------------------------------------------------------------
 -- Account
 -------------------------------------------------------------------------------
@@ -213,13 +247,12 @@ officeToAccount OffOther     = "???"
 -- Contract type
 -------------------------------------------------------------------------------
 
-contractTypeOk :: P.ContractType -> Text -> Bool
-contractTypeOk P.Permanent      t               = "Permanent" `T.isInfixOf` t
--- All-in people don't have working time
-contractTypeOk P.PermanentAllIn t               = "no working time" `T.isInfixOf` t
--- fixed terms are either subcontractors or permanent employees
-contractTypeOk P.FixedTerm      "Subcontractor" = True
-contractTypeOk P.FixedTerm      t               = "Permanent" `T.isInfixOf` t
+contractTypeOk :: Maybe P.EmploymentType -> P.ContractType -> Text -> Bool
+contractTypeOk (Just P.External) ct t =
+    ct == P.FixedTerm && t == "Subcontractor"
+contractTypeOk _ P.Permanent      t = "Permanent" `T.isInfixOf` t
+contractTypeOk _ P.PermanentAllIn t = "no working time" `T.isInfixOf` t
+contractTypeOk _ P.FixedTerm      t = "Permanent" `T.isInfixOf` t
 
 -------------------------------------------------------------------------------
 -- Prefix number for cost center comparison
@@ -232,11 +265,64 @@ prefixNumber = RE.decimal <* optional (psym (not . isDigit) *> many anySym)
 -- Cells
 -------------------------------------------------------------------------------
 
-markErrorCell :: MonadState Bool m => m ()
-markErrorCell = id .= False
+-- | Smaller state: better.
+data CellState
+    = CellOk
+    | CellFixable (NonEmpty Text)     -- ^ Error which is mechanically fixable
+    | CellPersonio (NonEmpty Text)    -- ^ personio data is inconsistent
+    | CellInconsistent (NonEmpty Text) -- ^ Planmill and personio disagree
+  deriving (Eq, Ord, Show)
 
-cell_ :: MonadState Bool m => HtmlT (State Bool) () -> HtmlT m ()
-cell_ html = case runState (commuteHtmlT html) True of
-    (html', s) -> do
-        id %= (&& s)
-        td_ [ style_ "background: #fcc; font-weight: bold"  | not s ] html'
+cellStateErrors :: CellState -> [Text]
+cellStateErrors CellOk = []
+cellStateErrors (CellFixable xs) = toList xs
+cellStateErrors (CellPersonio xs) = toList xs
+cellStateErrors (CellInconsistent xs) = toList xs
+
+append :: NonEmpty a -> [a] -> NonEmpty a
+append (x :| xs) ys = x :| (xs ++ ys)
+
+instance Semigroup CellState where
+    CellInconsistent xs <> s = CellInconsistent (append xs $ cellStateErrors s)
+    s <> CellInconsistent xs = CellInconsistent (append xs $ cellStateErrors s)
+    CellPersonio xs <> s     = CellPersonio (append xs $ cellStateErrors s)
+    s <> CellPersonio xs     = CellPersonio (append xs $ cellStateErrors s)
+    CellFixable xs <> s      = CellFixable (append xs $ cellStateErrors s)
+    s <> CellFixable xs      = CellFixable (append xs $ cellStateErrors s)
+    CellOk <> CellOk         = CellOk
+
+instance Monoid CellState where
+    mempty = CellOk
+    mappend = (<>)
+
+markFixableCell :: MonadWriter CellState m => Text -> m ()
+markFixableCell err = tell (CellFixable (err :| []))
+
+markPersonioCell :: MonadWriter CellState m => Text -> m ()
+markPersonioCell err = tell (CellPersonio (err :| []))
+
+markErrorCell :: MonadWriter CellState m => Text -> m ()
+markErrorCell err = tell (CellInconsistent (err :| []))
+
+cell_ :: MonadWriter Any m => HtmlT (Writer CellState) () -> HtmlT m ()
+cell_ html = case runWriter (commuteHtmlT html) of
+    (html', CellOk)              -> td_ html'
+    (html', CellFixable xs)      -> do
+        tell (Any True)
+        td_ [ style_ "background: #ccf; font-weight: bold", errorsTitle_ xs ] html'
+    (html', CellPersonio xs)     -> do
+        tell (Any True)
+        td_ [ style_ "background: #ffc; font-weight: bold", errorsTitle_ xs ] html'
+    (html', CellInconsistent xs) -> do
+        tell (Any True)
+        td_ [ style_ "background: #fcc; font-weight: bold", errorsTitle_ xs ] html'
+
+errorsTitle_ :: NonEmpty Text -> Attribute
+errorsTitle_ xs = title_ $ T.intercalate "; " $ toList xs
+
+instance MonadWriter w m => MonadWriter w (HtmlT m) where
+    tell = lift . tell
+    listen = undefined
+    pass = undefined
+
+
