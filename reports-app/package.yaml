@@ -42,6 +42,7 @@ dependencies:
   - futurice-prelude
   - futurice-reports
   - futurice-servant
+  - futurice-tribes
   - generics-sop
   - github >=0.15.0
   - hashable >= 1.2

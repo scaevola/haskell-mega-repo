@@ -33,6 +33,7 @@ library:
     - futurice-github
     - futurice-prelude
     - futurice-reports
+    - futurice-tribes
     - generics-sop
     - generics-sop-lens
     - github

@@ -150,7 +150,7 @@ balanceForUser interval user = do
 
 balanceReport
     :: forall m env.
-        ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m
+        ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m, MonadPersonio m
         , MonadReader env m, HasFUMEmployeeListName env
         )
     => PM.Interval Day
@@ -164,7 +164,7 @@ balanceReport interval = do
     pure $ Report (ReportGenerated now) fpm''
   where
     cmpPE :: StrictPair Employee a -> StrictPair Employee a -> Ordering
-    cmpPE = (comparing employeeTeam <> comparing employeeName) `on` S.fst
+    cmpPE = (comparing employeeTribe <> comparing employeeName) `on` S.fst
 
     supervisors :: Vector FUM.User -> HashMap FUM.Login Text
     supervisors us = HM.fromList . mapMaybe mk $ us'

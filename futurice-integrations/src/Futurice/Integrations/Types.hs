@@ -8,20 +8,21 @@ module Futurice.Integrations.Types where
 import Futurice.Prelude
 import Prelude ()
 
-import qualified Data.Csv          as Csv
+import qualified Data.Csv                as Csv
 import           Futurice.Generics
-import qualified Futurice.IC       as IList
+import qualified Futurice.IC             as IList
 import           Futurice.Peano
 import           Futurice.Report
 import           Futurice.Report.Columns (ToColumns)
-import           Lucid             hiding (for_)
+import           Futurice.Tribe          (Tribe)
+import           Lucid                   hiding (for_)
 
 -- | Employee information often used in reports
 --
 -- /TODO/ lensify
 data Employee = Employee
     { employeeName     :: !Text
-    , employeeTeam     :: !Text
+    , employeeTribe    :: !Tribe
     , employeeContract :: !Text
     }
  deriving (Eq, Show, Typeable, Generic)
