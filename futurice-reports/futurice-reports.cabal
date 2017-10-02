@@ -41,6 +41,7 @@ library
     , fum-types
     , futurice-foundation
     , futurice-prelude
+    , futurice-tribes
     , generics-sop
     , github
     , lucid

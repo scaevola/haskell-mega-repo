@@ -7,15 +7,16 @@ module Futurice.App.Reports.MissingHoursChart (
     missingHoursChartRender,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens                (contains, (.=))
 import Control.Monad.State.Strict  (StateT, evalStateT, state)
 import Data.Fixed                  (Centi)
 import Data.Time.Calendar.WeekDate (fromWeekDate, toWeekDate)
 import Futurice.Integrations
+import Futurice.Prelude
 import Futurice.Time
+import Futurice.Tribe              (Tribe, tribeToText)
 import Numeric.Interval.NonEmpty   ((...))
+import Prelude ()
 import Servant.Chart               (Chart (..))
 
 import Futurice.App.Reports.MissingHours
@@ -28,7 +29,7 @@ type MissingHoursChartData = (Integer, Int, Int, PM.Interval Day, Map Tribe (Sum
 
 missingHoursChartData
     :: forall m env.
-        ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m
+        ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m, MonadPersonio m
         , MonadReader env m, HasFUMEmployeeListName env
         )
     => Set (PM.EnumValue PM.User "contractType")
@@ -63,12 +64,11 @@ missingHoursChartRender (currYear, weekA, weekB, interval, trs) = Chart . C.toRe
         let scale :: NDT 'Hours Centi -> Double
             scale x = realToFrac (getNDT x) / fromIntegral (getSum count)
         lineStyle <- nextLineStyle
-        lift $ C.plot $ line' lineStyle (tribe ^. unpacked) $ singleton $ do
+        lift $ C.plot $ line' lineStyle (tribeToText tribe ^. unpacked) $ singleton $ do
             week <- [weekA .. weekB]
             let day = fromWeekDate currYear week 1
             pure (day, maybe 0 scale $ hours ^? ix (currYear, week))
 
-type Tribe = Text
 type Count = Int
 type YearWeek = (Integer, Int)
 
@@ -81,7 +81,7 @@ arrangeReports = Map.fromListWith f . map process
     f (x, m) (x', m') = (x <> x', Map.unionWith (+) m m')
 
     process (e, hours) =
-        ( employeeTeam e
+        ( employeeTribe e
         , (Sum 1, Map.fromListWith (+) $ map process2 $ toList hours)
         )
     process2 mh = ((y, w), mh ^. missingHourCapacity)

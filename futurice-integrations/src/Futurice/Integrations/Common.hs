@@ -21,13 +21,15 @@ module Futurice.Integrations.Common (
     HasGithubOrgName(..),
     ) where
 
-import Prelude ()
-import Futurice.Prelude
+import Data.List                     (find)
 import Data.Time
        (addGregorianMonthsClip, fromGregorian, toGregorian)
 import Futurice.IdMap                (IdMap, idMapOf)
 import Futurice.Integrations.Classes
 import Futurice.Integrations.Types
+import Futurice.Prelude
+import Futurice.Tribe                (defaultTribe)
+import Prelude ()
 import Text.Regex.Applicative.Text   (match)
 
 import qualified Data.HashMap.Strict as HM
@@ -35,6 +37,7 @@ import qualified Data.HashMap.Strict as HM
 import qualified Chat.Flowdock.REST as FD
 import qualified FUM
 import qualified GitHub             as GH
+import qualified Personio           as P
 import qualified PlanMill           as PM
 import qualified PlanMill.Queries   as PMQ
 
@@ -142,15 +145,27 @@ fumPlanmillMap =
 --
 -- /TODO/: use applicative
 planmillEmployee
-    :: MonadPlanMillQuery m
+    :: (MonadPlanMillQuery m, MonadPersonio m)
     => PM.UserId
     -> m Employee
 planmillEmployee uid = do
     u <- PMQ.user uid
-    t <- traverse PMQ.team (PM.uTeam u)
+
+    -- tribe
+    t <- case match loginRe (PM.uUserName u) of
+        Nothing -> pure defaultTribe
+        Just l  -> do
+            ps <- P.personio P.PersonioEmployees
+            let f p = p ^. P.employeeLogin == Just l
+            pure $ fromMaybe defaultTribe $  view P.employeeTribe <$> find f ps
+
+    -- contract
     c <- PMQ.enumerationValue (PM.uContractType u) "Unknown Contract"
+
     return $ Employee
         { employeeName     = PM.uFirstName u <> " " <> PM.uLastName u
-        , employeeTeam     = maybe "Unknown Team" PM.tName t
+        , employeeTribe    = t
         , employeeContract = c
         }
+ where
+   loginRe = "https://login.futurice.com/openid/" *> FUM.loginRegexp

@@ -168,7 +168,7 @@ missingHoursForUser interval user = do
 
 missingHoursReport
     :: forall m env title.
-        ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m
+        ( PM.MonadTime m, MonadFUM m, MonadPlanMillQuery m, MonadPersonio m
         , MonadReader env m, HasFUMEmployeeListName env
         )
     => Maybe (Set (PM.EnumValue PM.User "contractType"))

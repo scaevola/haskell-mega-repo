@@ -38,9 +38,11 @@ import Futurice.Generics
 import Futurice.IsMaybe
 import Futurice.List
 import Futurice.Lucid.Foundation
+import Futurice.Office           (Office)
 import Futurice.Prelude
 import Futurice.Time
        (AsScientific, IsTimeUnit (..), NDT (..), TimeUnit (..))
+import Futurice.Tribe            (Tribe)
 import Generics.SOP              ((:.:) (..), All, SListI (..))
 import GHC.TypeLits              (KnownSymbol, Symbol, symbolVal)
 import Prelude ()
@@ -576,6 +578,9 @@ class (ToJSON a, Ord a) => ReportValue a where
 data ColumnData a = ColumnData !Text ![a]
 
 instance ReportValue Text
+
+instance ReportValue Tribe
+instance ReportValue Office
 
 instance ReportValue Int where
     reportValueType _ = CTNumber
