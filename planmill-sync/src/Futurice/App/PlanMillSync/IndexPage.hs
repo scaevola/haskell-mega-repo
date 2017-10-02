@@ -51,6 +51,7 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
             td_ "Name"
             -- td_ "Tribe"
             -- td_ "Office"
+            td_ "Ext"
             td_ "Contract type"
             td_ "Contract span"
 
@@ -77,11 +78,20 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
         -- td_ $ toHtml $ p ^. P.employeeTribe
         -- td_ $ toHtml $ p ^. P.employeeOffice
 
+        cell_ $ case p ^. P.employeeEmploymentType of
+            Nothing -> markErrorCell
+            Just P.Internal -> pure ()
+            Just P.External -> "Ext"
+
         -- Contract type
         cell_ $ case p ^. P.employeeContractType of
             Nothing -> markErrorCell
             Just pContract -> do
                 toHtml (show pContract)
+
+                when (p ^. P.employeeEmploymentType == Just P.External && pContract /= P.FixedTerm) $
+                    markErrorCell
+
                 unless (contractTypeOk pContract (pmContract pm)) $ do
                     markErrorCell
                     " ≠ "
