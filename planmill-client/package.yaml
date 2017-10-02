@@ -46,6 +46,7 @@ dependencies:
   - DRBG
   - env-config
   - exceptions
+  - futurice-constants
   - futurice-metrics
   - futurice-prelude
   - futurice-pure-trans
@@ -60,6 +61,7 @@ dependencies:
   - intervals
   - lens
   - log-base
+  - lucid
   - monad-http
   - monad-time
   - monadcryptorandom >=0.7.0

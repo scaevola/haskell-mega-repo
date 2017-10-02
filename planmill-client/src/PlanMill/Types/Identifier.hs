@@ -10,14 +10,16 @@
 module PlanMill.Types.Identifier (
     Identifier(..),
     HasIdentifier(..),
+    IdentifierToHtml(..),
     ) where
 
-import Prelude ()
-import PlanMill.Internal.Prelude
 import Data.Aeson.Types
        (FromJSONKey (..), ToJSONKey (..), contramapToJSONKeyFunction)
 import Data.Swagger              (ToParamSchema, ToSchema)
 import Futurice.EnvConfig        (FromEnvVar (..))
+import Lucid                     (ToHtml (..), HtmlT)
+import PlanMill.Internal.Prelude
+import Prelude ()
 import Test.QuickCheck           (Arbitrary (..))
 import Web.HttpApiData           (FromHttpApiData (..), ToHttpApiData (..))
 
@@ -90,3 +92,10 @@ instance O.FromOptions (Identifier a) where
     optionsParser = fmap Ident $ O.argument (O.maybeReader readMaybe) $ mconcat
         [ O.metavar ":ident"
         ]
+
+instance IdentifierToHtml a => ToHtml (Identifier a) where
+    toHtmlRaw = toHtml
+    toHtml = identifierToHtml 
+
+class IdentifierToHtml a where
+    identifierToHtml :: Monad m => Identifier a -> HtmlT m ()

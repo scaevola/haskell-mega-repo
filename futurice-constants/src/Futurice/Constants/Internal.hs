@@ -9,6 +9,7 @@ import Prelude ()
 data Constants = Constants
     { fumPublicUrl      :: Text
     , personioPublicUrl :: Text
+    , planmillPublicUrl :: Text
     }
   deriving (Eq, Show)
 
@@ -16,6 +17,7 @@ instance FromJSON Constants where
     parseJSON = withObject "Constants" $ \obj -> Constants
         <$> obj .: "fumPublicUrl"
         <*> obj .: "personioPublicUrl"
+        <*> obj .: "planmillPublicUrl"
 
 -- TODO: remove when we drop support for GHC-7.10
 deriveLift ''Constants
