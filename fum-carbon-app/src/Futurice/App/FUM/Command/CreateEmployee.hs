@@ -1,12 +1,16 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE KindSignatures    #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE BangPatterns         #-}
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE KindSignatures       #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE TemplateHaskell      #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Futurice.App.FUM.Command.CreateEmployee (CreateEmployee (..)) where
 
-import Data.Maybe        (isJust)
+import Control.Lens         (toListOf)
+import Control.Monad.Reader (asks)
+import Data.Maybe           (isJust)
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
@@ -15,22 +19,25 @@ import Futurice.App.FUM.Command.Definition
 import Futurice.App.FUM.Pages.Href
 import Futurice.App.FUM.Types
 
+import qualified Data.Set as Set
 import qualified Personio
 
 data CreateEmployee (phase :: Phase) = CreateEmployee
     { cePersonioId :: !Personio.EmployeeId
+    , ceUID        :: !(Phased phase () UID)
     , ceLogin      :: !Login
     , ceStatus     :: !Status
     , ceName       :: !Text
     , ceEmail      :: !Text
     }
-  deriving (Show, Typeable, Generic)
+  deriving (Typeable, Generic)
 
 deriveGeneric ''CreateEmployee
 
 instance phase ~ 'Input => HasLomake (CreateEmployee phase) where
     lomake _ =
         hiddenField "personioId" :*
+        unitField :*
         hiddenField "login" :*
         enumField "status" statusToText :*
         hiddenField "name" :*
@@ -50,8 +57,8 @@ instance Command CreateEmployee where
     internalizeCommand _now _login rights cmd = do
         requireRights RightsIT rights
         validate cmd
-
-        pure (coerce cmd)
+        uid <- view worldNextUID
+        pure cmd { ceUID = uid }
 
     applyCommand now _login cmd = do
         validate cmd
@@ -59,6 +66,7 @@ instance Command CreateEmployee where
         let login = ceLogin cmd
         worldEmployees . at login ?= Employee
             { _employeeLogin        = login
+            , _employeeUID          = ceUID cmd
             , _employeePersonioId   = cePersonioId cmd
             , _employeeStatus       = ceStatus cmd
             , _employeeName         = ceName cmd
@@ -68,7 +76,23 @@ instance Command CreateEmployee where
             , _employeePasswordExp  = now  -- TODO
             }
 
+        -- UIDs should be unique
+        uids <- asks $ toListOf (worldEmployees . folded . employeeUID)
+        for_ (firstDuplicate uids) $ \dupUid ->
+            throwError $ "Duplicate uid: "++ show dupUid
+
+        -- make next UID one greater that any existing or current "next" UID.
+        worldNextUID %= \curr -> nextUnixID (maximum (curr : uids))
+
+        -- Redirect to the employee page
         pure $ LomakeResponseRedirect $ viewEmployeeHrefText login
+
+firstDuplicate :: (Foldable f, Ord a) => f a -> Maybe a
+firstDuplicate = go Set.empty . toList where
+    go !_ []                = Nothing
+    go !xs (y:ys)
+        | y `Set.member` xs = Just y
+        | otherwise         = go (Set.insert y xs) ys
 
 validate :: (MonadReader World m, MonadError String m) => CreateEmployee phase -> m ()
 validate  cmd = do

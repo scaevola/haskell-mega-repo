@@ -12,6 +12,8 @@ module Futurice.App.FUM.Types.World (
     worldMailboxes,
     worldGroups,
     worldSudoGroup,
+    worldNextUID,
+    worldNextGID,
     worldEmployeeGroups,
     ) where
 
@@ -21,6 +23,7 @@ import Futurice.Prelude
 import Prelude ()
 
 import Futurice.App.FUM.Types.Basic
+import Futurice.App.FUM.Types.UnixID
 
 import qualified Futurice.IdMap as IdMap
 
@@ -33,6 +36,8 @@ data World = World
     , _worldMailboxes  :: !(IdMap Mailbox)
     , _worldGroups     :: !(IdMap Group)
     , _worldSudoGroup  :: !(Maybe GroupName) -- change to Group!
+    , _worldNextUID    :: !UID
+    , _worldNextGID    :: !GID
     -- lazy fields
     , _worldEmployeeGroups :: Map Login (IdMap Group)
     }
@@ -68,12 +73,26 @@ worldSudoGroup f w = fmap
     (f (_worldSudoGroup w))
 {-# INLINE worldSudoGroup #-}
 
+worldNextUID :: Lens' World UID
+worldNextUID f w = fmap
+    (\x -> remakeWorld w { _worldNextUID = x})
+    (f (_worldNextUID w))
+{-# INLINE worldNextUID #-}
+
+worldNextGID :: Lens' World GID
+worldNextGID f w = fmap
+    (\x -> remakeWorld w { _worldNextGID = x})
+    (f (_worldNextGID w))
+{-# INLINE worldNextGID #-}
+
 worldEmployeeGroups :: Getter World (Map Login (IdMap Group))
 worldEmployeeGroups = getter _worldEmployeeGroups
 {-# INLINE worldEmployeeGroups #-}
 
 emptyWorld :: World
-emptyWorld = makeWorld mempty mempty mempty mempty Nothing
+emptyWorld = makeWorld mempty mempty mempty mempty
+    Nothing
+    firstUnixID firstUnixID
 
 makeWorld
     :: IdMap Employee
@@ -81,8 +100,10 @@ makeWorld
     -> IdMap Mailbox
     -> IdMap Group
     -> Maybe GroupName
+    -> UID
+    -> GID
     -> World
-makeWorld es cs ms gs sg = World es cs ms gs sg employeeGroups
+makeWorld es cs ms gs sg uid gid = World es cs ms gs sg uid gid employeeGroups
   where
     employeeGroups = toMapOf (IdMap.ifolded . getter mk) es where
         mk e = IdMap.filter (\g -> g ^. groupEmployees . contains l) gs where
@@ -95,10 +116,14 @@ remakeWorld w = makeWorld
     (_worldMailboxes w)
     (_worldGroups w)
     (_worldSudoGroup w)
+    (_worldNextUID w)
+    (_worldNextGID w)
 
 nullWorld :: World -> Bool
-nullWorld (World es cs ms gs sg _) =
+nullWorld (World es cs ms gs sg uid gid _) =
     null es && null cs && null ms && null gs && null sg
+    && uid == firstUnixID
+    && gid == firstUnixID
 
 -------------------------------------------------------------------------------
 -- Validation

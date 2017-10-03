@@ -96,6 +96,9 @@ instance Pretty Personio.EmployeeId where
 instance Pretty Login where
     pp l = PP.annotate (H (const (toHtml l))) (pp $ loginToText l)
 
+instance Pretty (UnixID t) where
+    pp = PP.string . show . getUnixID
+
 instance Pretty GroupName where
     pp n = PP.annotate (H (const html)) (pp $ groupNameToText n)
       where
@@ -111,6 +114,7 @@ instance Pretty Status where
 instance Pretty EmployeeX where
     pp (EX e gs) = ppBlock' (pp $ e ^. employeeLogin)
         [ "name"     <~ e ^. employeeName
+        , "uid"      <~ e ^. employeeUID
         , "personio" <~ e ^. employeePersonioId
         , "status"   <~ e ^. employeeStatus
         , "emails"   <~ e ^. employeeEmailAliases
@@ -120,7 +124,7 @@ instance Pretty EmployeeX where
 instance Pretty Group where
     pp e = ppBlock' (pp $ e ^. groupName)
         [ "type"     <~ e ^. groupType
+        , "gid"      <~ e ^. groupGID
         , "emails"   <~ e ^. groupEmailAliases
         , "members"  <~ (e ^.. groupEmployees . folded) ++ (e ^.. groupCustomers . folded)
         ]
-

@@ -22,6 +22,7 @@ import Prelude ()
 import Futurice.App.FUM.Types.GroupType
 import Futurice.App.FUM.Types.Identifier
 import Futurice.App.FUM.Types.Status
+import Futurice.App.FUM.Types.UnixID
 
 import qualified Personio as P
 
@@ -41,6 +42,7 @@ type Picture = Text
 -- /TODO:/ store name?
 data Employee = Employee
     { _employeeLogin          :: !Login
+    , _employeeUID            :: !UID
     , _employeePersonioId     :: !P.EmployeeId     -- ^ @123@, provides information to names, contract data etc.
     , _employeeStatus         :: !Status           -- ^ "futurice status", importantly not directly the google status.
     , _employeeName           :: !Text             -- ^ name, periodically sync'd from personio
@@ -85,6 +87,7 @@ data Mailbox = Mailbox
 -- | Group: email list or access group.
 data Group = Group
     { _groupName         :: !GroupName
+    , _groupGID          :: !GID
     , _groupType         :: !GroupType
     , _groupDescription  :: !Text
     , _groupEmailAliases :: ![Email]
