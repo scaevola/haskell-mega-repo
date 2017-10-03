@@ -9,14 +9,14 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Futurice.App.PlanMillSync.IndexPage (indexPage) where
 
-import Control.Lens                (IndexedGetting, ifoldMapOf)
+import Control.Lens                (IndexedGetting, ifoldMapOf, iforOf_)
 import Control.Monad.Writer.CPS    (Writer, runWriter)
 import Data.Char                   (isDigit)
 import Data.Map.Lens               (toMapOf)
 import Data.Maybe                  (isNothing)
 import Data.Monoid                 (Any (..))
 import Data.Ord                    (Down (..))
-import Data.These                  (_These)
+import Data.These                  (_That, _These, _This)
 import Futurice.Lucid.Foundation
 import Futurice.Office             (Office (..))
 import Futurice.Prelude
@@ -40,33 +40,99 @@ indexPage
     -> [P.Employee]
     -> HtmlPage "index"
 indexPage now planmills personios = page_ "PlanMill sync" $ do
-    fullRow_ $ h1_ "Personio ⇒ PlanMill sync"
+    div_ [ class_ "top-bar" ] $ do
+        div_ [ class_ "top-bar-left" ] $ ul_ [ class_ "menu" ] $ do
+            li_ [ class_ "menu-text"] $ "Personio ⇒ PlanMill sync"
+            li_ $ a_ [ href_ "#planmill" ] "Only in PlanMill"
+            li_ $ a_ [ href_ "#personio" ] "Only in Personio"
+            li_ $ a_ [ href_ "#crosscheck" ] "Crosscheck + sync"
 
-    fullRow_ $ h2_ "Cross-check of people in PlanMill and Personio"
     fullRow_ $ div_ [ class_ "callout alert "] $ ul_ $ do
         li_ $ "PlanMill data updates at night, so it can be out-of-date if there are recent changes."
+        li_ $ "Personio data updates every 5 minutes"
         li_ $ do
             "When values are differeent, both are shown: "
             b_ "Personio ≠ PlanMill"
             "."
 
+    fullRow_ $ do
+        a_ [ name_ "planmill" ] mempty
+        h2_ "People Active in PlanMIll but not in Personio"
+
     fullRow_ $ table_ $ do
         thead_ $ tr_ $ do
-            td_ "Login"
-            td_ "Personio"
-            td_ "Planmill"
-            td_ "Name"
+            th_ "Login"
+            th_ "Planmill"
+            th_ "Name"
+            th_ "PlanMill Team"
+            th_ "Contract span"
+
+        tbody_ $ iforOf_ (ifolded . _This) employees $ \login pm -> do
+            let pmu = pmUser pm
+            when (pmPassive pm == "Active") $ tr_ $ do
+                td_ $ toHtml login
+                td_ $ toHtml $ pmu ^. PM.identifier
+                td_ $ toHtml $ PM.uFirstName pmu <> " " <> PM.uLastName pmu
+                td_ $ traverse_ (toHtml . PM.tName) $ pmTeam pm
+                td_ $ do
+                    let pmStart = PM.uHireDate pmu
+                    let pmEnd = PM.uDepartDate pmu
+                    toHtml $ formatDateSpan pmStart pmEnd
+
+    fullRow_ $ do
+        a_ [ name_ "personio" ] mempty
+        h2_ "People Active in Personio but not in PlanMill"
+
+    fullRow_ $ table_ $ do
+        thead_ $ tr_ $ do
+            th_ "Login"
+            th_ "Personio"
+            th_ "Name"
+            th_ "Tribe"
+            th_ "Office"
+            th_ "Contract span"
+            th_ "HR Number"
+
+        tbody_ $ iforOf_ (ifolded . _That) employees $ \login p -> do
+            when (P.employeeIsActive now p) $ tr_ $ do
+                td_ $ toHtml login
+                personioHtml p
+
+    fullRow_ $ do
+        i_ "People Active in Personio, but without login"
+        table_ $ do
+            thead_ $ tr_ $ do
+                th_ "Personio"
+                th_ "Name"
+                th_ "Tribe"
+                th_ "Office"
+                th_ "Contract span"
+                th_ "HR Number"
+            tbody_ $ for_ personios $ \p ->
+                when (P.employeeIsActive now p && isNothing (p ^. P.employeeLogin)) $
+                    tr_ $ personioHtml p
+
+    fullRow_ $ do
+        a_ [ name_ "crosscheck" ] mempty
+        h2_ "Cross-check of people in PlanMill and Personio"
+
+    fullRow_ $ table_ $ do
+        thead_ $ tr_ $ do
+            th_ "Login"
+            th_ "Personio"
+            th_ "Planmill"
+            th_ "Name"
             -- td_ "Tribe"
             -- td_ "Office"
-            td_ "Status"
-            td_ "Ext"
-            td_ "Contract type"
-            td_ "Contract span"
+            th_ "Status"
+            th_ "Ext"
+            th_ "Contract type"
+            th_ "Contract span"
 
-            td_ "PM Superior"
-            td_ "Cost center = PM Team"
-            td_ "PM Account"
-            td_ "PM email"
+            th_ "PM Superior"
+            th_ "Cost center = PM Team"
+            th_ "PM Account"
+            th_ "PM email"
 
         tbody_ $ do
             let elements0 = itoListWithOf (ifolded . _These) processBoth employees
@@ -130,8 +196,6 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
 
         -- Contract span
         cell_ $ do
-            let ndash = "–"
-            let arrow = " →" -- space is intentional
 
             let pStart = p ^. P.employeeHireDate
             let pEnd = p ^. P.employeeEndDate
@@ -147,11 +211,6 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
                 pure ()
                 -- when (isNothing pEnd) markErrorCell
                 -- when (isNothing pmEnd) markErrorCell
-
-            let formatDateSpan s e =
-                    let s' = maybe "?" show s
-                        e' = maybe arrow (\x -> ndash ++ show x) e
-                    in s' ++ e'
 
             toHtml $ formatDateSpan pStart pEnd
 
@@ -229,6 +288,38 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
 
     employees :: Map FUM.Login (These PMUser P.Employee)
     employees = align planmillMap personioMap
+
+-------------------------------------------------------------------------------
+-- Only in Personio
+-------------------------------------------------------------------------------
+
+personioHtml :: Monad m => P.Employee -> HtmlT m ()
+personioHtml p = fst $ runWriter $ commuteHtmlT $ do
+    td_ $ toHtml $ p ^. P.employeeId
+    td_ $ toHtml $ p ^. P.employeeFullname
+    td_ $ toHtml $ p ^. P.employeeTribe
+    td_ $ toHtml $ p ^. P.employeeOffice
+    td_ $ do
+        let pStart = p ^. P.employeeHireDate
+        let pEnd = p ^. P.employeeEndDate 
+        toHtml $ formatDateSpan pStart pEnd
+    cell_ $ case p ^. P.employeeHRNumber of
+        Just x | x > 0 -> toHtml (show x) -- TODO: remove check, fix personio-client
+        _ -> when (p ^. P.employeeOffice `elem` [OffHelsinki, OffTampere]) $
+            markErrorCell "HR Number is required for people working in Finland"
+
+-------------------------------------------------------------------------------
+-- 
+-------------------------------------------------------------------------------
+
+formatDateSpan :: Maybe Day -> Maybe Day -> String
+formatDateSpan s e =
+    let s' = maybe "?" show s
+        e' = maybe arrow (\x -> ndash ++ show x) e
+    in s' ++ e'
+  where
+    ndash = "–"
+    arrow = " →" -- space is intentional
 
 -------------------------------------------------------------------------------
 -- Account
