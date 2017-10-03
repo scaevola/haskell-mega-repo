@@ -30,7 +30,7 @@ transact ctx now login scmd =
     withMVar (ctxTransactorMVar ctx) $ \_  -> do
         -- logTrace ("command " <> commandTag (Proxy :: Proxy cmd)) cmd
         world <- liftIO $ atomically $ readTVar (ctxWorld ctx)
-        case runStricterT (applyCommand now login cmd) world of
+        case runStricterT (applyCommand now login cmd <* validateWorld) world of
             Right (res, world') -> do
                 -- insert into db
                 _ <- poolExecute ctx insertQuery (login, now, commandTag' cmd, toJSON cmd)

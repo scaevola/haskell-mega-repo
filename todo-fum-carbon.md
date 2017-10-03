@@ -58,8 +58,13 @@
 - ~1:2:2 Transactor thread~
 - ~1:2:2 Persistence~
 
+## Suprises
+
+- ~1:1:1 UID&GID~
+
 # Personio -> PlanMill
 
 - ~2:3:4 GitHub prototype~
-- 1:1:1 GitHub prototype completion (blocked on Personio data mostly)
-- 10:15:20 Raw estimate
+- 1:1:1 GitHub prototype completion (blocked on Personio data)
+- ~10:15:20 Comparison (read-only) operations~
+- 2:3:5 Write operations (blocked on Personio data)
