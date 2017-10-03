@@ -71,7 +71,7 @@ decodeSomeCommand name payload =
     ct CTBootstrap <!>
     ct CTCreateEmployee <!>
     ct CTCreateGroup <!>
-    Left ("Unknown command: " ++ show name)
+    Left ("Unknown or corrupt command: " ++ show name ++ " = " ++ show payload)
   where
     ct :: CT cmd -> Either String SomeCommand
     ct tag = withCT tag $

@@ -35,7 +35,10 @@ import Futurice.App.FUM.Types
 --
 data Phase = Input | Internal
 
-
+-- | Phased field can be different in the input and what's stored in the db.
+type family Phased (phase :: Phase) a b where
+    Phased 'Input    a b = a
+    Phased 'Internal a b = b
 
 -- | Class describing different commands.
 class

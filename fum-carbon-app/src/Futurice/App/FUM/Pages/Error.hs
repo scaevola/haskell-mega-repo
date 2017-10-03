@@ -44,7 +44,9 @@ forbiddenPage tr = fumPage_ "Forbidden" (AuthUser $(mkLogin "guest") RightsOther
                 commandHtml' (Proxy :: Proxy Bootstrap) $
                     vJust (e ^. Personio.employeeId) :*
                     V (e ^. Personio.employeeLogin) [] :*
+                    vNothing :*
                     V (e ^? Personio.employeeFullname) [] :*
                     V (e ^? Personio.employeeEmail) [] :*
+                    vNothing :*
                     vNothing :*
                     Nil

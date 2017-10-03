@@ -1,12 +1,16 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE KindSignatures    #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE BangPatterns         #-}
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE KindSignatures       #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE TemplateHaskell      #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Futurice.App.FUM.Command.CreateGroup (CreateGroup (..)) where
 
-import Data.Maybe        (isJust)
+import Control.Lens         (toListOf)
+import Control.Monad.Reader (asks)
+import Data.Maybe           (isJust)
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
@@ -19,15 +23,17 @@ import qualified Data.Set as Set
 
 data CreateGroup (phase :: Phase) = CreateGroup
     { cgName :: !GroupName
+    , cgGID  :: !(Phased phase () GID)
     , cgType :: !GroupType
     }
-  deriving (Show, Typeable, Generic)
+  deriving (Typeable, Generic)
 
 deriveGeneric ''CreateGroup
 
 instance phase ~ 'Input => HasLomake (CreateGroup phase) where
     lomake _ =
         textField "name" :*
+        unitField :*
         enumField "type" groupTypeToText :*
         -- todo description
         Nil
@@ -45,7 +51,8 @@ instance Command CreateGroup where
     internalizeCommand _now _login rights cmd = do
         requireRights RightsNormal rights
         validate cmd
-        pure (coerce cmd)
+        gid <- view worldNextGID
+        pure cmd { cgGID = gid }
 
     applyCommand _now login cmd = do
         validate cmd
@@ -53,6 +60,7 @@ instance Command CreateGroup where
         let name = cgName cmd
         worldGroups . at name ?= Group
             { _groupName         = name
+            , _groupGID          = cgGID cmd
             , _groupType         = cgType cmd
             , _groupDescription  = "" -- TODO
             , _groupEmailAliases = []
@@ -61,7 +69,23 @@ instance Command CreateGroup where
             , _groupCustomers    = mempty
             }
 
+        -- GIDs should be unique
+        gids <- asks $ toListOf (worldGroups . folded . groupGID)
+        for_ (firstDuplicate gids) $ \dupgid ->
+            throwError $ "Duplicate gid: "++ show dupgid
+
+        -- make next GID one greater that any existing or current "next" GID.
+        worldNextGID %= \curr -> nextUnixID (maximum (curr : gids))
+
+        -- Redirect to the group page
         pure $ LomakeResponseRedirect $ viewGroupHrefText name
+
+firstDuplicate :: (Foldable f, Ord a) => f a -> Maybe a
+firstDuplicate = go Set.empty . toList where
+    go !_ []                = Nothing
+    go !xs (y:ys)
+        | y `Set.member` xs = Just y
+        | otherwise         = go (Set.insert y xs) ys
 
 validate :: (MonadReader World m, MonadError String m) => CreateGroup phase -> m ()
 validate cmd = do

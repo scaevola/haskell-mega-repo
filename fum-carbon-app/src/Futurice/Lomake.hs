@@ -48,6 +48,7 @@ class HasFieldName a where
 -------------------------------------------------------------------------------
 
 data Field a where
+    UnitField   :: Field ()
     TextField   :: TextFieldOptions a -> Field a
     HiddenField :: TextFieldOptions a -> Field a
     EnumField   :: EnumFieldOptions a -> Field a
@@ -82,6 +83,9 @@ instance HasFieldName (EnumFieldOptions a) where
 -------------------------------------------------------------------------------
 -- Field smart constructors
 -------------------------------------------------------------------------------
+
+unitField :: Field ()
+unitField = UnitField
 
 textField
     :: (ToHttpApiData a, FromHttpApiData a)
@@ -184,6 +188,8 @@ lomakeHtml formOpts fields names values =
     go Nil Nil Nil                     = pure ()
 
     render :: forall a. Field a -> Text -> V a -> StateT () (HtmlT m) ()
+    render UnitField _ _value = pure ()
+
     render (HiddenField opts) n value = do
         lift $ input_
             [ data_ "lomake-id" n
@@ -256,6 +262,7 @@ lomakeParseJSON' hm fs ns =
     fmap (SOP.to . SOP.SOP . SOP.Z) $ SOP.hsequence $ SOP.hzipWith parse fs ns
   where
     parse :: Field x -> K Text x -> m x
+    parse UnitField _ = pure ()
     parse (HiddenField opts) (K n) = do
         lookupField n (tfoDecode opts)
     parse (TextField opts) (K n) = do
