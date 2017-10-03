@@ -13,15 +13,16 @@ lomake = (function () {
   // initialisation
   function initialiseForm(formElement) {
     var formName = formElement.dataset.lomakeForm;
-    console.info("found lomake: ", formName);
+    console.info("found lomake: ", formName, formElement);
 
     // The url where we will submit the form.
     var formSubmitUrl = formElement.dataset.lomakeFormSubmit;
 
     // Elements
-    var inputElements = $$("*[data-lomake-id");
+    var inputElements = $$("*[data-lomake-id]", formElement);
     var resetBtn = $_("button[data-lomake-action=reset]", formElement);
     var submitBtn = $_("button[data-lomake-action=submit]", formElement);
+    console.log("elements", formName, resetBtn, submitBtn, inputElements);
 
     // Collect inputs
     var defs = {};
@@ -52,7 +53,7 @@ lomake = (function () {
               });
               return data;
             }
-          }
+          };
         }
         $el = jQuery(el).select2(opts);
       } else {
@@ -79,11 +80,11 @@ lomake = (function () {
       if (el.tagName === "SELECT") {
         check = function (value) {
           return value === "" || value === "-" ? undefined : value;
-        }
+        };
       }
 
       // checked value
-      def.signal$ = _.isFunction(check) ? def.source$.map(check) : def.source$
+      def.signal$ = _.isFunction(check) ? def.source$.map(check) : def.source$;
 
       // changed = original != source
       // note: check may say it's invalid - but it's still changed!
@@ -108,7 +109,7 @@ lomake = (function () {
       // per element validation.
       menrva.combine(def.dirty$, def.changed$, def.submittable$, function (dirty, changed, submittable) {
         if ((dirty || changed) && !submittable) {
-          return "error"
+          return "error";
         } else if (changed) {
           return "pending";
         } else {
@@ -161,6 +162,7 @@ lomake = (function () {
     });
 
     var formSubmittable$ = menrva.record(_.mapValues(defs, "submittable$")).map(function (rec) {
+      console.log("formSubmittable", rec);
       return _.chain(rec).values().every().value();
     });
 
@@ -194,6 +196,7 @@ lomake = (function () {
     });
 
     formSubmittable$.onValue(function (submittable) {
+      console.log("toggling submitBtn", submitBtn);
       if (submittable) {
         submitBtn.classList.remove("alert");
         submitBtn.classList.add("success");
@@ -229,7 +232,7 @@ lomake = (function () {
                         break;
                     case "LomakeResponseError":
                         throw new Error(response.contents);
-                        break;
+                        // break;
                     case "LomakeResponseReload":
                         location.reload();
                         break;
@@ -246,7 +249,7 @@ lomake = (function () {
                 modalElement.innerText = "" + exc;
 
                 var btn = document.createElement("BUTTON");
-                btn.className = "button alert"
+                btn.className = "button alert";
                 btn.innerText = "Close";
 
                 buttonOnClick(btn, function () {
@@ -266,7 +269,7 @@ lomake = (function () {
       markDirty: markDirty,
       markClean: markClean,
     };
-  };
+  }
 
   // onload event
   futu.onload(function () {
@@ -280,7 +283,7 @@ lomake = (function () {
 
   // make a menrva.source with bi-directional binding.
   function menrvaInputValue($el) {
-    var value$ = menrva.source(inputValue($el), _.isEqual)
+    var value$ = menrva.source(inputValue($el), _.isEqual);
     var cb = function () {
       menrva.transaction()
         .set(value$, inputValue($el))
@@ -329,8 +332,7 @@ lomake = (function () {
       body: JSON.stringify(body),
     };
 
-    return fetch(url, opts)
-      .then(function (res) {
+    return fetch(url, opts).then(function (res) {
         if (res.status !== 200) {
           throw new Error("Non-200 status: " + res.status);
         }

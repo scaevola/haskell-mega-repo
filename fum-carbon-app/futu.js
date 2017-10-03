@@ -3,20 +3,20 @@ futu = (function () {
 
   function $(selector, el) {
     el = el || document;
-    return el.querySelector(selector, el);
+    return el.querySelector(selector);
   }
 
   // mandatory element
   function $_(selector, el) {
     el = el || document;
-    res = el.querySelector(selector, el);
+    var res = el.querySelector(selector);
     assert(res, "Non-existing element for selector: " + selector);
     return res;
   }
 
   function $$(selector, el) {
     el = el || document;
-    var res = el.querySelectorAll(selector, el);
+    var res = el.querySelectorAll(selector);
     return Array.prototype.slice.call(res);
   }
 
