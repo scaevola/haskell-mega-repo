@@ -90,6 +90,7 @@ library
       Futurice.App.FUM.Auth
       Futurice.App.FUM.Clay
       Futurice.App.FUM.Command
+      Futurice.App.FUM.Command.AddEmailToEmployee
       Futurice.App.FUM.Command.AddEmployeeToGroup
       Futurice.App.FUM.Command.Bootstrap
       Futurice.App.FUM.Command.CreateEmployee

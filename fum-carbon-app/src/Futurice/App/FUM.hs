@@ -52,6 +52,7 @@ commandServer ctx = cmdServer ctx
     :<|> cmdServer ctx
     :<|> cmdServer ctx
     :<|> cmdServer ctx
+    :<|> cmdServer ctx
 
 server :: Ctx -> Server FumCarbonApi
 server ctx = pagesServer ctx

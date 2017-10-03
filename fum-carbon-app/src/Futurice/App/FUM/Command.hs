@@ -10,6 +10,7 @@ module Futurice.App.FUM.Command (
     ICT (..),
     withCT,
     decodeSomeCommand,
+    module Futurice.App.FUM.Command.AddEmailToEmployee,
     module Futurice.App.FUM.Command.AddEmployeeToGroup,
     module Futurice.App.FUM.Command.Bootstrap,
     module Futurice.App.FUM.Command.Definition,
@@ -22,6 +23,7 @@ import Prelude ()
 import Data.Aeson.Types (parseEither, parseJSON)
 import Data.Functor.Alt ((<!>))
 
+import Futurice.App.FUM.Command.AddEmailToEmployee
 import Futurice.App.FUM.Command.AddEmployeeToGroup
 import Futurice.App.FUM.Command.Bootstrap
 import Futurice.App.FUM.Command.CreateEmployee
@@ -45,6 +47,7 @@ withSomeCommand (SomeCommand tag cmd) f = withCT tag (f tag cmd)
 
 -- | GADT representing different commands.
 data CT cmd where
+    CTAddEmailToEmployee :: CT AddEmailToEmployee
     CTAddEmployeeToGroup :: CT AddEmployeeToGroup
     CTBootstrap          :: CT Bootstrap
     CTCreateEmployee     :: CT CreateEmployee
@@ -54,12 +57,14 @@ deriving instance Show (CT cmd)
 
 -- | Implicit 'CT'.
 class    ICT cmd                where icommandTag :: CT cmd
+instance ICT AddEmailToEmployee where icommandTag = CTAddEmailToEmployee
 instance ICT AddEmployeeToGroup where icommandTag = CTAddEmployeeToGroup
 instance ICT Bootstrap          where icommandTag = CTBootstrap
 instance ICT CreateEmployee     where icommandTag = CTCreateEmployee
 instance ICT CreateGroup        where icommandTag = CTCreateGroup
 
 withCT :: CT cmd -> (Command cmd => r) -> r
+withCT CTAddEmailToEmployee f = f
 withCT CTAddEmployeeToGroup f = f
 withCT CTBootstrap f          = f
 withCT CTCreateEmployee f     = f
@@ -67,6 +72,7 @@ withCT CTCreateGroup f        = f
 
 decodeSomeCommand :: Text -> Value -> Either String SomeCommand
 decodeSomeCommand name payload =
+    ct CTAddEmailToEmployee <!>
     ct CTAddEmployeeToGroup <!>
     ct CTBootstrap <!>
     ct CTCreateEmployee <!>

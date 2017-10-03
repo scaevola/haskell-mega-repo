@@ -37,11 +37,24 @@ whenExists l action = do
 --
 canEditGroup
     :: MonadReader World m
-    => Login
+    => Login -- ^ editor
     -> GroupName
     -> m Bool
 canEditGroup l _ = isSudoer l
 -- TODO: implement rest
+
+-- | Can login edit other login?
+--
+-- * if `isSudoer`
+--
+-- * if same
+canEditEmployee
+    :: MonadReader World m
+    => Login -- ^ editor
+    -> Login
+    -> m Bool
+canEditEmployee l l' | l == l' = pure True
+canEditEmployee l _ = isSudoer l
 
 isSudoer :: MonadReader World m => Login -> m Bool
 isSudoer login = fmap (fromMaybe False) $ runMaybeT $ do

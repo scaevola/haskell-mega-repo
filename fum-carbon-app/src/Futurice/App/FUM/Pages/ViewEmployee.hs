@@ -78,7 +78,13 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
                 td_ $ toHtml email
                 td_ $ button_ [ class_ "button" ] "Remove"
 
-        todos_ [ "Remove doesn't work", "Add alias" ]
+        subheader_ "Add email address"
+        commandHtml' (Proxy :: Proxy AddEmailToEmployee) $
+            vHidden login :*
+            vNothing :*
+            Nil
+
+        todos_ [ "Add alias" ]
 
     block_ "SSH Keys" $ do
         todos_ [ "show", "management" ]
