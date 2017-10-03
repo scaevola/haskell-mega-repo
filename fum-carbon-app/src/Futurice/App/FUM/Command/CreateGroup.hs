@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns         #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE KindSignatures       #-}
@@ -8,8 +7,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Futurice.App.FUM.Command.CreateGroup (CreateGroup (..)) where
 
-import Control.Lens         (toListOf)
-import Control.Monad.Reader (asks)
 import Data.Maybe           (isJust)
 import Futurice.Generics
 import Futurice.Prelude
@@ -69,23 +66,11 @@ instance Command CreateGroup where
             , _groupCustomers    = mempty
             }
 
-        -- GIDs should be unique
-        gids <- asks $ toListOf (worldGroups . folded . groupGID)
-        for_ (firstDuplicate gids) $ \dupgid ->
-            throwError $ "Duplicate gid: "++ show dupgid
-
         -- make next GID one greater that any existing or current "next" GID.
-        worldNextGID %= \curr -> nextUnixID (maximum (curr : gids))
+        worldNextGID %= nextUnixID
 
         -- Redirect to the group page
         pure $ LomakeResponseRedirect $ viewGroupHrefText name
-
-firstDuplicate :: (Foldable f, Ord a) => f a -> Maybe a
-firstDuplicate = go Set.empty . toList where
-    go !_ []                = Nothing
-    go !xs (y:ys)
-        | y `Set.member` xs = Just y
-        | otherwise         = go (Set.insert y xs) ys
 
 validate :: (MonadReader World m, MonadError String m) => CreateGroup phase -> m ()
 validate cmd = do
