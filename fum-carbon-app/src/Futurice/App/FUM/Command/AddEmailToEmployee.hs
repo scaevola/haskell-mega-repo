@@ -28,8 +28,9 @@ deriveGeneric ''AddEmailToEmployee
 instance phase ~ 'Input => HasLomake (AddEmailToEmployee phase) where
     lomake _ =
         hiddenField "Login" :*
-        textFieldWithRegexp "Email address" "^.*@futurice\\.com$" :*
+        textFieldWithRegexp "Email address" emailKleene :*
         Nil
+
 
 instance phase ~ 'Internal => ToJSON (AddEmailToEmployee phase) where
     toJSON = sopToJSON

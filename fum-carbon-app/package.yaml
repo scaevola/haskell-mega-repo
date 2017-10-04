@@ -47,6 +47,7 @@ dependencies:
   - postgresql-simple
   - pretty-compact
   - QuickCheck
+  - range-set-list
   - recursion-schemes >= 5.0.1
   - reflection
   - regex-applicative

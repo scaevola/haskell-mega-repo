@@ -298,6 +298,7 @@ lomake = (function () {
         .commit();
     };
     $el.change(cb);
+    $el.keyup(cb);
 
     value$.onValue(function (value) {
       setInputValue($el, value);

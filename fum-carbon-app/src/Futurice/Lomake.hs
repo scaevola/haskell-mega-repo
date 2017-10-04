@@ -16,6 +16,7 @@ module Futurice.Lomake (
     SOP.IsProductType,
     ) where
 
+import Kleene
 import Control.Monad.Fail         (MonadFail)
 import Control.Monad.State.Strict
 import Data.Maybe                 (isNothing)
@@ -59,7 +60,7 @@ data Field a where
 
 data TextFieldOptions a = TextFieldOptions
     { tfoName   :: FieldName
-    , tfoRegexp :: Text -- TODO: proper type
+    , tfoRegexp :: Kleene Char String
     , tfoEncode :: a -> Text
     , tfoDecode :: Text -> Either Text a
     }
@@ -93,14 +94,14 @@ textField
     => FieldName -> Field a
 textField n = TextField TextFieldOptions
     { tfoName   = n
-    , tfoRegexp = ""
+    , tfoRegexp = kleeneEverything
     , tfoEncode = toQueryParam
     , tfoDecode = parseQueryParam
     }
 
 textFieldWithRegexp
     :: (ToHttpApiData a, FromHttpApiData a)
-    => FieldName -> Text -> Field a
+    => FieldName -> Kleene Char String -> Field a
 textFieldWithRegexp n re = TextField TextFieldOptions
     { tfoName   = n
     , tfoRegexp = re
@@ -113,7 +114,7 @@ hiddenField
     => FieldName -> Field a
 hiddenField n = HiddenField TextFieldOptions
     { tfoName   = n
-    , tfoRegexp = ""
+    , tfoRegexp = kleeneEverything
     , tfoEncode = toQueryParam
     , tfoDecode = parseQueryParam
     }
@@ -222,7 +223,8 @@ lomakeHtml formOpts fields names values =
                 , type_ "text"
                 , value_ $ vMaybe "" (tfoEncode opts) value
                 ] ++
-                [ data_ "lomake-regexp" $ tfoRegexp opts | "" /= tfoRegexp opts ]
+                [ data_ "lomake-regexp" $ kleeneToJS $ tfoRegexp opts
+                | not (isKleeneEverything (tfoRegexp opts)) ]
 
     render (EnumField opts) n v@VHidden {} =
         render (HiddenField opts') n v
