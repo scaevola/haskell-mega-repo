@@ -59,6 +59,7 @@ data Field a where
 
 data TextFieldOptions a = TextFieldOptions
     { tfoName   :: FieldName
+    , tfoRegexp :: Text -- TODO: proper type
     , tfoEncode :: a -> Text
     , tfoDecode :: Text -> Either Text a
     }
@@ -92,6 +93,17 @@ textField
     => FieldName -> Field a
 textField n = TextField TextFieldOptions
     { tfoName   = n
+    , tfoRegexp = ""
+    , tfoEncode = toQueryParam
+    , tfoDecode = parseQueryParam
+    }
+
+textFieldWithRegexp
+    :: (ToHttpApiData a, FromHttpApiData a)
+    => FieldName -> Text -> Field a
+textFieldWithRegexp n re = TextField TextFieldOptions
+    { tfoName   = n
+    , tfoRegexp = re
     , tfoEncode = toQueryParam
     , tfoDecode = parseQueryParam
     }
@@ -101,6 +113,7 @@ hiddenField
     => FieldName -> Field a
 hiddenField n = HiddenField TextFieldOptions
     { tfoName   = n
+    , tfoRegexp = ""
     , tfoEncode = toQueryParam
     , tfoDecode = parseQueryParam
     }
@@ -203,19 +216,21 @@ lomakeHtml formOpts fields names values =
     render (TextField opts) n value = do
         lift $ row_ $ large_ 12 $ label_ $ do
             toHtml (opts ^. fieldName) -- TODO: use label?
-            input_
+            input_ $
                 [ data_ "lomake-id" n
                 , name_ n
                 , type_ "text"
                 , value_ $ vMaybe "" (tfoEncode opts) value
-                ]
+                ] ++
+                [ data_ "lomake-regexp" $ tfoRegexp opts | "" /= tfoRegexp opts ]
 
     render (EnumField opts) n v@VHidden {} =
         render (HiddenField opts') n v
       where
         -- TODO: make 'Lens opts HiddenFieldOpts'
         opts' = TextFieldOptions
-            { tfoName = efoName opts
+            { tfoName   = efoName opts
+            , tfoRegexp = ""
             , tfoEncode = efoEncode opts
             , tfoDecode = efoDecode opts
             }

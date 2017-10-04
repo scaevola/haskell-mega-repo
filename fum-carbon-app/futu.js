@@ -27,10 +27,18 @@ futu = (function () {
     }
   }
 
+  function trace() {
+    // return;
+    var args = ["TRACE"].concat(_.toArray(arguments));
+    console.log.apply(console, args);
+  }
+
+  /*
   function traceCall(f, args) {
     var args = [f.name].concat(_.toArray(args));
     console.info.apply(console, args);
   }
+  */
 
   function buttonOnClick(btn, callback) {
     btn.addEventListener("click", function (e) {
@@ -88,5 +96,6 @@ futu = (function () {
     assert: assert,
     onload: onload,
     buttonOnClick: buttonOnClick,
+    trace: trace,
   };
 }());

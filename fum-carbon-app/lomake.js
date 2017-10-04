@@ -5,6 +5,7 @@ lomake = (function () {
   var $ = futu.$;
   var $_ = futu.$_;
   var $$ = futu.$$;
+  var trace = futu.trace;
   var buttonOnClick = futu.buttonOnClick;
 
   // forms
@@ -81,6 +82,13 @@ lomake = (function () {
         check = function (value) {
           return value === "" || value === "-" ? undefined : value;
         };
+      } else if (typeof el.dataset.lomakeRegexp === "string") {
+        var checkRegexp = new RegExp(el.dataset.lomakeRegexp);
+        trace(elName, "check regexp", checkRegexp);
+        check = function (value) {
+          var m = value.match(checkRegexp);
+          return m ? value : undefined;
+        };
       }
 
       // checked value
@@ -102,8 +110,8 @@ lomake = (function () {
       // dirty = "touched elements".
       def.dirty$ = menrva.source(false);
       $el.blur(function () {
+        trace(elName, "blur");
         menrva.transaction([def.dirty$, true]).commit();
-        console.log("blur");
       });
 
       // per element validation.
