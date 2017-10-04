@@ -82,6 +82,7 @@ library
     , unordered-containers
     , uuid
     , uuid-types
+    , writer-cps-mtl
   exposed-modules:
       Futurice.App.FUM
       Futurice.App.FUM.Ack
@@ -97,6 +98,7 @@ library
       Futurice.App.FUM.Command.CreateEmployee
       Futurice.App.FUM.Command.CreateGroup
       Futurice.App.FUM.Command.Definition
+      Futurice.App.FUM.Command.RemoveEmailFromEmployee
       Futurice.App.FUM.Config
       Futurice.App.FUM.Ctx
       Futurice.App.FUM.Lomake
@@ -190,6 +192,7 @@ executable fum-carbon-server
     , unordered-containers
     , uuid
     , uuid-types
+    , writer-cps-mtl
     , fum-carbon-app
   default-language: Haskell2010
 
@@ -256,6 +259,7 @@ test-suite unit-tests
     , unordered-containers
     , uuid
     , uuid-types
+    , writer-cps-mtl
     , tasty
     , tasty-quickcheck
     , fum-carbon-app

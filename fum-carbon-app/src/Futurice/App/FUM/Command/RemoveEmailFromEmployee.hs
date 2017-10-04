@@ -5,7 +5,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
-module Futurice.App.FUM.Command.AddEmailToEmployee (AddEmailToEmployee (..)) where
+module Futurice.App.FUM.Command.RemoveEmailFromEmployee (RemoveEmailFromEmployee (..)) where
 
 import Control.Lens      (contains, (.=))
 import Futurice.Generics
@@ -17,29 +17,29 @@ import Futurice.App.FUM.Command.Definition
 import Futurice.App.FUM.Pages.Href
 import Futurice.App.FUM.Types
 
-data AddEmailToEmployee (phase :: Phase) = AddEmailToEmployee
-    { aeeLogin :: !Login
-    , aeeEmail :: !Email
+data RemoveEmailFromEmployee (phase :: Phase) = RemoveEmailFromEmployee
+    { reeLogin :: !Login
+    , reeEmail :: !Email
     }
   deriving (Show, Typeable, Generic)
 
-deriveGeneric ''AddEmailToEmployee
+deriveGeneric ''RemoveEmailFromEmployee
 
-instance phase ~ 'Input => HasLomake (AddEmailToEmployee phase) where
+instance phase ~ 'Input => HasLomake (RemoveEmailFromEmployee phase) where
     lomake _ =
         hiddenField "Login" :*
-        textFieldWithRegexp "Email address" emailKleene :*
+        hiddenField "Email address" :*
         Nil
 
-instance phase ~ 'Internal => ToJSON (AddEmailToEmployee phase) where
+instance phase ~ 'Internal => ToJSON (RemoveEmailFromEmployee phase) where
     toJSON = sopToJSON
     toEncoding = sopToEncoding
 
-instance phase ~ 'Internal => FromJSON (AddEmailToEmployee phase) where
+instance phase ~ 'Internal => FromJSON (RemoveEmailFromEmployee phase) where
     parseJSON = sopParseJSON
 
-instance Command AddEmailToEmployee where
-    type CommandTag AddEmailToEmployee = "add-email-to-employee"
+instance Command RemoveEmailFromEmployee where
+    type CommandTag RemoveEmailFromEmployee = "remove-email-from-employee"
 
     internalizeCommand _now login rights cmd = do
         requireRights RightsNormal rights
@@ -48,27 +48,22 @@ instance Command AddEmailToEmployee where
 
     applyCommand _now login' cmd = do
         validate login' cmd
-        let login = aeeLogin cmd
+        let login = reeLogin cmd
 
-        worldEmployees . ix login . employeeEmailAliases . contains (aeeEmail cmd) .= True
+        worldEmployees . ix login . employeeEmailAliases . contains (reeEmail cmd) .= False
 
         pure $ LomakeResponseRedirect $ viewEmployeeHrefText login
 
 validate
     :: (MonadReader World m, MonadError String m)
-    => Login -> AddEmailToEmployee phase -> m ()
+    => Login -> RemoveEmailFromEmployee phase -> m ()
 validate login' cmd = do
-    let login = aeeLogin cmd
-
-    -- user exists
-    unlessExists (worldEmployees . ix login) $
-        throwError $ "Employee doesn't exist " ++ show (loginToText login)
+    let login = reeLogin cmd
 
     -- check rights
     unlessM (canEditEmployee login' login) $
         throwError $ "You cannot edit user " ++ show (loginToText login)
 
-    -- Check that emails is unique
-    emails <- view worldEmails
-    when (emails ^. contains (aeeEmail cmd)) $
-        throwError $ "Email already in use"
+    -- check that users has an email, this validates also that user exists.
+    unlessExists (worldEmployees . ix login . employeeEmailAliases . ix (reeEmail cmd)) $
+        throwError $ "Employee doesn't have that email alias"

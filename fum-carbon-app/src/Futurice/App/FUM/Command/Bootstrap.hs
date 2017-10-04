@@ -74,7 +74,8 @@ instance Command Bootstrap where
             , _employeePersonioId   = bootPersonioId cmd
             , _employeeStatus       = StatusActive
             , _employeeName         = bootName cmd
-            , _employeeEmailAliases = [ bootEmail cmd ]
+            , _employeeEmail        = bootEmail cmd
+            , _employeeEmailAliases = mempty
             , _employeeSshKeys      = []
             , _employeePicture      = Nothing
             , _employeePasswordExp  = now  -- TODO

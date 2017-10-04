@@ -67,6 +67,7 @@ dependencies:
   - unordered-containers
   - uuid
   - uuid-types
+  - writer-cps-mtl
 
 library:
   source-dirs: src

@@ -90,6 +90,9 @@ instance Pretty Text where
 instance Pretty a => Pretty [a] where
     pp = PP.list . map pp
 
+instance Pretty a => Pretty (Set a) where
+    pp = pp . toList
+
 instance Pretty Personio.EmployeeId where
     pp i = PP.annotate (H (const (toHtml i))) (PP.string "xxxxxx") -- TODO!
 
@@ -117,7 +120,8 @@ instance Pretty EmployeeX where
         , "uid"      <~ e ^. employeeUID
         , "personio" <~ e ^. employeePersonioId
         , "status"   <~ e ^. employeeStatus
-        , "emails"   <~ e ^. employeeEmailAliases
+        , "email"    <~ e ^. employeeEmail
+        , "aliases"  <~ e ^. employeeEmailAliases
         , "groups"   <~ gs
         ]
 

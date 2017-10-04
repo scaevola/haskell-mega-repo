@@ -21,9 +21,9 @@ lomake = (function () {
 
     // Elements
     var inputElements = $$("*[data-lomake-id]", formElement);
-    var resetBtn = $_("button[data-lomake-action=reset]", formElement);
+    var resetBtn = $("button[data-lomake-action=reset]", formElement);
     var submitBtn = $_("button[data-lomake-action=submit]", formElement);
-    console.log("elements", formName, resetBtn, submitBtn, inputElements);
+    trace("elements", formName, resetBtn, submitBtn, inputElements);
 
     // Collect inputs
     var defs = {};
@@ -160,51 +160,61 @@ lomake = (function () {
       menrva.transaction(tr).commit();
     }
 
+    // Can change?
+    // form with all hidden inputs cannot change,
+    // so submit button will be enable before change
+    var formCannotChange = _.chain(defs).values().map(function (def) {
+        return def.el.tagName === "INPUT" && def.el.type === "hidden";
+    }).every().value();
+
     // Form signals
-    var formChanged$ = menrva.record(_.mapValues(defs, "changed$")).map(function (rec) {
-      return _.chain(rec).values().some().value();
-    });
+    var formChanged$ = formCannotChange ? menrva.source(true) :
+      menrva.record(_.mapValues(defs, "changed$")).map(function (rec) {
+        return _.chain(rec).values().some().value();
+      });
 
     var formDirty$ = menrva.record(_.mapValues(defs, "dirty$")).map(function (rec) {
       return _.chain(rec).values().some().value();
     });
 
     var formSubmittable$ = menrva.record(_.mapValues(defs, "submittable$")).map(function (rec) {
-      console.log("formSubmittable", rec);
       return _.chain(rec).values().every().value();
     });
 
     // reset button state
-    menrvaSome(formChanged$, formDirty$).onValue(function (changed) {
-      resetBtn.disabled = !changed;
-    });
-
-    buttonOnClick(resetBtn, function () {
-      var tr = [];
-      _.forEach(defs, function (def) {
-        // we didn't touch the element
-        tr.push(def.dirty$);
-        tr.push(false);
-
-        // source value should be what the UI shows.
-        // TODO: menrva should support setting to the value of other signal!
-        // https://github.com/phadej/menrva/issues/16
-        tr.push(def.source$);
-        tr.push(def.original$.value());
+    if (resetBtn) {
+      menrvaSome(formChanged$, formDirty$).onValue(function (changed) {
+        resetBtn.disabled = !changed;
       });
 
-      menrva.transaction(tr).commit();
-    });
+      buttonOnClick(resetBtn, function () {
+        var tr = [];
+        _.forEach(defs, function (def) {
+          // we didn't touch the element
+          tr.push(def.dirty$);
+          tr.push(false);
+
+          // source value should be what the UI shows.
+          // TODO: menrva should support setting to the value of other signal!
+          // https://github.com/phadej/menrva/issues/16
+          tr.push(def.source$);
+          tr.push(def.original$.value());
+        });
+
+        menrva.transaction(tr).commit();
+      });
+    }
 
     // submit button state
     menrva.combine(formSubmittable$, formChanged$, function (submittable, changed) {
       return changed || !submittable;
     }).onValue(function (enabled) {
+      trace("toggling submitBtn disable", formName, submitBtn);
       submitBtn.disabled = !enabled;
     });
 
     formSubmittable$.onValue(function (submittable) {
-      console.log("toggling submitBtn", submitBtn);
+      trace("toggling submitBtn class", formName, submitBtn);
       if (submittable) {
         submitBtn.classList.remove("alert");
         submitBtn.classList.add("success");
@@ -220,7 +230,7 @@ lomake = (function () {
           return def.signal$.value();
         });
 
-        console.log("Submitting", formSubmitUrl, values);
+        trace("Submitting", formSubmitUrl, values);
 
         // Modal
         var modalElement = document.createElement("DIV");

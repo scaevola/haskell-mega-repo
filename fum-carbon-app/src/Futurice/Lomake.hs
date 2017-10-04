@@ -7,6 +7,10 @@
 {-# LANGUAGE UndecidableInstances    #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE UndecidableInstances  #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 -- | Simple but awesome form library.
 --
 -- /TODO:/ mode to @futurice-prelude@ after stabilised.
@@ -16,17 +20,18 @@ module Futurice.Lomake (
     SOP.IsProductType,
     ) where
 
-import Kleene
-import Control.Monad.Fail         (MonadFail)
-import Control.Monad.State.Strict
-import Data.Maybe                 (isNothing)
-import Data.Swagger               (NamedSchema (..))
+import Data.Monoid                 (Any (..))
+import Control.Monad.Fail        (MonadFail)
+import Control.Monad.Writer.CPS  (Writer, runWriter)
+import Data.Maybe                (isNothing)
+import Data.Swagger              (NamedSchema (..))
 import Futurice.Generics
-import Futurice.List              (UnSingleton)
+import Futurice.List             (UnSingleton)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
+import Kleene
 import Prelude ()
-import Servant.API                (Link)
+import Servant.API               (Link)
 
 -- import Generics.SOP              hiding (FieldName)
 
@@ -145,8 +150,9 @@ dynEnumField n = EnumField EnumFieldOptions
 
 -- | Form rendering options.
 data FormOptions = FormOptions
-    { foName :: !Text  -- ^ name of the form
-    , foUrl  :: !Link  -- ^ url where to submit the form
+    { foName        :: !Text          -- ^ name of the form
+    , foUrl         :: !Link          -- ^ url where to submit the form
+    , foSubmitStyle :: !(Text, Text)  -- ^ text, style of submit button
     }
   deriving (Show)
 
@@ -174,6 +180,7 @@ vMaybe :: b -> (a -> b) -> V a -> b
 vMaybe  def f (V x _)     = maybe def f x
 vMaybe _def f (VHidden x) = f x
 
+
 -- | Render lomake HTML form.
 lomakeHtml
     :: forall xs m. Monad m
@@ -185,27 +192,37 @@ lomakeHtml
 lomakeHtml formOpts fields names values =
     row_ formAttributes $ large_ 12 $ do
         -- inputs
-        evalStateT (go fields names values) mempty
+        let (elementHtml, Any anyNonHidden) =
+                runWriter $ commuteHtmlT $ go fields names values
+        elementHtml
 
         -- buttons
-        row_ $ large_ 12 $ div_ [ class_ "button-group" ] $ do
-            button_ [ class_ "button success", data_ "lomake-action" "submit", disabled_ "disabled" ] "Submit"
-            button_ [ class_ "button", data_ "lomake-action" "reset", disabled_ "disabled" ] "Reset"
+        row_ $ large_ 12 $ div_ [ class_ "button-group" ] $
+            if anyNonHidden
+            then do
+                button_ [ classes_ [ "button", submitClass ], data_ "lomake-action" "submit", disabled_ "disabled" ] (toHtml submitValue)
+                button_ [ class_ "button", data_ "lomake-action" "reset", disabled_ "disabled" ] "Reset"
+            else
+                button_ [ classes_ [ "button", submitClass ], data_ "lomake-action" "submit" ] (toHtml submitValue)
   where
+    submitValue = fst $ foSubmitStyle formOpts
+    submitClass = snd $ foSubmitStyle formOpts
+
     formAttributes =
         [ data_ "lomake-form" $ foName formOpts
         , data_ "lomake-form-submit" $ "/" <> toUrlPiece (foUrl formOpts)
         ]
 
-    go :: NP Field ys -> NP (K Text) ys -> NP V ys -> StateT () (HtmlT m) ()
+    go :: NP Field ys -> NP (K Text) ys -> NP V ys -> HtmlT (Writer Any) ()
     go (f :* fs) (K n :* ns) (x :* xs) = render f n x >> go fs ns xs
     go Nil Nil Nil                     = pure ()
 
-    render :: forall a. Field a -> Text -> V a -> StateT () (HtmlT m) ()
+    -- State tells whether we have non-hidden elements
+    render :: forall a. Field a -> Text -> V a -> HtmlT (Writer Any) ()
     render UnitField _ _value = pure ()
 
     render (HiddenField opts) n value = do
-        lift $ input_
+        input_
             [ data_ "lomake-id" n
             , name_ n
             , type_ "hidden"
@@ -215,7 +232,8 @@ lomakeHtml formOpts fields names values =
     render (TextField opts) n v@VHidden {} =
         render (HiddenField opts) n v
     render (TextField opts) n value = do
-        lift $ row_ $ large_ 12 $ label_ $ do
+        tell (Any True)
+        row_ $ large_ 12 $ label_ $ do
             toHtml (opts ^. fieldName) -- TODO: use label?
             input_ $
                 [ data_ "lomake-id" n
@@ -240,7 +258,7 @@ lomakeHtml formOpts fields names values =
     render (EnumField opts) n value = do
         let p = efoEncode opts
         let mValue = vMaybe Nothing Just value
-        lift $ row_ $ large_ 12 $ label_ $ do
+        row_ $ large_ 12 $ label_ $ do
             toHtml (opts ^. fieldName) -- TODO: use label?
             select_ [ data_ "lomake-id" n, name_ n ] $ do
                 when (isNothing mValue) $
@@ -332,3 +350,13 @@ instance ToJSON LomakeResponse
 instance FromJSON LomakeResponse
 instance ToSchema LomakeResponse where
     declareNamedSchema = S.genericDeclareNamedSchemaUnrestricted S.defaultSchemaOptions
+
+-------------------------------------------------------------------------------
+-- temp
+-------------------------------------------------------------------------------
+instance MonadWriter w m => MonadWriter w (HtmlT m) where
+    tell = lift . tell
+    listen = undefined
+    pass = undefined
+
+

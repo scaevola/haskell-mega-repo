@@ -76,15 +76,16 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
         fullRow_ $ table_ $ tbody_ $
             for_ (e ^.. employeeEmailAliases . folded) $ \email -> tr_ $ do
                 td_ $ toHtml email
-                td_ $ button_ [ class_ "button" ] "Remove"
+                td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveEmailFromEmployee) "Remove" "alert" $
+                    vHidden login :*
+                    vHidden email :*
+                    Nil
 
         subheader_ "Add email address"
         commandHtml' (Proxy :: Proxy AddEmailToEmployee) $
             vHidden login :*
             vNothing :*
             Nil
-
-        todos_ [ "Add alias" ]
 
     block_ "SSH Keys" $ do
         todos_ [ "show", "management" ]

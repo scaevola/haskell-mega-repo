@@ -24,7 +24,7 @@ data CreateEmployee (phase :: Phase) = CreateEmployee
     , ceLogin      :: !Login
     , ceStatus     :: !Status
     , ceName       :: !Text
-    , ceEmail      :: !Text
+    , ceEmail      :: !Email
     }
   deriving (Typeable, Generic)
 
@@ -66,7 +66,8 @@ instance Command CreateEmployee where
             , _employeePersonioId   = cePersonioId cmd
             , _employeeStatus       = ceStatus cmd
             , _employeeName         = ceName cmd
-            , _employeeEmailAliases = [ ceEmail cmd ]
+            , _employeeEmail        = ceEmail cmd
+            , _employeeEmailAliases = mempty
             , _employeeSshKeys      = []
             , _employeePicture      = Nothing
             , _employeePasswordExp  = now  -- TODO

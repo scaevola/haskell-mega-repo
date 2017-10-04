@@ -98,7 +98,8 @@ worldEmployeeGroups = getter _worldEmployeeGroups
 -- | TODO: change to Map Email Owner?
 worldEmails :: Getter World (Set Email)
 worldEmails = getter $ \w -> mconcat
-    [ setOf (worldEmployees . folded . employeeEmailAliases . folded) w
+    [ setOf (worldEmployees . folded . employeeEmail) w
+    , setOf (worldEmployees . folded . employeeEmailAliases . folded) w
     , setOf (worldGroups . folded . groupEmailAliases . folded) w
     , setOf (worldMailboxes . folded . mailboxEmail) w
     , setOf (worldMailboxes . folded . mailboxEmailAliases . folded) w

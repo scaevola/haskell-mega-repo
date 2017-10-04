@@ -30,6 +30,7 @@ type FumCarbonCommandApi = CommandEndpoint Bootstrap
     :<|> CommandEndpoint AddEmployeeToGroup
     :<|> CommandEndpoint CreateEmployee
     :<|> CommandEndpoint CreateGroup
+    :<|> CommandEndpoint RemoveEmailFromEmployee
 
 type FumCarbonMachineApi =
     "personio-request" :> ReqBody '[JSON] Personio.SomePersonioReq :> Post '[JSON] Personio.SomePersonioRes
