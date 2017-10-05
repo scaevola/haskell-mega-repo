@@ -22,6 +22,7 @@ module Personio.Types (
 
 import Control.Monad.Writer        (WriterT, execWriterT, unless)
 import Data.Aeson.Compat
+import Data.Fixed (Centi)
 import Data.Aeson.Types            (typeMismatch)
 import Data.Char                   (ord)
 import Data.List                   (foldl')
@@ -35,6 +36,7 @@ import Futurice.Generics
 import Futurice.IdMap              (HasKey (..))
 import Futurice.Office
 import Futurice.Prelude
+import Futurice.Time
 import Futurice.Tribe
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym, string)
@@ -80,6 +82,8 @@ data Employee = Employee
     , _employeeContractType   :: !(Maybe ContractType)
     , _employeeHomePhone      :: !(Maybe Text)
     , _employeePosition       :: !(Maybe Text)  -- ^ aka "title", /TODO/: make own type and non-Maybe.
+    , _employeeWeeklyHours    :: !(NDT 'Hours Centi)
+    , _employeeExpat          :: !Bool
 #ifdef PERSONIO_DEBUG
     , _employeeRest           :: !(HashMap Text Attribute)
 #endif
@@ -154,6 +158,8 @@ parseEmployeeObject obj' = Employee
     <*> optional (parseDynamicAttribute obj "Contract type")
     <*> parseDynamicAttribute obj "Private phone"
     <*> parseAttribute obj "position"
+    <*> fmap getWeeklyHours (parseAttribute obj "weekly_working_hours")
+    <*> fmap getExpat (parseDynamicAttribute obj  "Expat")
 #ifdef PERSONIO_DEBUG
     <*> pure obj' -- for employeeRest field
 #endif
@@ -211,6 +217,22 @@ instance FromJSON FlowdockId where
 
 flowdockRegexp :: RE' Word64
 flowdockRegexp = string "https://www.flowdock.com/app/private/" *> RE.decimal
+
+newtype Expat = Expat { getExpat :: Bool }
+
+instance FromJSON Expat where
+    parseJSON = withText "Expat" $ \t -> pure . Expat $ case t of
+        "Yes" -> True
+        _     -> False  -- lenient
+
+newtype WeeklyHours = WeeklyHours { getWeeklyHours :: NDT 'Hours Centi }
+
+instance FromJSON WeeklyHours where
+    parseJSON (String t) = case readMaybe (t ^. unpacked) of
+        Nothing -> fail $ "Hours: " ++ show t
+        Just x  -> pure (WeeklyHours (NDT x))
+    parseJSON (Number n) = pure (WeeklyHours (realToFrac n))
+    parseJSON v          = typeMismatch "WeeklyHours" v
 
 -------------------------------------------------------------------------------
 -- Validation
