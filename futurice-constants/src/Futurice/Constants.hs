@@ -6,6 +6,7 @@ module Futurice.Constants (
     personioPublicUrlStr,
     planmillPublicUrl,
     planmillPublicUrlStr,
+    competenceMap,
     ) where
 
 import Futurice.Prelude
@@ -41,3 +42,6 @@ planmillPublicUrl = I.planmillPublicUrl constants
 
 planmillPublicUrlStr :: String
 planmillPublicUrlStr = planmillPublicUrl ^. unpacked
+
+competenceMap :: Map Text Text
+competenceMap = I.competenceMap constants

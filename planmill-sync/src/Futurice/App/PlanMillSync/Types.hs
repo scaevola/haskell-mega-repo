@@ -27,6 +27,8 @@ users = do
         p <- PMQ.enumerationValue (PM.uPassive u) "Unknown active status"
         pure PMUser
             { pmUser     = u'
+                { PM.uCompetence = PM.uCompetence u <|> PM.uCompetence u'
+                }
             , pmTeam     = t
             , pmContract = c
             , pmAccount  = a

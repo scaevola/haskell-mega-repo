@@ -35,6 +35,7 @@ library
     , aeson-compat
     , env-config
     , fum-types
+    , futurice-constants
     , futurice-foundation
     , futurice-integrations
     , futurice-prelude

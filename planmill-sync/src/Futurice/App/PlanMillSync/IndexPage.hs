@@ -18,6 +18,7 @@ import Data.Maybe                  (isNothing)
 import Data.Monoid                 (Any (..))
 import Data.Ord                    (Down (..))
 import Data.These                  (_That, _These, _This)
+import Futurice.Constants          (competenceMap)
 import Futurice.Lucid.Foundation
 import Futurice.Office             (Office (..))
 import Futurice.Prelude
@@ -136,6 +137,7 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
             th_ "Expat"
             th_ "PM Account"
             th_ "PM email"
+            th_ "Competence"
 
         tbody_ $ do
             let elements0 = itoListWithOf (ifolded . _These) processBoth employees
@@ -278,6 +280,16 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
                     markFixableCell "Email should be `login`@futurice.com"
                     toHtml e
 
+        -- Role & Competence
+        cell_ $ do
+            let pCompetence  = p ^. P.employeeRole
+            let pmCompetence = PM.uCompetence pmu
+            toHtml pCompetence
+            unless (eqCompareCompetence pCompetence pmCompetence) $ do
+                markErrorCell "Competences don't match"
+                " ≠ "
+                traverse_ toHtml pmCompetence
+
     planmillMap :: Map FUM.Login PMUser
     planmillMap = toMapOf (folded . getter f . _Just . ifolded) planmills
       where
@@ -315,6 +327,21 @@ personioHtml p = fst $ runWriter $ commuteHtmlT $ do
         Just x | x > 0 -> toHtml (show x) -- TODO: remove check, fix personio-client
         _ -> when (p ^. P.employeeOffice `elem` [OffHelsinki, OffTampere]) $
             markErrorCell "HR Number is required for people working in Finland"
+
+-------------------------------------------------------------------------------
+-- Competence
+-------------------------------------------------------------------------------
+
+eqCompareCompetence :: Text -> Maybe Text -> Bool
+eqCompareCompetence _ Nothing = False
+eqCompareCompetence p (Just pm) = eq (T.toLower p) (T.toLower pm')
+  where
+    pm' = T.strip $ T.takeWhile (/= '(') pm
+
+    eq x y | competenceMap ^. at x == Just y = True
+    -- Temporary
+    eq _ "sub contractors" = True
+    eq x y = x == y
 
 -------------------------------------------------------------------------------
 --
