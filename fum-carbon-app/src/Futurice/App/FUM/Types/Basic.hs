@@ -46,7 +46,8 @@ data Employee = Employee
     , _employeePersonioId     :: !P.EmployeeId     -- ^ @123@, provides information to names, contract data etc.
     , _employeeStatus         :: !Status           -- ^ "futurice status", importantly not directly the google status.
     , _employeeName           :: !Text             -- ^ name, periodically sync'd from personio
-    , _employeeEmailAliases   :: ![Email]
+    , _employeeEmail          :: !Email
+    , _employeeEmailAliases   :: !(Set Email)
     , _employeeSshKeys        :: ![SshKey]
     , _employeePicture        :: !(Maybe Picture)
     , _employeePasswordExp    :: !UTCTime          -- ^ password expiration date, does LDAP expires?

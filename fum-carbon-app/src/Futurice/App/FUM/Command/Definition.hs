@@ -105,7 +105,15 @@ commandHtml'
     => Proxy cmd
     -> NP V (LomakeCode (cmd 'Input))
     -> HtmlT m ()
-commandHtml' p = lomakeHtml
+commandHtml' p = commandHtmlSubmit p "Submit" "success"
+
+commandHtmlSubmit
+    :: forall cmd m. (Command cmd, Monad m)
+    => Proxy cmd
+    -> Text -> Text
+    -> NP V (LomakeCode (cmd 'Input))
+    -> HtmlT m ()
+commandHtmlSubmit p submitName submitStyle = lomakeHtml
     commandFormOptions
     (lomake cmdp)
     (strippedFieldNames cmdp)
@@ -114,8 +122,9 @@ commandHtml' p = lomakeHtml
 
     commandFormOptions :: FormOptions
     commandFormOptions = FormOptions
-        { foName = commandTag p <> "-form"
-        , foUrl  = safeLink ep ep
+        { foName        = commandTag p <> "-form"
+        , foUrl         = safeLink ep ep
+        , foSubmitStyle = (submitName, submitStyle)
         }
 
     ep :: Proxy ("commands" :> CommandEndpoint cmd)

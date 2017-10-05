@@ -62,6 +62,7 @@ library
     , postgresql-simple
     , pretty-compact
     , QuickCheck
+    , range-set-list
     , recursion-schemes >= 5.0.1
     , reflection
     , regex-applicative
@@ -81,6 +82,7 @@ library
     , unordered-containers
     , uuid
     , uuid-types
+    , writer-cps-mtl
   exposed-modules:
       Futurice.App.FUM
       Futurice.App.FUM.Ack
@@ -90,11 +92,13 @@ library
       Futurice.App.FUM.Auth
       Futurice.App.FUM.Clay
       Futurice.App.FUM.Command
+      Futurice.App.FUM.Command.AddEmailToEmployee
       Futurice.App.FUM.Command.AddEmployeeToGroup
       Futurice.App.FUM.Command.Bootstrap
       Futurice.App.FUM.Command.CreateEmployee
       Futurice.App.FUM.Command.CreateGroup
       Futurice.App.FUM.Command.Definition
+      Futurice.App.FUM.Command.RemoveEmailFromEmployee
       Futurice.App.FUM.Config
       Futurice.App.FUM.Ctx
       Futurice.App.FUM.Lomake
@@ -116,12 +120,14 @@ library
       Futurice.App.FUM.Transactor
       Futurice.App.FUM.Types
       Futurice.App.FUM.Types.Basic
+      Futurice.App.FUM.Types.Email
       Futurice.App.FUM.Types.GroupType
       Futurice.App.FUM.Types.Identifier
       Futurice.App.FUM.Types.Status
       Futurice.App.FUM.Types.UnixID
       Futurice.App.FUM.Types.World
       Futurice.Lomake
+      Kleene
   default-language: Haskell2010
 
 executable fum-carbon-server
@@ -166,6 +172,7 @@ executable fum-carbon-server
     , postgresql-simple
     , pretty-compact
     , QuickCheck
+    , range-set-list
     , recursion-schemes >= 5.0.1
     , reflection
     , regex-applicative
@@ -185,6 +192,7 @@ executable fum-carbon-server
     , unordered-containers
     , uuid
     , uuid-types
+    , writer-cps-mtl
     , fum-carbon-app
   default-language: Haskell2010
 
@@ -231,6 +239,7 @@ test-suite unit-tests
     , postgresql-simple
     , pretty-compact
     , QuickCheck
+    , range-set-list
     , recursion-schemes >= 5.0.1
     , reflection
     , regex-applicative
@@ -250,6 +259,7 @@ test-suite unit-tests
     , unordered-containers
     , uuid
     , uuid-types
+    , writer-cps-mtl
     , tasty
     , tasty-quickcheck
     , fum-carbon-app

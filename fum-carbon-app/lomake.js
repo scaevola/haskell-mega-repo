@@ -5,6 +5,7 @@ lomake = (function () {
   var $ = futu.$;
   var $_ = futu.$_;
   var $$ = futu.$$;
+  var trace = futu.trace;
   var buttonOnClick = futu.buttonOnClick;
 
   // forms
@@ -13,15 +14,16 @@ lomake = (function () {
   // initialisation
   function initialiseForm(formElement) {
     var formName = formElement.dataset.lomakeForm;
-    console.info("found lomake: ", formName);
+    console.info("found lomake: ", formName, formElement);
 
     // The url where we will submit the form.
     var formSubmitUrl = formElement.dataset.lomakeFormSubmit;
 
     // Elements
-    var inputElements = $$("*[data-lomake-id");
-    var resetBtn = $_("button[data-lomake-action=reset]", formElement);
+    var inputElements = $$("*[data-lomake-id]", formElement);
+    var resetBtn = $("button[data-lomake-action=reset]", formElement);
     var submitBtn = $_("button[data-lomake-action=submit]", formElement);
+    trace("elements", formName, resetBtn, submitBtn, inputElements);
 
     // Collect inputs
     var defs = {};
@@ -52,7 +54,7 @@ lomake = (function () {
               });
               return data;
             }
-          }
+          };
         }
         $el = jQuery(el).select2(opts);
       } else {
@@ -79,11 +81,18 @@ lomake = (function () {
       if (el.tagName === "SELECT") {
         check = function (value) {
           return value === "" || value === "-" ? undefined : value;
-        }
+        };
+      } else if (typeof el.dataset.lomakeRegexp === "string") {
+        var checkRegexp = new RegExp(el.dataset.lomakeRegexp);
+        trace(elName, "check regexp", checkRegexp);
+        check = function (value) {
+          var m = value.match(checkRegexp);
+          return m ? value : undefined;
+        };
       }
 
       // checked value
-      def.signal$ = _.isFunction(check) ? def.source$.map(check) : def.source$
+      def.signal$ = _.isFunction(check) ? def.source$.map(check) : def.source$;
 
       // changed = original != source
       // note: check may say it's invalid - but it's still changed!
@@ -101,14 +110,14 @@ lomake = (function () {
       // dirty = "touched elements".
       def.dirty$ = menrva.source(false);
       $el.blur(function () {
+        trace(elName, "blur");
         menrva.transaction([def.dirty$, true]).commit();
-        console.log("blur");
       });
 
       // per element validation.
       menrva.combine(def.dirty$, def.changed$, def.submittable$, function (dirty, changed, submittable) {
         if ((dirty || changed) && !submittable) {
-          return "error"
+          return "error";
         } else if (changed) {
           return "pending";
         } else {
@@ -151,10 +160,18 @@ lomake = (function () {
       menrva.transaction(tr).commit();
     }
 
+    // Can change?
+    // form with all hidden inputs cannot change,
+    // so submit button will be enable before change
+    var formCannotChange = _.chain(defs).values().map(function (def) {
+        return def.el.tagName === "INPUT" && def.el.type === "hidden";
+    }).every().value();
+
     // Form signals
-    var formChanged$ = menrva.record(_.mapValues(defs, "changed$")).map(function (rec) {
-      return _.chain(rec).values().some().value();
-    });
+    var formChanged$ = formCannotChange ? menrva.source(true) :
+      menrva.record(_.mapValues(defs, "changed$")).map(function (rec) {
+        return _.chain(rec).values().some().value();
+      });
 
     var formDirty$ = menrva.record(_.mapValues(defs, "dirty$")).map(function (rec) {
       return _.chain(rec).values().some().value();
@@ -165,35 +182,39 @@ lomake = (function () {
     });
 
     // reset button state
-    menrvaSome(formChanged$, formDirty$).onValue(function (changed) {
-      resetBtn.disabled = !changed;
-    });
-
-    buttonOnClick(resetBtn, function () {
-      var tr = [];
-      _.forEach(defs, function (def) {
-        // we didn't touch the element
-        tr.push(def.dirty$);
-        tr.push(false);
-
-        // source value should be what the UI shows.
-        // TODO: menrva should support setting to the value of other signal!
-        // https://github.com/phadej/menrva/issues/16
-        tr.push(def.source$);
-        tr.push(def.original$.value());
+    if (resetBtn) {
+      menrvaSome(formChanged$, formDirty$).onValue(function (changed) {
+        resetBtn.disabled = !changed;
       });
 
-      menrva.transaction(tr).commit();
-    });
+      buttonOnClick(resetBtn, function () {
+        var tr = [];
+        _.forEach(defs, function (def) {
+          // we didn't touch the element
+          tr.push(def.dirty$);
+          tr.push(false);
+
+          // source value should be what the UI shows.
+          // TODO: menrva should support setting to the value of other signal!
+          // https://github.com/phadej/menrva/issues/16
+          tr.push(def.source$);
+          tr.push(def.original$.value());
+        });
+
+        menrva.transaction(tr).commit();
+      });
+    }
 
     // submit button state
     menrva.combine(formSubmittable$, formChanged$, function (submittable, changed) {
       return changed || !submittable;
     }).onValue(function (enabled) {
+      trace("toggling submitBtn disable", formName, submitBtn);
       submitBtn.disabled = !enabled;
     });
 
     formSubmittable$.onValue(function (submittable) {
+      trace("toggling submitBtn class", formName, submitBtn);
       if (submittable) {
         submitBtn.classList.remove("alert");
         submitBtn.classList.add("success");
@@ -209,7 +230,7 @@ lomake = (function () {
           return def.signal$.value();
         });
 
-        console.log("Submitting", formSubmitUrl, values);
+        trace("Submitting", formSubmitUrl, values);
 
         // Modal
         var modalElement = document.createElement("DIV");
@@ -229,7 +250,7 @@ lomake = (function () {
                         break;
                     case "LomakeResponseError":
                         throw new Error(response.contents);
-                        break;
+                        // break;
                     case "LomakeResponseReload":
                         location.reload();
                         break;
@@ -246,7 +267,7 @@ lomake = (function () {
                 modalElement.innerText = "" + exc;
 
                 var btn = document.createElement("BUTTON");
-                btn.className = "button alert"
+                btn.className = "button alert";
                 btn.innerText = "Close";
 
                 buttonOnClick(btn, function () {
@@ -266,7 +287,7 @@ lomake = (function () {
       markDirty: markDirty,
       markClean: markClean,
     };
-  };
+  }
 
   // onload event
   futu.onload(function () {
@@ -280,13 +301,14 @@ lomake = (function () {
 
   // make a menrva.source with bi-directional binding.
   function menrvaInputValue($el) {
-    var value$ = menrva.source(inputValue($el), _.isEqual)
+    var value$ = menrva.source(inputValue($el), _.isEqual);
     var cb = function () {
       menrva.transaction()
         .set(value$, inputValue($el))
         .commit();
     };
     $el.change(cb);
+    $el.keyup(cb);
 
     value$.onValue(function (value) {
       setInputValue($el, value);
@@ -329,8 +351,7 @@ lomake = (function () {
       body: JSON.stringify(body),
     };
 
-    return fetch(url, opts)
-      .then(function (res) {
+    return fetch(url, opts).then(function (res) {
         if (res.status !== 200) {
           throw new Error("Non-200 status: " + res.status);
         }

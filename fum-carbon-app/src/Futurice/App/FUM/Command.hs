@@ -10,23 +10,27 @@ module Futurice.App.FUM.Command (
     ICT (..),
     withCT,
     decodeSomeCommand,
+    module Futurice.App.FUM.Command.AddEmailToEmployee,
     module Futurice.App.FUM.Command.AddEmployeeToGroup,
     module Futurice.App.FUM.Command.Bootstrap,
     module Futurice.App.FUM.Command.Definition,
     module Futurice.App.FUM.Command.CreateEmployee,
     module Futurice.App.FUM.Command.CreateGroup,
+    module Futurice.App.FUM.Command.RemoveEmailFromEmployee,
     ) where
 
-import Futurice.Prelude
-import Prelude ()
 import Data.Aeson.Types (parseEither, parseJSON)
 import Data.Functor.Alt ((<!>))
+import Futurice.Prelude
+import Prelude ()
 
+import Futurice.App.FUM.Command.AddEmailToEmployee
 import Futurice.App.FUM.Command.AddEmployeeToGroup
 import Futurice.App.FUM.Command.Bootstrap
 import Futurice.App.FUM.Command.CreateEmployee
 import Futurice.App.FUM.Command.CreateGroup
 import Futurice.App.FUM.Command.Definition
+import Futurice.App.FUM.Command.RemoveEmailFromEmployee
 
 -- | Existential command, union of all commands.
 data SomeCommand where
@@ -45,32 +49,40 @@ withSomeCommand (SomeCommand tag cmd) f = withCT tag (f tag cmd)
 
 -- | GADT representing different commands.
 data CT cmd where
-    CTAddEmployeeToGroup :: CT AddEmployeeToGroup
-    CTBootstrap          :: CT Bootstrap
-    CTCreateEmployee     :: CT CreateEmployee
-    CTCreateGroup        :: CT CreateGroup
+    CTAddEmailToEmployee      :: CT AddEmailToEmployee
+    CTAddEmployeeToGroup      :: CT AddEmployeeToGroup
+    CTBootstrap               :: CT Bootstrap
+    CTCreateEmployee          :: CT CreateEmployee
+    CTCreateGroup             :: CT CreateGroup
+    CTRemoveEmailFromEmployee :: CT RemoveEmailFromEmployee
 
 deriving instance Show (CT cmd)
 
 -- | Implicit 'CT'.
-class    ICT cmd                where icommandTag :: CT cmd
-instance ICT AddEmployeeToGroup where icommandTag = CTAddEmployeeToGroup
-instance ICT Bootstrap          where icommandTag = CTBootstrap
-instance ICT CreateEmployee     where icommandTag = CTCreateEmployee
-instance ICT CreateGroup        where icommandTag = CTCreateGroup
+class    ICT cmd                     where icommandTag :: CT cmd
+instance ICT AddEmailToEmployee      where icommandTag = CTAddEmailToEmployee
+instance ICT AddEmployeeToGroup      where icommandTag = CTAddEmployeeToGroup
+instance ICT Bootstrap               where icommandTag = CTBootstrap
+instance ICT CreateEmployee          where icommandTag = CTCreateEmployee
+instance ICT CreateGroup             where icommandTag = CTCreateGroup
+instance ICT RemoveEmailFromEmployee where icommandTag = CTRemoveEmailFromEmployee
 
 withCT :: CT cmd -> (Command cmd => r) -> r
+withCT CTAddEmailToEmployee f = f
 withCT CTAddEmployeeToGroup f = f
 withCT CTBootstrap f          = f
 withCT CTCreateEmployee f     = f
 withCT CTCreateGroup f        = f
+withCT CTRemoveEmailFromEmployee f = f
 
 decodeSomeCommand :: Text -> Value -> Either String SomeCommand
 decodeSomeCommand name payload =
+    ct CTAddEmailToEmployee <!>
     ct CTAddEmployeeToGroup <!>
     ct CTBootstrap <!>
     ct CTCreateEmployee <!>
     ct CTCreateGroup <!>
+    ct CTRemoveEmailFromEmployee <!>
     Left ("Unknown or corrupt command: " ++ show name ++ " = " ++ show payload)
   where
     ct :: CT cmd -> Either String SomeCommand

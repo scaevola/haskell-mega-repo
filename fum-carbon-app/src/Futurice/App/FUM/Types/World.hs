@@ -16,11 +16,14 @@ module Futurice.App.FUM.Types.World (
     worldSudoGroup,
     worldNextUID,
     worldNextGID,
+    -- * Getters
     worldEmployeeGroups,
+    worldEmails,
     ) where
 
 import Control.Lens         (contains, toListOf)
 import Control.Monad.Reader (asks)
+import Data.Set.Lens        (setOf)
 import Futurice.IdMap       (IdMap)
 import Futurice.Prelude
 import Prelude ()
@@ -91,6 +94,16 @@ worldNextGID f w = fmap
 worldEmployeeGroups :: Getter World (Map Login (IdMap Group))
 worldEmployeeGroups = getter _worldEmployeeGroups
 {-# INLINE worldEmployeeGroups #-}
+
+-- | TODO: change to Map Email Owner?
+worldEmails :: Getter World (Set Email)
+worldEmails = getter $ \w -> mconcat
+    [ setOf (worldEmployees . folded . employeeEmail) w
+    , setOf (worldEmployees . folded . employeeEmailAliases . folded) w
+    , setOf (worldGroups . folded . groupEmailAliases . folded) w
+    , setOf (worldMailboxes . folded . mailboxEmail) w
+    , setOf (worldMailboxes . folded . mailboxEmailAliases . folded) w
+    ]
 
 -- | Empty, virgin world.
 emptyWorld :: World

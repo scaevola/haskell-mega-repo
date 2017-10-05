@@ -3,20 +3,20 @@ futu = (function () {
 
   function $(selector, el) {
     el = el || document;
-    return el.querySelector(selector, el);
+    return el.querySelector(selector);
   }
 
   // mandatory element
   function $_(selector, el) {
     el = el || document;
-    res = el.querySelector(selector, el);
+    var res = el.querySelector(selector);
     assert(res, "Non-existing element for selector: " + selector);
     return res;
   }
 
   function $$(selector, el) {
     el = el || document;
-    var res = el.querySelectorAll(selector, el);
+    var res = el.querySelectorAll(selector);
     return Array.prototype.slice.call(res);
   }
 
@@ -27,10 +27,18 @@ futu = (function () {
     }
   }
 
+  function trace() {
+    // return;
+    var args = ["TRACE"].concat(_.toArray(arguments));
+    console.log.apply(console, args);
+  }
+
+  /*
   function traceCall(f, args) {
     var args = [f.name].concat(_.toArray(args));
     console.info.apply(console, args);
   }
+  */
 
   function buttonOnClick(btn, callback) {
     btn.addEventListener("click", function (e) {
@@ -88,5 +96,6 @@ futu = (function () {
     assert: assert,
     onload: onload,
     buttonOnClick: buttonOnClick,
+    trace: trace,
   };
 }());
