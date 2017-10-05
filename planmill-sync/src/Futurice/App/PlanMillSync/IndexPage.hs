@@ -12,6 +12,7 @@ module Futurice.App.PlanMillSync.IndexPage (indexPage) where
 import Control.Lens                (IndexedGetting, ifoldMapOf, iforOf_)
 import Control.Monad.Writer.CPS    (Writer, runWriter)
 import Data.Char                   (isDigit)
+import Data.Fixed                  (Centi)
 import Data.Map.Lens               (toMapOf)
 import Data.Maybe                  (isNothing)
 import Data.Monoid                 (Any (..))
@@ -20,6 +21,7 @@ import Data.These                  (_That, _These, _This)
 import Futurice.Lucid.Foundation
 import Futurice.Office             (Office (..))
 import Futurice.Prelude
+import Futurice.Time
 import Prelude ()
 import Text.Regex.Applicative.Text (RE', anySym, match, psym)
 
@@ -131,6 +133,7 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
 
             th_ "PM Superior"
             th_ "Cost center = PM Team"
+            th_ "Expat"
             th_ "PM Account"
             th_ "PM email"
 
@@ -189,9 +192,11 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
                 when (pEmploymentType == Just P.External && pContract /= P.FixedTerm) $
                     markPersonioCell "Externals should have contract type FixedTerm"
 
-                unless (contractTypeOk pEmploymentType pContract (pmContract pm)) $ do
+                unless (contractTypeOk pEmploymentType pContract (p ^. P.employeeWeeklyHours) (pmContract pm)) $ do
                     markErrorCell "Contract types don't agree"
-                    " ≠ "
+                    " (weekly hours: "
+                    toHtml (p ^. P.employeeWeeklyHours)
+                    ") ≠ "
                     toHtml (pmContract pm)
 
         -- Contract span
@@ -249,6 +254,9 @@ indexPage now planmills personios = page_ "PlanMill sync" $ do
                 " ≠ "
                 traverse_ (toHtml . PM.tName) pmt
 
+        -- Expat
+        td_ $ when (p ^. P.employeeExpat) "Expat"
+
         -- PM Account
         cell_ $ case pmAccount pm of
             Nothing -> markErrorCell "PlanMill employee doesn't have account set"
@@ -301,7 +309,7 @@ personioHtml p = fst $ runWriter $ commuteHtmlT $ do
     td_ $ toHtml $ p ^. P.employeeOffice
     td_ $ do
         let pStart = p ^. P.employeeHireDate
-        let pEnd = p ^. P.employeeEndDate 
+        let pEnd = p ^. P.employeeEndDate
         toHtml $ formatDateSpan pStart pEnd
     cell_ $ case p ^. P.employeeHRNumber of
         Just x | x > 0 -> toHtml (show x) -- TODO: remove check, fix personio-client
@@ -309,7 +317,7 @@ personioHtml p = fst $ runWriter $ commuteHtmlT $ do
             markErrorCell "HR Number is required for people working in Finland"
 
 -------------------------------------------------------------------------------
--- 
+--
 -------------------------------------------------------------------------------
 
 formatDateSpan :: Maybe Day -> Maybe Day -> String
@@ -338,12 +346,17 @@ officeToAccount OffOther     = "???"
 -- Contract type
 -------------------------------------------------------------------------------
 
-contractTypeOk :: Maybe P.EmploymentType -> P.ContractType -> Text -> Bool
-contractTypeOk (Just P.External) ct t =
+contractTypeOk :: Maybe P.EmploymentType -> P.ContractType -> NDT 'Hours Centi -> Text -> Bool
+contractTypeOk (Just P.External) ct _ t =
     ct == P.FixedTerm && t == "Subcontractor"
-contractTypeOk _ P.Permanent      t = "Permanent" `T.isInfixOf` t
-contractTypeOk _ P.PermanentAllIn t = "no working time" `T.isInfixOf` t
-contractTypeOk _ P.FixedTerm      t = "Permanent" `T.isInfixOf` t
+contractTypeOk _ P.PermanentAllIn _ t = "no working time" `T.isInfixOf` t
+-- Permanent or FixedTerm
+contractTypeOk _ _      h t
+    -- whether montly or hourly is not yet clear
+    | "hourly pay" `T.isInfixOf` t = True
+    -- arbitrary bound
+    | h >= 37   = "full-time" `T.isInfixOf` t
+    | otherwise = "part-time" `T.isInfixOf` t
 
 -------------------------------------------------------------------------------
 -- Prefix number for cost center comparison
