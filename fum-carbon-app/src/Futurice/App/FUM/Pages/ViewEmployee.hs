@@ -35,12 +35,15 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
 
         let mp = personio ^? ix (e ^. employeePersonioId)
         mcase mp (vertRow_ "Personio" $ em_ "cannot find id") $ \p -> do
-            vertRow_ "Office" $ toHtml $ p ^. Personio.employeeOffice
-            vertRow_ "Tribe" $ toHtml $ p ^. Personio.employeeTribe
-            vertRow_ "Phone" $ traverse_ toHtml $ p ^. Personio.employeeWorkPhone
+            vertRow_ "Office"  $ toHtml $ p ^. Personio.employeeOffice
+            vertRow_ "Tribe"   $ toHtml $ p ^. Personio.employeeTribe
+            vertRow_ "Phone"   $ traverse_ toHtml $ p ^. Personio.employeeWorkPhone
+            vertRow_ "Email"   $ traverse_ toHtml $ p ^. Personio.employeeEmail
+            vertRow_ "Int/Ext" $ traverse_ toHtml $ p ^. Personio.employeeEmploymentType
+            vertRow_ "GitHub"  $ traverse_ toHtml $ p ^. Personio.employeeGithub
             -- TODO: what else to show?
             --
-    todos_ [ "show github", "show flowdock", "show internal/external", "show contractEndDate" ]
+    todos_ [ "show flowdock", "show contract span" ]
 
     block_ "Groups" $ do
         let groups = world ^.. worldEmployeeGroups . ix login . folded

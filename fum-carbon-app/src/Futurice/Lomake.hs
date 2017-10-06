@@ -4,12 +4,11 @@
 {-# LANGUAGE OverloadedStrings       #-}
 {-# LANGUAGE ScopedTypeVariables     #-}
 {-# LANGUAGE TypeFamilies            #-}
-{-# LANGUAGE UndecidableInstances    #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE FlexibleInstances       #-}
+{-# LANGUAGE MultiParamTypeClasses   #-}
+{-# LANGUAGE UndecidableInstances    #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 -- | Simple but awesome form library.
 --
@@ -20,10 +19,10 @@ module Futurice.Lomake (
     SOP.IsProductType,
     ) where
 
-import Data.Monoid                 (Any (..))
 import Control.Monad.Fail        (MonadFail)
 import Control.Monad.Writer.CPS  (Writer, runWriter)
 import Data.Maybe                (isNothing)
+import Data.Monoid               (Any (..))
 import Data.Swagger              (NamedSchema (..))
 import Futurice.Generics
 import Futurice.List             (UnSingleton)
@@ -65,7 +64,7 @@ data Field a where
 
 data TextFieldOptions a = TextFieldOptions
     { tfoName   :: FieldName
-    , tfoRegexp :: Kleene Char String
+    , tfoRegexp :: Kleene Char ()
     , tfoEncode :: a -> Text
     , tfoDecode :: Text -> Either Text a
     }
@@ -99,17 +98,18 @@ textField
     => FieldName -> Field a
 textField n = TextField TextFieldOptions
     { tfoName   = n
-    , tfoRegexp = kleeneEverything
+    , tfoRegexp = void kleeneEverything
     , tfoEncode = toQueryParam
     , tfoDecode = parseQueryParam
     }
 
+-- | Note regexp isn't used to validate the data.
 textFieldWithRegexp
     :: (ToHttpApiData a, FromHttpApiData a)
-    => FieldName -> Kleene Char String -> Field a
+    => FieldName -> Kleene Char a -> Field a
 textFieldWithRegexp n re = TextField TextFieldOptions
     { tfoName   = n
-    , tfoRegexp = re
+    , tfoRegexp = void re
     , tfoEncode = toQueryParam
     , tfoDecode = parseQueryParam
     }
@@ -119,7 +119,7 @@ hiddenField
     => FieldName -> Field a
 hiddenField n = HiddenField TextFieldOptions
     { tfoName   = n
-    , tfoRegexp = kleeneEverything
+    , tfoRegexp = void kleeneEverything
     , tfoEncode = toQueryParam
     , tfoDecode = parseQueryParam
     }
@@ -249,7 +249,7 @@ lomakeHtml formOpts fields names values =
         -- TODO: make 'Lens opts HiddenFieldOpts'
         opts' = TextFieldOptions
             { tfoName   = efoName opts
-            , tfoRegexp = ""
+            , tfoRegexp = void kleeneEverything
             , tfoEncode = efoEncode opts
             , tfoDecode = efoDecode opts
             }

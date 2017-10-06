@@ -122,7 +122,6 @@ library
       Futurice.App.FUM.Transactor
       Futurice.App.FUM.Types
       Futurice.App.FUM.Types.Basic
-      Futurice.App.FUM.Types.Email
       Futurice.App.FUM.Types.GroupType
       Futurice.App.FUM.Types.Identifier
       Futurice.App.FUM.Types.Status

@@ -10,11 +10,13 @@
 module Futurice.App.FUM.Types.Basic (
     module FUM.Types.Login,
     module FUM.Types.GroupName,
+    module Futurice.Email,
     module Futurice.App.FUM.Types.Basic,
     ) where
 
 import FUM.Types.GroupName
 import FUM.Types.Login
+import Futurice.Email
 import Futurice.IdMap      (HasKey (..))
 import Futurice.Prelude
 import Prelude ()
@@ -28,8 +30,6 @@ import qualified Personio as P
 
 -- TODO:
 type SshKey = Text
--- | Email ending with @futurice.com
-type Email = Text
 -- | Any email
 type RawEmail = Text
 -- | We always have /some/ picture of the employee.

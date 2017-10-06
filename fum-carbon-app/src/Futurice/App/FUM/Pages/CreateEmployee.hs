@@ -10,7 +10,6 @@ import Prelude ()
 import Futurice.App.FUM.Command
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Types
-import Futurice.Email (emailToText)
 
 import qualified Personio
 
@@ -45,5 +44,5 @@ createEmployeePage auth _world _es e = fumPage_ "Create employee" auth $ do
         V (e ^. Personio.employeeLogin) [] :*
         vNothing :*
         V (e ^? Personio.employeeFullname) [] :*
-        V (e ^? Personio.employeeEmail . _Just . getter emailToText) [] :*
+        V (e ^. Personio.employeeEmail) [] :*
         Nil

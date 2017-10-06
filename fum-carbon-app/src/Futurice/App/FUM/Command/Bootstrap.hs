@@ -23,7 +23,7 @@ data Bootstrap (phase :: Phase) = Bootstrap
     , bootLogin      :: !Login
     , bootUID        :: !(Phased phase () UID)
     , bootName       :: !Text
-    , bootEmail      :: !Text
+    , bootEmail      :: !Email
     , bootGroupName  :: !GroupName
     , bootGID        :: !(Phased phase () GID)
     }
