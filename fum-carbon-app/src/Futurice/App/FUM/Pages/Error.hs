@@ -10,6 +10,7 @@ import Prelude ()
 import Futurice.App.FUM.Command
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Types
+import Futurice.Email (emailToText)
 
 import qualified Personio
 
@@ -35,7 +36,7 @@ forbiddenPage tr = fumPage_ "Forbidden" (AuthUser $(mkLogin "guest") RightsOther
                     vertRow_ "Login" $
                         traverse_ toHtml $ e ^. Personio.employeeLogin
                     vertRow_ "Email" $
-                        toHtml $ e ^. Personio.employeeEmail
+                        traverse_ toHtml $ e ^. Personio.employeeEmail
                     vertRow_ "Hiring date" $
                         maybe "-" (toHtml . show) $ e ^. Personio.employeeHireDate
                     vertRow_ "Contract end date" $
@@ -46,7 +47,7 @@ forbiddenPage tr = fumPage_ "Forbidden" (AuthUser $(mkLogin "guest") RightsOther
                     V (e ^. Personio.employeeLogin) [] :*
                     vNothing :*
                     V (e ^? Personio.employeeFullname) [] :*
-                    V (e ^? Personio.employeeEmail) [] :*
+                    V (e ^? Personio.employeeEmail . _Just . getter emailToText) [] :*
                     vNothing :*
                     vNothing :*
                     Nil

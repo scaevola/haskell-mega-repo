@@ -94,6 +94,11 @@ kleeneDotChar = KleeneChar dotRSet
 kleeneEverything :: (Ord c, Enum c, Bounded c) => Kleene c [c]
 kleeneEverything = many kleeneAnyChar
 
+-- | >>> T.putStrLn $ kleeneToJS kleeneEverything1
+-- ^[^][^]*$
+kleeneEverything1 :: (Ord c, Enum c, Bounded c) => Kleene c [c]
+kleeneEverything1 = some kleeneAnyChar
+
 -- | Matches whole input?
 --
 -- TODO: this is quick test, not proper decision procedure

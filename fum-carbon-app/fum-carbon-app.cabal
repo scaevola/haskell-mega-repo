@@ -49,6 +49,7 @@ library
     , futurice-postgres
     , futurice-prelude
     , futurice-servant
+    , futurice-tribes
     , generics-sop
     , generics-sop-lens
     , http-api-data
@@ -159,6 +160,7 @@ executable fum-carbon-server
     , futurice-postgres
     , futurice-prelude
     , futurice-servant
+    , futurice-tribes
     , generics-sop
     , generics-sop-lens
     , http-api-data
@@ -227,6 +229,7 @@ test-suite unit-tests
     , futurice-postgres
     , futurice-prelude
     , futurice-servant
+    , futurice-tribes
     , generics-sop
     , generics-sop-lens
     , http-api-data

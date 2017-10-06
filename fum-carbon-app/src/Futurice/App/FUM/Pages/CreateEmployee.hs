@@ -10,6 +10,7 @@ import Prelude ()
 import Futurice.App.FUM.Command
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Types
+import Futurice.Email (emailToText)
 
 import qualified Personio
 
@@ -31,7 +32,7 @@ createEmployeePage auth _world _es e = fumPage_ "Create employee" auth $ do
         vertRow_ "Login" $
             traverse_ toHtml $ e ^. Personio.employeeLogin
         vertRow_ "Email" $
-            toHtml $ e ^. Personio.employeeEmail
+            traverse_ toHtml $ e ^. Personio.employeeEmail
         vertRow_ "Hiring date" $
             maybe "-" (toHtml . show) $ e ^. Personio.employeeHireDate
         vertRow_ "Contract end date" $
@@ -44,5 +45,5 @@ createEmployeePage auth _world _es e = fumPage_ "Create employee" auth $ do
         V (e ^. Personio.employeeLogin) [] :*
         vNothing :*
         V (e ^? Personio.employeeFullname) [] :*
-        V (e ^? Personio.employeeEmail) [] :*
+        V (e ^? Personio.employeeEmail . _Just . getter emailToText) [] :*
         Nil

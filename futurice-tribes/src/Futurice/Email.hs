@@ -1,17 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Futurice.Email (
     Email,
+    mkEmail,
+    emailToText,
+    emailFromText,
     emailKleene,
-    emailRe,
+    emailRegexp,
     ) where
 
 import Data.Aeson
        (FromJSON (..), FromJSONKey (..), FromJSONKeyFunction (..), ToJSON (..),
        ToJSONKey (..), withText)
 import Futurice.Prelude
-import Kleene                      (Kleene, kleeneEverything, kleeneToRe)
+import Kleene                      (Kleene, kleeneEverything1, kleeneToRe)
+import Language.Haskell.TH         (ExpQ)
 import Lucid                       (ToHtml (..), a_, href_)
 import Prelude ()
+import Test.QuickCheck             (Arbitrary (..))
 import Text.Regex.Applicative.Text (RE', match)
 import Web.HttpApiData             (FromHttpApiData (..), ToHttpApiData (..))
 
@@ -22,11 +28,13 @@ import qualified Data.Swagger as S
 newtype Email = Email Text
   deriving (Eq, Ord, Show)
 
+deriveLift ''Email
+
 emailToText :: Email -> Text
 emailToText (Email x) = x <> suffix
 
 emailFromText :: Text -> Maybe Email
-emailFromText = match emailRe
+emailFromText = match emailRegexp
 
 parseEmail :: Monad m => Text -> m Email
 parseEmail t = maybe
@@ -35,8 +43,21 @@ parseEmail t = maybe
     (emailFromText t)
 
 -------------------------------------------------------------------------------
+-- Template Haskell
+-------------------------------------------------------------------------------
+
+-- | Create email at compile time.
+mkEmail :: String -> ExpQ
+mkEmail n
+    | Just t <- emailFromText (n ^. packed) = [| t |]
+    | otherwise = fail $ "Invalid futurice email name: " ++ n
+
+-------------------------------------------------------------------------------
 -- instances
 -------------------------------------------------------------------------------
+
+instance Arbitrary Email where
+    arbitrary = pure (Email "arbitrary")
 
 instance NFData Email where
     rnf (Email x) = rnf x
@@ -89,11 +110,11 @@ instance Csv.FromField Email where
 
 emailKleene :: Kleene Char Email
 emailKleene = Email . view packed
-    <$> kleeneEverything
+    <$> kleeneEverything1
     <* (suffix :: Kleene Char String)
 
-emailRe :: RE' Email
-emailRe = kleeneToRe emailKleene
+emailRegexp :: RE' Email
+emailRegexp = kleeneToRe emailKleene
 
 suffix :: IsString a => a
 suffix = "@futurice.com"
