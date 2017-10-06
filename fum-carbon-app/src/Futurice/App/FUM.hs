@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
@@ -49,6 +50,7 @@ cmdServer ctx mlogin (LomakeRequest cmdInput) = runLogT "command" (ctxLogger ctx
 
 commandServer :: Ctx -> Server FumCarbonCommandApi
 commandServer ctx = cmdServer ctx
+    :<|> cmdServer ctx
     :<|> cmdServer ctx
     :<|> cmdServer ctx
     :<|> cmdServer ctx

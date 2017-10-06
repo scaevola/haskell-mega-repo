@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.17.1.
+-- This file has been generated from package.yaml by hpack version 0.18.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -31,17 +31,23 @@ library
   ghc-options: -Wall
   build-depends:
       base            >=4.7      && <4.11
+    , QuickCheck
+    , aeson
     , aeson-compat
     , cassava
     , containers
     , futurice-prelude
+    , http-api-data
+    , kleene
     , lucid
-    , QuickCheck
+    , regex-applicative
+    , regex-applicative-text
     , swagger2
     , template-haskell
     , text
     , vector
   exposed-modules:
+      Futurice.Email
       Futurice.Office
       Futurice.Tribe
   other-modules:

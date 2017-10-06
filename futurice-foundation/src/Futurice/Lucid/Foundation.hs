@@ -8,7 +8,7 @@
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE UndecidableInstances   #-}
 module Futurice.Lucid.Foundation (
-    commuteHtmlT,
+    L.commuteHtmlT,
     -- * Vendor
     vendorServer,
     -- * Grid
@@ -56,15 +56,6 @@ import Servant.Swagger.UI.Internal    (mkRecursiveEmbedded)
 
 import qualified Lucid      as L
 import qualified Lucid.Base as L
-
--------------------------------------------------------------------------------
--- from ustream
--------------------------------------------------------------------------------
-
-commuteHtmlT :: (Functor m, Monad n)
-             => HtmlT m a      -- ^ unpurely generated HTML
-             -> m (HtmlT n a)  -- ^ Commuted monads. /Note:/ @n@ can be 'Identity'
-commuteHtmlT (L.HtmlT xs) = fmap (L.HtmlT . return) xs
 
 -------------------------------------------------------------------------------
 -- Lucid

@@ -22,9 +22,9 @@ module Personio.Types (
 
 import Control.Monad.Writer        (WriterT, execWriterT, unless)
 import Data.Aeson.Compat
-import Data.Fixed (Centi)
 import Data.Aeson.Types            (typeMismatch)
 import Data.Char                   (ord)
+import Data.Fixed                  (Centi)
 import Data.List                   (foldl')
 import Data.Maybe                  (isJust)
 import Data.Swagger
@@ -32,6 +32,7 @@ import Data.Swagger
 import Data.Time                   (zonedTimeToLocalTime)
 import FUM.Types.Login             (Login, loginRegexp)
 import Futurice.Aeson
+import Futurice.Email              (Email, emailRegexp)
 import Futurice.Generics
 import Futurice.IdMap              (HasKey (..))
 import Futurice.Office
@@ -67,7 +68,7 @@ data Employee = Employee
     , _employeeHireDate       :: !(Maybe Day)
     , _employeeEndDate        :: !(Maybe Day)
     , _employeeRole           :: !Text
-    , _employeeEmail          :: !Text
+    , _employeeEmail          :: !(Maybe Email)
     , _employeeWorkPhone      :: !(Maybe Text)
     , _employeeSupervisorId   :: !(Maybe EmployeeId)
     , _employeeLogin          :: !(Maybe Login)
@@ -143,7 +144,7 @@ parseEmployeeObject obj' = Employee
     <*> fmap (fmap zonedDay) (parseAttribute obj "hire_date")
     <*> fmap (fmap zonedDay) (parseAttribute obj "contract_end_date")
     <*> parseDynamicAttribute obj "Primary role"
-    <*> parseAttribute obj "email"
+    <*> optional (parseAttribute obj "email")
     <*> parseDynamicAttribute obj "Work phone"
     <*> fmap getSupervisorId (parseAttribute obj "supervisor")
     <*> optional (parseDynamicAttribute obj "Login name")
@@ -369,7 +370,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         , workPermitEndsMissing
         ]
       where
-        emailRegexp = some anySym *> string "@" *> some anySym *> string "." *> some anySym
+        privEmailRegexp = some anySym *> string "@" *> some anySym *> string "." *> some anySym
 
         phoneRegexp = string "+" *> (T.pack <$> some (psym (`elem` allowedChars)))
           where
@@ -585,7 +586,7 @@ validatePersonioEmployee = withObjectDump "Personio.Employee" $ \obj -> do
         privateEmailValidate :: WriterT [ValidationMessage] Parser ()
         privateEmailValidate = do
             pMail <- lift (parseDynamicAttribute obj "Private email")
-            case match (emailRegexp <|> "") pMail of
+            case match (void privEmailRegexp <|> pure ()) pMail of
                 Just _  -> pure ()
                 Nothing -> tell [PrivateEmailInvalid pMail]
 

@@ -1,9 +1,4 @@
-index-state: 2017-09-26T10:34:20Z
-
-allow-newer: Chart:base
-allow-newer: flowdock-grep:base
-allow-newer: diagrams-svg:optparse-applicative
-allow-newer: diagrams-postscript:base
+index-state: 2017-10-05T23:59:09Z
 
 packages:
   ansi-pretty/
@@ -35,6 +30,7 @@ packages:
   github-sync/
   haxl-fxtra/
   hours-api/
+  kleene/
   log-cloudwatch/
   mega-repo-tool/
   monad-http/

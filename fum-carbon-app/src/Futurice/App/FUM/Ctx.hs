@@ -73,4 +73,5 @@ newCtx logger mockUser ci es vs = do
         scmd <- either fail pure $ decodeSomeCommand tag payload
         withSomeCommand scmd $ \_ cmd -> do
             _ <- applyCommand now login cmd
+            validateWorld
             applyCommands rest

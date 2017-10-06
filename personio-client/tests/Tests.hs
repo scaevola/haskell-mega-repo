@@ -4,6 +4,7 @@
 import Data.Aeson.Compat
 import Data.Aeson.Lens       (key, _String)
 import Data.Aeson.Types      (parseEither)
+import Futurice.Email        (mkEmail)
 import Futurice.Office       (Office (..))
 import Futurice.Prelude
 import Futurice.Tribe        (mkTribe)
@@ -59,7 +60,7 @@ examples = testGroup "HUnit"
         Just $(mkDay "2017-05-29") @=? e ^. employeeHireDate
         Nothing @=? e ^. employeeEndDate
         "Developer (Primary)" @=? e ^. employeeRole
-        "teemu.teekkari@example.com" @=? e ^. employeeEmail
+        Just $(mkEmail "teemu.teekkari@futurice.com") @=? e ^. employeeEmail
         Just "+123 5678910" @=? e ^. employeeWorkPhone
         Just (EmployeeId 1337) @=? e ^. employeeSupervisorId
         $(mkTribe "Tammerforce") @=? e ^. employeeTribe
@@ -264,7 +265,7 @@ validations = testGroup "Validations"
         $ correctEmployeeValue
             & attributeValue "dynamic_72943" . _String .~ "SomeTribe" -- Home tribe
     , testValidation
-        "expat bonus and allowance currency" 
+        "expat bonus and allowance currency"
         ExpatBonusAndAllowanceCurrencyMissing
         $ correctEmployeeValue
             & attributeValue "dynamic_72971" . _String .~ "something?" -- Expat housing allowance
@@ -355,13 +356,13 @@ validations = testGroup "Validations"
 validValue :: Show a => (a -> Bool) -> a ->  TestTree
 validValue checker toCheck = testCase msg $
     assertBool "invalid!" $ checker toCheck
-  where 
+  where
     msg = show toCheck ++ " is valid"
 
 invalidValue :: Show a => (a -> Bool) -> a -> TestTree
 invalidValue checker toCheck = testCase msg $
     assertBool "valid!" $ not $ checker toCheck
-  where 
+  where
     msg = show toCheck ++ " is invalid"
 
 -------------------------------------------------------------------------------
@@ -378,7 +379,7 @@ isValidIBANTests = testGroup "isValidIBAN"
     ]
   where
     validIBAN :: Text -> TestTree
-    validIBAN = validValue isValidIBAN 
+    validIBAN = validValue isValidIBAN
 
     invalidIBAN :: Text -> TestTree
     invalidIBAN = invalidValue isValidIBAN

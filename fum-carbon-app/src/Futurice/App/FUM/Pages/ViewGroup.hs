@@ -26,21 +26,22 @@ viewGroupPage auth world g = fumPage_ "Group" auth $ do
         vertRow_ "Type" $ toHtml $ g ^. groupType
 
     when (canEditGroup (authLogin auth) (g ^. groupName) world) $ do
-        subheader_ "Add member"
-        commandHtml' (Proxy :: Proxy AddEmployeeToGroup) $
+        block_ "Add member" $ commandHtml' (Proxy :: Proxy AddEmployeeToGroup) $
             vHidden (g ^. groupName) :*
             vEmployees (\e -> notElem e $ g ^.. groupEmployees . folded) world :*
             Nil
 
-    subheader_ "Members"
-    fullRow_ $ table_ $ do
-        thead_ $ tr_ $ do
-            th_ "Login"
-            th_ "Name"
-            th_ "Status"
+    block_ "Members" $ do
+        fullRow_ $ table_ $ do
+            thead_ $ tr_ $ do
+                th_ "Login"
+                th_ "Name"
+                th_ "Status"
 
-        tbody_ $ for_ (g ^.. groupEmployees . folded) $ \login -> tr_ $
-            for_ (world ^? worldEmployees . ix login) $ \e -> do
-                td_ $ loginToHtml $ e ^. employeeLogin
-                td_ $ toHtml $ e ^. employeeName
-                td_ $ toHtml $ e ^. employeeStatus
+            tbody_ $ for_ (g ^.. groupEmployees . folded) $ \login -> tr_ $
+                for_ (world ^? worldEmployees . ix login) $ \e -> do
+                    td_ $ loginToHtml $ e ^. employeeLogin
+                    td_ $ toHtml $ e ^. employeeName
+                    td_ $ toHtml $ e ^. employeeStatus
+
+        todos_ ["Removal of member, edit group type, remove group, special (e.g. office) groups"]

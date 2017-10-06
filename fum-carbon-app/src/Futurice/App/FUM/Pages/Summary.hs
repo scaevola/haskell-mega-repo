@@ -99,6 +99,9 @@ instance Pretty Personio.EmployeeId where
 instance Pretty Login where
     pp l = PP.annotate (H (const (toHtml l))) (pp $ loginToText l)
 
+instance Pretty Email where
+    pp x = PP.annotate (H (const (toHtml x))) (pp $ emailToText x)
+
 instance Pretty (UnixID t) where
     pp = PP.string . show . getUnixID
 

@@ -2,9 +2,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Kleene where
 
-import Data.RangeSet.List (RSet)
-import Futurice.Prelude
 import Prelude ()
+import Prelude.Compat
+
+import Control.Applicative (Alternative (..), liftA2)
+import Data.RangeSet.List  (RSet)
+import Data.String         (IsString (..))
+import Data.Text           (Text)
+import Data.Semigroup (Semigroup (..))
 
 import qualified Data.RangeSet.List     as RSet
 import qualified Text.Regex.Applicative as R
@@ -26,6 +31,13 @@ data Kleene c a where
 
 instance (c ~ Char, IsString a) => IsString (Kleene c a) where
     fromString s = KleeneMap fromString (KleeneString s)
+
+instance Semigroup (Kleene c a) where
+    (<>) = (<|>)
+
+instance Monoid (Kleene c a) where
+    mempty = empty
+    mappend = (<>)
 
 instance Functor (Kleene c) where
     fmap _ KleeneEmpty          = KleeneEmpty
@@ -67,14 +79,25 @@ instance Alternative (Kleene c) where
 --
 -------------------------------------------------------------------------------
 
+-- | >>> T.putStrLn $ kleeneToJS kleeneAnyChar
+-- ^[^]$
 kleeneAnyChar :: (Ord c, Enum c, Bounded c) => Kleene c c
 kleeneAnyChar = KleeneChar RSet.full
 
+-- | >>> T.putStrLn $ kleeneToJS kleeneDotChar
+-- ^.$
 kleeneDotChar :: Kleene Char Char
 kleeneDotChar = KleeneChar dotRSet
 
+-- | >>> T.putStrLn $ kleeneToJS kleeneEverything
+-- ^[^]*$
 kleeneEverything :: (Ord c, Enum c, Bounded c) => Kleene c [c]
 kleeneEverything = many kleeneAnyChar
+
+-- | >>> T.putStrLn $ kleeneToJS kleeneEverything1
+-- ^[^][^]*$
+kleeneEverything1 :: (Ord c, Enum c, Bounded c) => Kleene c [c]
+kleeneEverything1 = some kleeneAnyChar
 
 -- | Matches whole input?
 --
@@ -110,6 +133,13 @@ kleeneToRe (KleeneString s)         = R.string s
 --
 -- TODO: use builder
 -- TODO: escaping
+--
+-- >>> T.putStrLn $ kleeneToJS "foobar"
+-- ^foobar$
+--
+-- >>> T.putStrLn $ kleeneToJS $ many "foobar"
+-- ^(?:foobar)*$
+--
 kleeneToJS :: Kleene Char a -> Text
 kleeneToJS kl = "^" <> go False kl <> "$"
   where
@@ -139,3 +169,12 @@ kleeneToJS kl = "^" <> go False kl <> "$"
 
 dotRSet :: RSet Char
 dotRSet = RSet.full RSet.\\ RSet.singleton '\n'
+
+-------------------------------------------------------------------------------
+-- Doctest
+-------------------------------------------------------------------------------
+
+-- $setup
+--
+-- >>> :set -XOverloadedStrings
+-- >>> import qualified Data.Text.IO as T

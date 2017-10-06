@@ -34,9 +34,11 @@ dependencies:
   - futurice-postgres
   - futurice-prelude
   - futurice-servant
+  - futurice-tribes
   - generics-sop
   - generics-sop-lens
   - http-api-data
+  - kleene
   - lattices
   - lens
   - lifted-base

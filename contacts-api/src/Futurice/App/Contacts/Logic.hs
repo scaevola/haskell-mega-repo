@@ -18,6 +18,7 @@ module Futurice.App.Contacts.Logic (
     ) where
 
 import Data.RFC5051          (compareUnicode)
+import Futurice.Email        (emailToText)
 import Futurice.Integrations
 import Futurice.Prelude
 import Prelude ()
@@ -78,7 +79,7 @@ employeeToContact e = Contact
     { contactLogin      = fromMaybe $(FUM.mkLogin "xxxx") $ e ^. Personio.employeeLogin
     , contactFirst      = e ^. Personio.employeeFirst
     , contactName       = e ^. Personio.employeeFirst <> " " <> e ^. Personio.employeeLast
-    , contactEmail      = e ^. Personio.employeeEmail
+    , contactEmail      = maybe "" emailToText $ e ^. Personio.employeeEmail
     , contactPhones     = catMaybes [e ^. Personio.employeeWorkPhone, e ^. Personio.employeeHomePhone]
     , contactTitle      = e ^. Personio.employeePosition
     , contactThumb      = noImage -- from FUM

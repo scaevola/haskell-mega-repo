@@ -23,12 +23,17 @@ default-extensions:
 
 dependencies:
   - base            >=4.7      && <4.11
+  - QuickCheck
+  - aeson
   - aeson-compat
   - cassava
   - containers
   - futurice-prelude
+  - http-api-data
+  - kleene
   - lucid
-  - QuickCheck
+  - regex-applicative
+  - regex-applicative-text
   - swagger2
   - template-haskell
   - text

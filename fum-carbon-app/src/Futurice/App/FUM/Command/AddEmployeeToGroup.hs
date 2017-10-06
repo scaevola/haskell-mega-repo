@@ -69,4 +69,4 @@ validate login cmd = do
         throwError $ "Employee doesn't exist " ++ show (loginToText addLogin)
 
     unlessM (canEditGroup login name) $
-        throwError $ "You can edit group " ++ show (groupNameToText name)
+        throwError $ "You cannot edit group " ++ show (groupNameToText name)
