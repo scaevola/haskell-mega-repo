@@ -1,13 +1,16 @@
+{-# LANGUAGE ConstraintKinds    #-}
 {-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE GADTs              #-}
 {-# LANGUAGE RankNTypes         #-}
 {-# LANGUAGE StandaloneDeriving #-}
 module Futurice.App.FUM.Command (
+    Commands,
     SomeCommand,
     someCommand,
     withSomeCommand,
-    CT (..),
-    ICT (..),
+    CT,
+    ICT,
     withCT,
     decodeSomeCommand,
     module Futurice.App.FUM.Command.AddEmailToEmployee,
@@ -17,11 +20,17 @@ module Futurice.App.FUM.Command (
     module Futurice.App.FUM.Command.CreateEmployee,
     module Futurice.App.FUM.Command.CreateGroup,
     module Futurice.App.FUM.Command.RemoveEmailFromEmployee,
+    module Futurice.App.FUM.Command.RemoveEmployeeFromGroup,
     ) where
 
-import Data.Aeson.Types (parseEither, parseJSON)
-import Data.Functor.Alt ((<!>))
+import Control.Lens       (review)
+import Data.Aeson.Types   (parseEither, parseJSON)
+import Data.Constraint    (Dict (..))
+import Data.Type.Equality
+import Futurice.Has       (In, inj)
 import Futurice.Prelude
+import Futurice.TypeTag
+import Generics.SOP       (hcmap, hcollapse)
 import Prelude ()
 
 import Futurice.App.FUM.Command.AddEmailToEmployee
@@ -31,14 +40,29 @@ import Futurice.App.FUM.Command.CreateEmployee
 import Futurice.App.FUM.Command.CreateGroup
 import Futurice.App.FUM.Command.Definition
 import Futurice.App.FUM.Command.RemoveEmailFromEmployee
+import Futurice.App.FUM.Command.RemoveEmployeeFromGroup
+
+import qualified Data.Map as Map
+
+-- | List of commands
+type Commands = '[ Bootstrap
+    , AddEmailToEmployee
+    , AddEmployeeToGroup
+    , CreateEmployee
+    , CreateGroup
+    , RemoveEmailFromEmployee
+    , RemoveEmployeeFromGroup
+    ]
 
 -- | Existential command, union of all commands.
 data SomeCommand where
     SomeCommand :: CT cmd -> cmd 'Internal -> SomeCommand
 
+type ICT cmd = In cmd Commands
+
 -- | 'SomeCommand' introduction.
 someCommand :: (Command cmd, ICT cmd) => cmd 'Internal -> SomeCommand
-someCommand = SomeCommand icommandTag
+someCommand = SomeCommand (TT (review inj Refl))
 
 -- | 'SomeCommand' elimination.
 withSomeCommand
@@ -47,46 +71,21 @@ withSomeCommand
     -> r
 withSomeCommand (SomeCommand tag cmd) f = withCT tag (f tag cmd)
 
--- | GADT representing different commands.
-data CT cmd where
-    CTAddEmailToEmployee      :: CT AddEmailToEmployee
-    CTAddEmployeeToGroup      :: CT AddEmployeeToGroup
-    CTBootstrap               :: CT Bootstrap
-    CTCreateEmployee          :: CT CreateEmployee
-    CTCreateGroup             :: CT CreateGroup
-    CTRemoveEmailFromEmployee :: CT RemoveEmailFromEmployee
+type CT = TT Commands
 
-deriving instance Show (CT cmd)
-
--- | Implicit 'CT'.
-class    ICT cmd                     where icommandTag :: CT cmd
-instance ICT AddEmailToEmployee      where icommandTag = CTAddEmailToEmployee
-instance ICT AddEmployeeToGroup      where icommandTag = CTAddEmployeeToGroup
-instance ICT Bootstrap               where icommandTag = CTBootstrap
-instance ICT CreateEmployee          where icommandTag = CTCreateEmployee
-instance ICT CreateGroup             where icommandTag = CTCreateGroup
-instance ICT RemoveEmailFromEmployee where icommandTag = CTRemoveEmailFromEmployee
-
-withCT :: CT cmd -> (Command cmd => r) -> r
-withCT CTAddEmailToEmployee f = f
-withCT CTAddEmployeeToGroup f = f
-withCT CTBootstrap f          = f
-withCT CTCreateEmployee f     = f
-withCT CTCreateGroup f        = f
-withCT CTRemoveEmailFromEmployee f = f
+withCT :: forall cmd r. CT cmd -> (Command cmd => r) -> r
+withCT ct r = case typeTagDict (Proxy :: Proxy Command) ct of
+    Dict -> r
 
 decodeSomeCommand :: Text -> Value -> Either String SomeCommand
-decodeSomeCommand name payload =
-    ct CTAddEmailToEmployee <!>
-    ct CTAddEmployeeToGroup <!>
-    ct CTBootstrap <!>
-    ct CTCreateEmployee <!>
-    ct CTCreateGroup <!>
-    ct CTRemoveEmailFromEmployee <!>
-    Left ("Unknown or corrupt command: " ++ show name ++ " = " ++ show payload)
+decodeSomeCommand name payload = case Map.lookup name typeTagsByName of
+    Nothing ->
+        Left $ "Unknown  command: " ++ show name ++ " = " ++ show payload
+    Just (SomeTT tag) -> withCT tag $
+        SomeCommand tag <$> parseEither parseJSON payload
+
+typeTagsByName :: Map Text (SomeTT Commands)
+typeTagsByName = Map.fromList $ hcollapse $ hcmap (Proxy :: Proxy Command) f (typeTags :: NP CT Commands)
   where
-    ct :: CT cmd -> Either String SomeCommand
-    ct tag = withCT tag $
-        if commandTag tag == name
-        then SomeCommand tag <$> parseEither parseJSON payload
-        else Left $ "Tag doesn't match: " ++ show name
+    f :: forall cmd. Command cmd => TT Commands cmd -> K (Text, SomeTT Commands) cmd
+    f tag = K (commandTag tag, SomeTT tag)

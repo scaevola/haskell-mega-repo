@@ -41,7 +41,6 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
             vertRow_ "Email"   $ traverse_ toHtml $ p ^. Personio.employeeEmail
             vertRow_ "Int/Ext" $ traverse_ toHtml $ p ^. Personio.employeeEmploymentType
             vertRow_ "GitHub"  $ traverse_ toHtml $ p ^. Personio.employeeGithub
-            -- TODO: what else to show?
             --
     todos_ [ "show flowdock", "show contract span" ]
 
@@ -60,7 +59,10 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
             tbody_ $ for_ groups $ \g -> tr_ $ do
                 td_ $ a_ [ viewGroupHref_ $ g ^. groupName] $ toHtml $ g ^. groupName
                 td_ $ toHtml $ g ^. groupType
-                td_ "Remove TODO"
+                td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveEmployeeFromGroup) "Remove" "alert" $
+                    vHidden (g ^. groupName) :*
+                    vHidden login :*
+                    Nil
 
         subheader_ "Add to group"
         commandHtml' (Proxy :: Proxy AddEmployeeToGroup) $
@@ -69,7 +71,7 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
             vHidden login :*
             Nil
 
-        todos_ ["removal of groups"]
+        todos_ ["snow only editable groups?"]
 
     block_ "Email addresses" $ do
         when (null $ e ^. employeeEmailAliases) $
