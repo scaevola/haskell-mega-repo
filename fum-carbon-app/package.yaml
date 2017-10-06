@@ -29,6 +29,7 @@ dependencies:
   - DRBG
   - env-config
   - fail
+  - fum-api
   - fum-types
   - futurice-foundation
   - futurice-postgres

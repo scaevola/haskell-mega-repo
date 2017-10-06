@@ -4,19 +4,35 @@
 module Futurice.App.FUM.Machine (machineServer) where
 
 import Control.Concurrent.STM (readTVarIO)
+import Control.Monad.Reader   (Reader, asks, runReader)
+import Data.Set.Lens          (setOf)
 import Futurice.Prelude
 import Prelude ()
 import Servant
 
 import Futurice.App.FUM.API
 import Futurice.App.FUM.Ctx
+import Futurice.App.FUM.Types
+import Futurice.FUM.MachineAPI
 
 import qualified Personio
 
 machineServer :: Ctx -> Server FumCarbonMachineApi
-machineServer ctx = personioRequest ctx
+machineServer ctx = machineServer' ctx
+    :<|> personioRequest ctx
     :<|> rawEmployees ctx
     :<|> rawValidations ctx
+
+machineServer' :: Ctx -> Server FUMMachineAPI
+machineServer' ctx = enter (NT nt) eg
+  where
+    nt :: Reader World a -> Handler a
+    nt m = liftIO $ do
+        w <- readTVarIO (ctxWorld ctx)
+        return (runReader m w)
+
+    eg :: GroupName -> Reader World (Set Login)
+    eg name = asks (setOf (worldGroups . ix name . groupEmployees . folded))
 
 personioRequest :: Ctx -> Personio.SomePersonioReq -> Handler Personio.SomePersonioRes
 personioRequest ctx (Personio.SomePersonioReq res) = case res of

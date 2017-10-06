@@ -14,6 +14,7 @@ import Servant.HTML.Lucid        (HTML)
 
 import Futurice.App.FUM.API.Pages
 import Futurice.App.FUM.Command
+import Futurice.FUM.MachineAPI
 
 import qualified Personio
 
@@ -33,8 +34,8 @@ type FumCarbonCommandApi = CommandEndpoint Bootstrap
     :<|> CommandEndpoint RemoveEmailFromEmployee
     :<|> CommandEndpoint RemoveEmployeeFromGroup
 
-type FumCarbonMachineApi =
-    "personio-request" :> ReqBody '[JSON] Personio.SomePersonioReq :> Post '[JSON] Personio.SomePersonioRes
+type FumCarbonMachineApi = FUMMachineAPI
+    :<|> "personio-request" :> ReqBody '[JSON] Personio.SomePersonioReq :> Post '[JSON] Personio.SomePersonioRes
     :<|> "raw-employees" :> Get '[JSON] [Personio.Employee]
     :<|> "raw-employee-validations" :> Get '[JSON] [Personio.EmployeeValidation]
 
