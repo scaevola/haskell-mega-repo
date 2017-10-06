@@ -68,6 +68,7 @@ extra-deps:
 - haxl-0.5.1.0
 - lattices-1.6.0
 - log-base-0.7.2.0
+- lucid-2.9.9
 - nf-1.0.1.0
 - Only-0.1
 - pretty-compact-3.0

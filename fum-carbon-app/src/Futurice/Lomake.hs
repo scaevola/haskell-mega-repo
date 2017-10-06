@@ -180,7 +180,6 @@ vMaybe :: b -> (a -> b) -> V a -> b
 vMaybe  def f (V x _)     = maybe def f x
 vMaybe _def f (VHidden x) = f x
 
-
 -- | Render lomake HTML form.
 lomakeHtml
     :: forall xs m. Monad m
@@ -350,13 +349,3 @@ instance ToJSON LomakeResponse
 instance FromJSON LomakeResponse
 instance ToSchema LomakeResponse where
     declareNamedSchema = S.genericDeclareNamedSchemaUnrestricted S.defaultSchemaOptions
-
--------------------------------------------------------------------------------
--- temp
--------------------------------------------------------------------------------
-instance MonadWriter w m => MonadWriter w (HtmlT m) where
-    tell = lift . tell
-    listen = undefined
-    pass = undefined
-
-

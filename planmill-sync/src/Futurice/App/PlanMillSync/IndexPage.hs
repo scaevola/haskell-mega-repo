@@ -450,10 +450,3 @@ cell_ html = case runWriter (commuteHtmlT html) of
 
 errorsTitle_ :: NonEmpty Text -> Attribute
 errorsTitle_ xs = title_ $ T.intercalate "; " $ toList xs
-
-instance MonadWriter w m => MonadWriter w (HtmlT m) where
-    tell = lift . tell
-    listen = undefined
-    pass = undefined
-
-
