@@ -35,6 +35,7 @@ packages:
   github-sync/
   haxl-fxtra/
   hours-api/
+  kleene/
   log-cloudwatch/
   mega-repo-tool/
   monad-http/

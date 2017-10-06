@@ -52,6 +52,7 @@ library
     , generics-sop
     , generics-sop-lens
     , http-api-data
+    , kleene
     , lattices
     , lens
     , lifted-base
@@ -127,7 +128,6 @@ library
       Futurice.App.FUM.Types.UnixID
       Futurice.App.FUM.Types.World
       Futurice.Lomake
-      Kleene
   default-language: Haskell2010
 
 executable fum-carbon-server
@@ -162,6 +162,7 @@ executable fum-carbon-server
     , generics-sop
     , generics-sop-lens
     , http-api-data
+    , kleene
     , lattices
     , lens
     , lifted-base
@@ -229,6 +230,7 @@ test-suite unit-tests
     , generics-sop
     , generics-sop-lens
     , http-api-data
+    , kleene
     , lattices
     , lens
     , lifted-base

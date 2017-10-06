@@ -37,6 +37,7 @@ dependencies:
   - generics-sop
   - generics-sop-lens
   - http-api-data
+  - kleene
   - lattices
   - lens
   - lifted-base
