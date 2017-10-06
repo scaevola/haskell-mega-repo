@@ -13,7 +13,7 @@
 
 - 1:1:2 Editing employee fields (status)
 - 1:2:5 Picture upload
-- 1:2:2 Adding mail aliases
+- ~1:2:2 Adding mail aliases~
 - 1:2:2 Password change
 - 1:2:2 SSH keys processing
 - 1:1:1 view tweak: github, flowdock, internal/external, contractEndDate
@@ -25,7 +25,8 @@
 - ~1:1:2 CreateGroup command~
 - 1:1:2 EditGroup command
 - ~1:1:2 AddEmployeeToGroup~
-- 2:3:4 group edititng acl
+- ~1:1:1 RemoveEmployeeFromGroup~
+- 1:2:3 group editing acl
 
 # Customer
 
