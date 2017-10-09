@@ -74,7 +74,7 @@ ctxConfig (_, _, _, cfg) = cfg
 -- Integrations
 -------------------------------------------------------------------------------
 
-runIntegrations' :: Ctx -> Integrations I I I I I a -> IO a
+runIntegrations' :: Ctx -> Integrations I I Proxy I I I a -> IO a
 runIntegrations' (_, mgr, lgr, cfg) m = do
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m
@@ -176,7 +176,7 @@ reports =
 
 serveChart
     :: (Typeable key, KnownSymbol key, Typeable v, NFData v)
-    => Integrations I I I I I v
+    => Integrations I I Proxy I I I v
     -> (v -> Chart key)
     -> Ctx
     -> IO (Chart key)
@@ -187,7 +187,7 @@ serveChart f g ctx = do
 -- TODO: introduce "HasMissingHoursContracts"?
 missingHoursChartData'
     :: Ctx
-    -> Integrations I I I I I MissingHoursChartData
+    -> Integrations I I Proxy I I I MissingHoursChartData
 missingHoursChartData' ctx =
     missingHoursChartData (cfgMissingHoursContracts (ctxConfig ctx))
 

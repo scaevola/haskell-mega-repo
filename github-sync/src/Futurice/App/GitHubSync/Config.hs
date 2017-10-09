@@ -12,7 +12,7 @@ import Text.Regex.Applicative (RE, match, psym, sym)
 import qualified GitHub as GH
 
 data Config = Config
-    { cfgIntegrationsConfig :: !(IntegrationsConfig Proxy Proxy I Proxy I) -- TODO
+    { cfgIntegrationsConfig :: !(IntegrationsConfig Proxy Proxy Proxy I Proxy I) -- TODO
     , cfgAuth               :: !GH.Auth
     , cfgOrganisationName   :: !(GH.Name GH.Organization)
     , cfgPinnedUsers        :: !Pinned

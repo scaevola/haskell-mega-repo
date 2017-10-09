@@ -407,7 +407,7 @@ makeCtx Config {..} lgr _cache = do
 fetchGroups
     :: Manager
     -> Logger
-    -> IntegrationsConfig Proxy I Proxy Proxy I
+    -> IntegrationsConfig Proxy I Proxy Proxy Proxy I
     -> (FUM.GroupName, FUM.GroupName, FUM.GroupName)
     -> IO (Map FUM.Login TaskRole)
 fetchGroups mgr lgr cfg (itGroupName, hrGroupName, supervisorGroupName) = do
