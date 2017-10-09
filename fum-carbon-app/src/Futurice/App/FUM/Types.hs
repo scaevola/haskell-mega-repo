@@ -1,7 +1,13 @@
 module Futurice.App.FUM.Types (
-    module Futurice.App.FUM.Types.Basic,
+    module FUM.Types.Login,
+    module FUM.Types.GroupName,
+    module Futurice.Email,
+    module Futurice.App.FUM.Types.Customer,
+    module Futurice.App.FUM.Types.Employee,
+    module Futurice.App.FUM.Types.Group,
     module Futurice.App.FUM.Types.GroupType,
     module Futurice.App.FUM.Types.Identifier,
+    module Futurice.App.FUM.Types.Mailbox,
     module Futurice.App.FUM.Types.Status,
     module Futurice.App.FUM.Types.UnixID,
     module Futurice.App.FUM.Types.World,
@@ -14,9 +20,16 @@ module Futurice.App.FUM.Types (
 import Futurice.Prelude
 import Prelude ()
 
-import Futurice.App.FUM.Types.Basic
+import Futurice.Email
+import FUM.Types.Login
+import FUM.Types.GroupName
+
+import Futurice.App.FUM.Types.Customer
+import Futurice.App.FUM.Types.Employee
+import Futurice.App.FUM.Types.Group
 import Futurice.App.FUM.Types.GroupType
 import Futurice.App.FUM.Types.Identifier
+import Futurice.App.FUM.Types.Mailbox
 import Futurice.App.FUM.Types.Status
 import Futurice.App.FUM.Types.UnixID
 import Futurice.App.FUM.Types.World

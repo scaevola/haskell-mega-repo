@@ -123,9 +123,12 @@ library
       Futurice.App.FUM.Report.Validation
       Futurice.App.FUM.Transactor
       Futurice.App.FUM.Types
-      Futurice.App.FUM.Types.Basic
+      Futurice.App.FUM.Types.Customer
+      Futurice.App.FUM.Types.Employee
+      Futurice.App.FUM.Types.Group
       Futurice.App.FUM.Types.GroupType
       Futurice.App.FUM.Types.Identifier
+      Futurice.App.FUM.Types.Mailbox
       Futurice.App.FUM.Types.Status
       Futurice.App.FUM.Types.UnixID
       Futurice.App.FUM.Types.World

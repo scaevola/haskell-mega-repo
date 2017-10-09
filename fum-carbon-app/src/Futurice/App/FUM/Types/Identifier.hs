@@ -7,8 +7,6 @@ module Futurice.App.FUM.Types.Identifier (
     _IdentifierText,
     identifierToText,
     Entity(..),
-    HasIdentifier (..),
-    identifierText,
     ) where
 
 import Data.Swagger      (SwaggerType (SwaggerString), format, type_)
@@ -58,20 +56,6 @@ instance FromJSON (Identifier a) where
 
 instance Postgres.ToField (Identifier a) where
     toField (Identifier i) = Postgres.toField i
-
--------------------------------------------------------------------------------
--- HasIdentifier
--------------------------------------------------------------------------------
-
--- | TODO: evaluate if we really need this, we have 'Key'
-class Entity ident => HasIdentifier entity ident | entity -> ident where
-    identifier :: Lens' entity (Identifier ident)
-
-identifierText :: HasIdentifier entity ident => Getter entity Text
-identifierText = identifier . getter identifierToText
-
-instance Entity e => HasIdentifier (Identifier e) e where
-    identifier = id
 
 -------------------------------------------------------------------------------
 -- Entity
