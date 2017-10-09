@@ -33,6 +33,7 @@ library
       base >=4.8   && <4.11
     , aeson
     , aeson-compat
+    , async
     , binary
     , binary-tagged
     , constraints
@@ -43,6 +44,7 @@ library
     , generics-sop
     , github
     , haxl
+    , http-client
     , lens
     , postgresql-simple
     , servant

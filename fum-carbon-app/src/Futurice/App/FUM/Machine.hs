@@ -24,12 +24,19 @@ machineServer ctx = machineServer' ctx
     :<|> rawValidations ctx
 
 machineServer' :: Ctx -> Server FUMMachineAPI
-machineServer' ctx = enter (NT nt) eg
+machineServer' ctx = enter (NT nt) $ traverse haxl
+    :<|> eg
   where
     nt :: Reader World a -> Handler a
     nt m = liftIO $ do
         w <- readTVarIO (ctxWorld ctx)
         return (runReader m w)
+
+    haxl :: SomeFUM6 -> Reader World SomeFUM6Response
+    haxl (SomeFUM6 req) = SomeFUM6Response req <$> haxl' req
+
+    haxl' :: FUM6 a -> Reader World a
+    haxl' (FUMGroupEmployees n) = eg n
 
     eg :: GroupName -> Reader World (Set Login)
     eg name = asks (setOf (worldGroups . ix name . groupEmployees . folded))
