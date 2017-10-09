@@ -27,7 +27,7 @@ dependencies:
   - deepseq
   - distributive
   - env-config
-  - fum-client
+  - fum-api
   - fum-types
   - futurice-foundation
   - futurice-integrations

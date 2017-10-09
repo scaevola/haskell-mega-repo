@@ -15,7 +15,7 @@ import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Markup
 import Futurice.App.Checklist.Types
 
-import qualified FUM (Login)
+import qualified FUM.Types.Login as FUM
 
 employeeAuditPage
     :: World

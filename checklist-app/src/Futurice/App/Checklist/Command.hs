@@ -32,22 +32,22 @@ module Futurice.App.Checklist.Command (
     TaskAddition (..),
     ) where
 
-import Algebra.Lattice        (top)
-import Data.Aeson             (Value (..))
-import Data.Aeson.Lens        (key)
-import Data.Char              (isUpper, toLower)
-import Data.List              (intercalate)
-import Data.List.CommonPrefix (CommonPrefix (..), getCommonPrefix)
-import Data.List.Split        (keepDelimsL, split, whenElt)
+import Algebra.Lattice         (top)
+import Data.Aeson              (Value (..))
+import Data.Aeson.Lens         (key)
+import Data.Char               (isUpper, toLower)
+import Data.List               (intercalate)
+import Data.List.CommonPrefix  (CommonPrefix (..), getCommonPrefix)
+import Data.List.Split         (keepDelimsL, split, whenElt)
 import Data.Singletons.Bool
-import Data.Swagger           (NamedSchema (..))
+import Data.Swagger            (NamedSchema (..))
 import Data.Type.Equality
 import Futurice.Aeson
        (FromJSONField1, fromJSONField1, object, withBool, withObject, (.!=),
        (.:), (.:?), (.=))
 import Futurice.Generics
-import Futurice.Lucid.Generics
 import Futurice.IsMaybe
+import Futurice.Lucid.Generics
 import Futurice.Prelude
 import Prelude ()
 
@@ -55,7 +55,7 @@ import qualified Control.Lens                         as Lens
 import qualified Data.Aeson.Compat                    as Aeson
 import qualified Database.PostgreSQL.Simple.FromField as Postgres
 import qualified Database.PostgreSQL.Simple.ToField   as Postgres
-import qualified FUM
+import qualified FUM.Types.Login                      as FUM
 import qualified Generics.SOP                         as SOP
 import qualified Generics.SOP.Lens                    as SOPL
 

@@ -6,14 +6,14 @@ module Futurice.App.Checklist.Logic (
     transactCommand,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
 import Control.Lens               (ifoldMapOf, iforOf_, non, use)
 import Control.Monad.State.Strict (execState)
+import Futurice.Prelude
+import Prelude ()
 
 import qualified Control.Lens               as Lens
 import qualified Database.PostgreSQL.Simple as Postgres
-import qualified FUM
+import qualified FUM.Types.Login            as FUM
 
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Types

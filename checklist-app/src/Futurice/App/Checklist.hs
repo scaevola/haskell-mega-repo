@@ -48,7 +48,9 @@ import Futurice.App.Checklist.Pages.Tasks
 import Futurice.App.Checklist.Types
 
 import qualified Database.PostgreSQL.Simple as Postgres
-import qualified FUM
+import qualified FUM.Types.GroupName        as FUM
+import qualified FUM.Types.Login            as FUM
+import qualified Futurice.FUM.MachineAPI    as FUM
 
 import qualified Personio
 
@@ -407,17 +409,17 @@ makeCtx Config {..} lgr _cache = do
 fetchGroups
     :: Manager
     -> Logger
-    -> IntegrationsConfig Proxy I Proxy Proxy Proxy I
+    -> IntegrationsConfig Proxy Proxy I Proxy Proxy I
     -> (FUM.GroupName, FUM.GroupName, FUM.GroupName)
     -> IO (Map FUM.Login TaskRole)
 fetchGroups mgr lgr cfg (itGroupName, hrGroupName, supervisorGroupName) = do
     now <- currentTime
     (itGroup, hrGroup, supervisorGroup) <- runIntegrations mgr lgr now cfg $
         liftA3 (,,)
-            (FUM.fumGroup itGroupName)
-            (FUM.fumGroup hrGroupName)
-            (FUM.fumGroup supervisorGroupName)
+            (FUM.fum6 $ FUM.FUMGroupEmployees itGroupName)
+            (FUM.fum6 $ FUM.FUMGroupEmployees hrGroupName)
+            (FUM.fum6 $ FUM.FUMGroupEmployees supervisorGroupName)
     pure $ toMapOf (folded . ifolded) $
-        [ (login, TaskRoleIT) | login <- itGroup ^.. FUM.groupUsers . folded ] ++
-        [ (login, TaskRoleHR) | login <- hrGroup ^.. FUM.groupUsers . folded ] ++
-        [ (login, TaskRoleSupervisor) | login <- supervisorGroup ^.. FUM.groupUsers . folded ]
+        [ (login, TaskRoleIT) | login <- itGroup ^.. folded ] ++
+        [ (login, TaskRoleHR) | login <- hrGroup ^.. folded ] ++
+        [ (login, TaskRoleSupervisor) | login <- supervisorGroup ^.. folded ]
