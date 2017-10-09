@@ -26,6 +26,7 @@ library:
     - bytestring
     - cassava
     - env-config
+    - fum-api
     - fum-client
     - futurice-github
     - futurice-metrics

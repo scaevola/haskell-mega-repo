@@ -51,12 +51,14 @@ envs:
     PLANMILLPROXY_HAXLURL: "http://localhost:8808/planmill-haxl"
     GITHUBPROXY_HAXLURL: "http://localhost:8811/github-haxl"
     PERSONIOPROXY_REQUESTURL: "http://localhost:8812/api/personio-request"
+    FUMCARBON_HAXLURL: "http://localhost:8812/api/haxl"
 
     # proxy-app
     REPORTSAPP_BASEURL: http://localhost:8807
     PLANMILLPROXY_BASEURL: http://localhost:8808
     GITHUBPROXY_BASEURL: http://localhost:8811
     PERSONIOPROXY_BASEURL: http://localhost:8812
+    FUMCARBON_BASEURL: http://localhost:8812
     POWER_BASEURL: http://localhost:8000
 
     # spice stats
