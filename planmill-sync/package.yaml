@@ -28,7 +28,9 @@ library:
     - base                  >=4.7   && <4.11
     - aeson
     - aeson-compat
+    - containers
     - env-config
+    - fum-api
     - fum-types
     - futurice-constants
     - futurice-foundation

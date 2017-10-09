@@ -42,7 +42,7 @@ indexPageAction ctx _mfu = do
     lgr = ctxLogger ctx
     mgr = ctxManager ctx
 
-type M = Integrations Proxy Proxy I Proxy I
+type M = Integrations Proxy Proxy Proxy I Proxy I
 
 fetcher :: M ([GH.User], [P.Employee])
 fetcher = liftA2 (,) github personioE

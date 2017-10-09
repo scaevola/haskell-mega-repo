@@ -13,6 +13,7 @@ import qualified FUM
 data Config = Config
     { cfgPostgresConnInfo     :: !ConnectInfo
     , cfgReportsAppBaseurl    :: !BaseUrl
+    , cfgFumCarbonBaseurl     :: !BaseUrl
     , cfgPlanmillProxyBaseurl :: !BaseUrl
     , cfgGithubProxyBaseurl   :: !BaseUrl
     , cfgPersonioProxyBaseurl :: !BaseUrl
@@ -25,6 +26,7 @@ instance Configure Config where
     configure = Config
         <$> envConnectInfo
         <*> envVar "REPORTSAPP_BASEURL"
+        <*> envVar "FUMCARBON_BASEURL"
         <*> envVar "PLANMILLPROXY_BASEURL"
         <*> envVar "GITHUBPROXY_BASEURL"
         <*> envVar "PERSONIOPROXY_BASEURL"

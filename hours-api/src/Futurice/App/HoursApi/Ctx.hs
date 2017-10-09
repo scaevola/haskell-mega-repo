@@ -18,5 +18,5 @@ data Ctx = Ctx
     , ctxManager         :: !Manager
     , ctxWorkers         :: !PM.Workers
     , ctxPlanmillCfg     :: !PM.Cfg
-    , ctxIntegrationsCfg :: !(IntegrationsConfig I I Proxy Proxy Proxy)
+    , ctxIntegrationsCfg :: !(IntegrationsConfig I I Proxy Proxy Proxy Proxy)
     }

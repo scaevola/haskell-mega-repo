@@ -14,6 +14,7 @@ data Ctx = Ctx
     { ctxManager              :: !Manager
     , ctxPostgresPool         :: !(Pool Connection)
     , ctxReportsAppBaseurl    :: !BaseUrl
+    , ctxFumCarbonBaseurl     :: !BaseUrl
     , ctxPlanmillProxyBaseurl :: !BaseUrl
     , ctxGithubProxyBaseurl   :: !BaseUrl
     , ctxPersonioProxyBaseurl :: !BaseUrl

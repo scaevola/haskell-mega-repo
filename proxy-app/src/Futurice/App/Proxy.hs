@@ -34,6 +34,7 @@ import Text.Regex.Applicative.Text     (RE', anySym, match, string)
 import qualified Data.Text                  as T
 import qualified Database.PostgreSQL.Simple as Postgres
 import qualified FUM
+import qualified Futurice.FUM.MachineAPI    as FUM6
 import qualified Futurice.GitHub            as GH (SomeRequest, SomeResponse)
 import qualified Personio
 import qualified PlanMill.Types.Query       as PM (SomeQuery, SomeResponse)
@@ -49,6 +50,7 @@ import Futurice.App.Reports.TimereportsByTask (TimereportsByTaskReport)
 -------------------------------------------------------------------------------
 
 data ReportsAppService
+data FumCarbonService
 data PlanmillProxyService
 data GithubProxyService
 data FumService
@@ -58,6 +60,10 @@ data PersonioProxyService
 instance HasClientBaseurl Ctx ReportsAppService where
     clientBaseurl _ = lens ctxReportsAppBaseurl $ \ctx x ->
         ctx { ctxReportsAppBaseurl = x }
+
+instance HasClientBaseurl Ctx FumCarbonService where
+    clientBaseurl _ = lens ctxFumCarbonBaseurl $ \ctx x ->
+        ctx { ctxFumCarbonBaseurl = x }
 
 instance HasClientBaseurl Ctx PlanmillProxyService where
     clientBaseurl _ = lens ctxPlanmillProxyBaseurl $ \ctx x ->
@@ -93,6 +99,13 @@ type TimereportsByTaskReportEndpoint = ProxyPair
     ("reports" :> "hours-by-task" :> Get '[CSV, JSON] TimereportsByTaskReport)
     ReportsAppService
     ("hours-by-task" :> Get '[JSON] TimereportsByTaskReport)
+
+type FumCarbonEndpoint' =
+    ReqBody '[JSON] [FUM6.SomeFUM6] :> Post '[JSON] [FUM6.SomeFUM6Response]
+type FumCarbonEndpoint = ProxyPair
+    ("fum-carbon-haxl" :> FumCarbonEndpoint')
+    FumCarbonService
+    ("api" :> "haxl" :> FumCarbonEndpoint')
 
 -- Planmill
 -- TODO: we actually decode/encode when proxying.
@@ -140,6 +153,11 @@ type PowerPeopleEndpoint = ProxyPair
     PowerService
     ("api" :> "v2" :> "people" :> Get '[JSON] Value)
 
+type PowerTribesEndpoint = ProxyPair
+    ("power" :> "api" :> "tribes" :> Get '[JSON] Value)
+    PowerService
+    ("api" :> "v2" :> "tribes" :> Get '[JSON] Value)
+
 -- Personio via FUM
 type PersonioProxyEndpoint' =
     ReqBody '[JSON] Personio.SomePersonioReq :>
@@ -154,6 +172,7 @@ type PersonioProxyEndpoint = ProxyPair
 type ProxyDefinition =
     '[ MissingReportsEndpoint
     , TimereportsByTaskReportEndpoint
+    , FumCarbonEndpoint
     , PlanmillProxyEndpoint
     , GithubProxyEndpoint
     , PersonioProxyEndpoint
@@ -162,6 +181,7 @@ type ProxyDefinition =
     , PowerBiEndpoint
     , PowerCompetencesEndpoint
     , PowerPeopleEndpoint
+    , PowerTribesEndpoint
     ]
 
 type ProxyAPI  = Get '[JSON] Text :<|> ProxyServer ProxyDefinition
@@ -192,6 +212,7 @@ server :: Ctx -> Server ProxyAPI
 server ctx = give (ctxFumAuthToken ctx) $ pure "P-R-O-X-Y"
     :<|> makeProxy (Proxy :: Proxy MissingReportsEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy TimereportsByTaskReportEndpoint) ctx
+    :<|> makeProxy (Proxy :: Proxy FumCarbonEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy PlanmillProxyEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy GithubProxyEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy PersonioProxyEndpoint) ctx
@@ -200,6 +221,7 @@ server ctx = give (ctxFumAuthToken ctx) $ pure "P-R-O-X-Y"
     :<|> makeProxy (Proxy :: Proxy PowerBiEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy PowerCompetencesEndpoint) ctx
     :<|> makeProxy (Proxy :: Proxy PowerPeopleEndpoint) ctx
+    :<|> makeProxy (Proxy :: Proxy PowerTribesEndpoint) ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
@@ -221,6 +243,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
             { ctxManager              = mgr
             , ctxPostgresPool         = postgresPool
             , ctxReportsAppBaseurl    = cfgReportsAppBaseurl
+            , ctxFumCarbonBaseurl     = cfgFumCarbonBaseurl
             , ctxPlanmillProxyBaseurl = cfgPlanmillProxyBaseurl
             , ctxGithubProxyBaseurl   = cfgGithubProxyBaseurl
             , ctxPersonioProxyBaseurl = cfgPersonioProxyBaseurl

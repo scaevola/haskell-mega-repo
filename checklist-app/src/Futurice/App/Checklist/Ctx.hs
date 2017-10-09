@@ -29,7 +29,7 @@ import Futurice.App.Checklist.Types
 data Ctx = Ctx
     { ctxLogger          :: !Logger
     , ctxManager         :: !Manager
-    , ctxIntegrationsCfg :: !(IntegrationsConfig Proxy I Proxy Proxy I)
+    , ctxIntegrationsCfg :: !(IntegrationsConfig Proxy I Proxy Proxy Proxy I)
     , ctxWorld           :: TVar World
     , ctxOrigWorld       :: World
     , ctxPostgres        :: Pool Postgres.Connection
@@ -40,7 +40,7 @@ data Ctx = Ctx
 
 newCtx
     :: Logger
-    -> IntegrationsConfig Proxy I Proxy Proxy I
+    -> IntegrationsConfig Proxy I Proxy Proxy Proxy I
     -> Postgres.ConnectInfo
     -> Maybe FUM.Login
     -> World

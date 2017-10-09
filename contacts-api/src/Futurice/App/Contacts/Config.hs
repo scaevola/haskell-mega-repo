@@ -6,4 +6,4 @@ import Prelude ()
 import Futurice.Prelude
 import Futurice.Integrations
 
-type Config = IntegrationsConfig I I I I I
+type Config = IntegrationsConfig I I Proxy I I I

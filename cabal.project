@@ -11,6 +11,7 @@ packages:
   favicon-app/
   flowdock-grep/
   flowdock-rest/
+  fum-api/
   fum-carbon-app/
   fum-client/
   fum-types/
