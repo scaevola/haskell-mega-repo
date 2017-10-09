@@ -40,6 +40,10 @@
 - 1:1:2 AddEmployeeToMailbox command
 - 2:3:4 mailbox editing acl?
 
+# Audit
+- 1:1:1 Employee and group pages
+- 1:1:1 Undo!
+
 # Technicals
 
 - ~1:1:1 Bootstrap~
@@ -62,6 +66,10 @@
 ## Suprises
 
 - ~1:1:1 UID&GID~
+
+# FUM -> Checklist
+
+- ~1:1:1 Checklist uses FUM as ACL provider~
 
 # Personio -> PlanMill
 
