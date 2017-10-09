@@ -20,7 +20,7 @@ import Prelude ()
 
 import qualified Data.Map                   as M
 import qualified Database.PostgreSQL.Simple as Postgres
-import qualified FUM
+import qualified FUM.Types.Login            as FUM
 
 import Futurice.App.Checklist.Command
 import Futurice.App.Checklist.Logic
@@ -29,7 +29,7 @@ import Futurice.App.Checklist.Types
 data Ctx = Ctx
     { ctxLogger          :: !Logger
     , ctxManager         :: !Manager
-    , ctxIntegrationsCfg :: !(IntegrationsConfig Proxy I Proxy Proxy Proxy I)
+    , ctxIntegrationsCfg :: !(IntegrationsConfig Proxy Proxy I Proxy Proxy I)
     , ctxWorld           :: TVar World
     , ctxOrigWorld       :: World
     , ctxPostgres        :: Pool Postgres.Connection
@@ -40,7 +40,7 @@ data Ctx = Ctx
 
 newCtx
     :: Logger
-    -> IntegrationsConfig Proxy I Proxy Proxy Proxy I
+    -> IntegrationsConfig Proxy Proxy I Proxy Proxy I
     -> Postgres.ConnectInfo
     -> Maybe FUM.Login
     -> World

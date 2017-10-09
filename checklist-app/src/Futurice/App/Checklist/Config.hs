@@ -8,12 +8,13 @@ import Futurice.Integrations
 import Futurice.Prelude
 import Prelude ()
 
-import qualified FUM
+import qualified FUM.Types.GroupName as FUM
+import qualified FUM.Types.Login     as FUM
 
 data Config = Config
     { cfgMockUser           :: !(Maybe FUM.Login)
     , cfgPostgresConnInfo   :: !ConnectInfo
-    , cfgIntegrationsCfg    :: !(IntegrationsConfig Proxy I Proxy Proxy Proxy I)
+    , cfgIntegrationsCfg    :: !(IntegrationsConfig Proxy Proxy I Proxy Proxy I)
     -- ACL Groups
     , cfgFumITGroup         :: !FUM.GroupName
     , cfgFumHRGroup         :: !FUM.GroupName

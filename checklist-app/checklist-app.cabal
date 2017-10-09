@@ -42,7 +42,7 @@ library
     , deepseq
     , distributive
     , env-config
-    , fum-client
+    , fum-api
     , fum-types
     , futurice-foundation
     , futurice-integrations
@@ -137,7 +137,7 @@ executable checklist-app-server
     , deepseq
     , distributive
     , env-config
-    , fum-client
+    , fum-api
     , fum-types
     , futurice-foundation
     , futurice-integrations
@@ -197,7 +197,7 @@ executable checklist-import
     , deepseq
     , distributive
     , env-config
-    , fum-client
+    , fum-api
     , fum-types
     , futurice-foundation
     , futurice-integrations
@@ -261,7 +261,7 @@ test-suite unit-tests
     , deepseq
     , distributive
     , env-config
-    , fum-client
+    , fum-api
     , fum-types
     , futurice-foundation
     , futurice-integrations
