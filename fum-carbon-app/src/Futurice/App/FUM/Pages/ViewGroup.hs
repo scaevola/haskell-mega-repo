@@ -37,11 +37,16 @@ viewGroupPage auth world g = fumPage_ "Group" auth $ do
                 th_ "Login"
                 th_ "Name"
                 th_ "Status"
+                th_ mempty
 
             tbody_ $ for_ (g ^.. groupEmployees . folded) $ \login -> tr_ $
                 for_ (world ^? worldEmployees . ix login) $ \e -> do
                     td_ $ loginToHtml $ e ^. employeeLogin
                     td_ $ toHtml $ e ^. employeeName
                     td_ $ toHtml $ e ^. employeeStatus
+                    td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveEmployeeFromGroup) "Remove" "alert" $
+                        vHidden (g ^. groupName) :*
+                        vHidden login :*
+                        Nil
 
-        todos_ ["Removal of member, edit group type, remove group, special (e.g. office) groups"]
+        todos_ ["edit group type, remove group, special (e.g. office) groups"]
