@@ -11,10 +11,14 @@
 module Futurice.FUM.MachineAPI (
     FUMMachineAPI,
     fumMachineApi,
+    -- * Class
+    MonadFUM6 (..),
     -- * haxl
     FUM6 (..),
     SomeFUM6 (..),
     SomeFUM6Response (..),
+    fumHaxlRequest,
+    initDataSource,
     ) where
 
 import Control.Concurrent.Async (async, waitCatch)
@@ -38,11 +42,18 @@ import qualified Network.HTTP.Client as HTTP
 -- Servant API
 -------------------------------------------------------------------------------
 
-type FUMMachineAPI = "haxl" :> ReqBody '[JSON] [SomeFUM6] :> Get '[JSON] [SomeFUM6Response]
+type FUMMachineAPI = "haxl" :> ReqBody '[JSON] [SomeFUM6] :> Post '[JSON] [SomeFUM6Response]
     :<|> "groups" :> Capture "group-name" GroupName :> "employees" :> Get '[JSON] (Set Login)
 
 fumMachineApi :: Proxy FUMMachineAPI
 fumMachineApi = Proxy
+
+-------------------------------------------------------------------------------
+-- Class
+-------------------------------------------------------------------------------
+
+class Monad m => MonadFUM6 m where
+    fum6 :: FUM6 a -> m a
 
 -------------------------------------------------------------------------------
 -- Haxl
@@ -134,6 +145,13 @@ instance S.ToSchema SomeFUM6Response where
 -- Haxl DataSource
 -------------------------------------------------------------------------------
 
+fumHaxlRequest :: FUM6 a -> GenHaxl u a
+fumHaxlRequest req = case req of
+    FUMGroupEmployees _ -> dataFetch req
+
+initDataSource :: Logger -> Manager -> HTTP.Request -> State FUM6
+initDataSource = FUM6State
+
 instance DataSource u FUM6 where
     fetch (FUM6State lgr mgr baseReq) _flags _userEnv bf =
         AsyncFetch $ \inn -> runLogT "fum6-haxl" lgr $ do
@@ -168,8 +186,9 @@ instance DataSource u FUM6 where
 
         putResults :: [BlockedFetch FUM6] -> [SomeFUM6Response] -> LogT IO ()
         -- if no more blocked fetches, we are done
-        putResults [] _ =
-            logAttention_ "Extra responses"
+        putResults [] ress =
+            unless (null ress) $ logAttention_ "Extra responses"
+
         -- if we have blocked fetch, but no result:
         -- report error
         putResults (BlockedFetch _q v : _)  [] =

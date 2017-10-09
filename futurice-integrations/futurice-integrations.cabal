@@ -42,6 +42,7 @@ library
     , dependent-sum
     , env-config
     , flowdock-rest
+    , fum-api
     , fum-client
     , futurice-github
     , futurice-prelude

@@ -27,6 +27,7 @@ import Network.HTTP.Client
 import PlanMill.Queries.Haxl     (initDataSourceBatch)
 import Prelude ()
 
+import qualified Futurice.FUM.MachineAPI as FUM6
 import qualified Chat.Flowdock.REST           as FD
 import qualified Flowdock.Haxl                as FD.Haxl
 import qualified FUM
@@ -61,6 +62,7 @@ makeLenses ''Env
 newtype Integrations
     (pm :: * -> *)
     (fum :: * -> *)
+    (fum6 :: * -> *)
     (gh :: * -> *)
     (fd :: * -> *)
     (pe :: * -> *)
@@ -68,13 +70,15 @@ newtype Integrations
     = Integr { unIntegr :: ReaderT (Env fum gh fd) (H.GenHaxl ()) a }
 
 -- | TODO: Show instance
-data IntegrationsConfig pm fum gh fd pe = MkIntegrationsConfig
+data IntegrationsConfig pm fum fum6 gh fd pe = MkIntegrationsConfig
     -- Planmill
     { integrCfgPlanmillProxyBaseRequest :: !(pm Request)
     -- FUM
     , integrCfgFumAuthToken             :: !(fum FUM.AuthToken)
     , integrCfgFumBaseUrl               :: !(fum FUM.BaseUrl)
     , integrCfgFumEmployeeListName      :: !(fum FUM.ListName)
+    -- FUM Carbon
+    , integrCfgFumCarbonBaseRequest     :: !(fum6 Request)
     -- GitHub
     , integrCfgGithubProxyBaseRequest   :: !(gh Request)
     , integrCfgGithubOrgName            :: !(gh :$ GH.Name GH.Organization)
@@ -86,10 +90,10 @@ data IntegrationsConfig pm fum gh fd pe = MkIntegrationsConfig
     }
 
 runIntegrations
-    :: (SFunctorI pm, SFunctorI fum, SFunctorI gh, SFunctorI fd, SFunctorI pe)
+    :: (SFunctorI pm, SFunctorI fum, SFunctorI fum6, SFunctorI gh, SFunctorI fd, SFunctorI pe)
     => Manager -> Logger -> UTCTime
-    -> IntegrationsConfig pm fum gh fd pe
-    -> Integrations pm fum gh fd pe a
+    -> IntegrationsConfig pm fum fum6 gh fd pe
+    -> Integrations pm fum fum6 gh fd pe a
     -> IO a
 runIntegrations mgr lgr now cfg (Integr m) = do
     let env = Env
@@ -102,6 +106,7 @@ runIntegrations mgr lgr now cfg (Integr m) = do
     let stateStore
             = pmStateSet
             . fumStateSet
+            . fum6StateSet
             . fdStateSet
             . ghStateSet
             . peStateSet
@@ -112,6 +117,8 @@ runIntegrations mgr lgr now cfg (Integr m) = do
     fumStateSet = extractSEndo $ fmap H.stateSet $ FUM.Haxl.initDataSource' mgr
         <$> integrCfgFumAuthToken cfg
         <*> integrCfgFumBaseUrl cfg
+    fum6StateSet  = extractSEndo $ fmap H.stateSet $ FUM6.initDataSource lgr mgr
+        <$> integrCfgFumCarbonBaseRequest cfg
     pmStateSet  = extractSEndo $ fmap H.stateSet $ initDataSourceBatch lgr mgr
         <$> integrCfgPlanmillProxyBaseRequest cfg
     fdStateSet  = extractSEndo $ fmap H.stateSet $ FD.Haxl.initDataSource' mgr
@@ -122,7 +129,7 @@ runIntegrations mgr lgr now cfg (Integr m) = do
         <$> integrCfgPersonioProxyBaseRequest cfg
 
 {-# DEPRECATED runIntegrationsIO "Only use this in repl" #-}
-runIntegrationsIO :: Integrations I I I I I a -> IO a
+runIntegrationsIO :: Integrations I I I I I I a -> IO a
 runIntegrationsIO action = withStderrLogger $ \lgr -> do
     cfg <- loadIntegrationConfig lgr
     mgr <- newManager tlsManagerSettings
@@ -134,19 +141,20 @@ runIntegrationsIO action = withStderrLogger $ \lgr -> do
 -------------------------------------------------------------------------------
 --
 -- | A helper useful in REPL.
-loadIntegrationConfig :: Logger -> IO (IntegrationsConfig I I I I I)
+loadIntegrationConfig :: Logger -> IO (IntegrationsConfig I I I I I I)
 loadIntegrationConfig lgr =
     runLogT "loadIntegrationConfig" lgr $ getConfig "REPL"
 
 instance
-    (SFunctorI pm, SFunctorI fum, SFunctorI gh, SFunctorI fd, SFunctorI pe)
-    => Configure (IntegrationsConfig pm fum gh fd pe)
+    (SFunctorI pm, SFunctorI fum, SFunctorI fum6, SFunctorI gh, SFunctorI fd, SFunctorI pe)
+    => Configure (IntegrationsConfig pm fum fum6 gh fd pe)
   where
     configure = MkIntegrationsConfig
         <$> (f <$$> envVar' "PLANMILLPROXY_HAXLURL")
         <*> envVar' "FUM_TOKEN"
         <*> envVar' "FUM_BASEURL"
         <*> envVar' "FUM_LISTNAME"
+        <*> (f <$$> envVar' "FUMCARBON_HAXLURL")
         <*> (f <$$> envVar' "GITHUBPROXY_HAXLURL")
         <*> envVar' "GH_ORG"
         <*> envVar' "FD_AUTH_TOKEN"
@@ -184,15 +192,15 @@ extractSFunctor def f = case sfunctor :: SFunctor f of
 -- Instances
 -------------------------------------------------------------------------------
 
-instance Functor (Integrations pm fum gh fd pe) where
+instance Functor (Integrations pm fum fum6 gh fd pe) where
     fmap f (Integr x) = Integr (fmap f x)
 
-instance Applicative (Integrations pm fum gh fd pe)  where
+instance Applicative (Integrations pm fum fum6 gh fd pe)  where
     pure = Integr . pure
     Integr f <*> Integr x = Integr (f <*> x)
     Integr f  *> Integr x = Integr (f  *> x)
 
-instance Monad (Integrations pm fum gh fd pe) where
+instance Monad (Integrations pm fum fum6 gh fd pe) where
     return = pure
     (>>) = (*>)
     Integr f >>= k = Integr $ f >>= unIntegr . k
@@ -201,32 +209,39 @@ instance Monad (Integrations pm fum gh fd pe) where
 -- Monad* instances
 -------------------------------------------------------------------------------
 
-instance MonadTime (Integrations pm fum gh fd pe) where
+instance MonadTime (Integrations pm fum fum6 gh fd pe) where
     currentTime = view envNow
 
-instance pm ~ I => MonadPlanMillConstraint (Integrations pm fum gh fd pe) where
-    type MonadPlanMillC (Integrations pm fum gh fd pe) = Unit1
+instance pm ~ I => MonadPlanMillConstraint (Integrations pm fum fum6 gh fd pe) where
+    type MonadPlanMillC (Integrations pm fum fum6 gh fd pe) = Unit1
     entailMonadPlanMillCVector _ _ = Sub Dict
 
-instance pm ~ I => MonadPlanMillQuery (Integrations pm fum gh fd pe) where
+instance pm ~ I => MonadPlanMillQuery (Integrations pm fum fum6 gh fd pe) where
     planmillQuery q = case (showDict, typeableDict) of
         (Dict, Dict) -> Integr (lift $ H.dataFetch q)
       where
         typeableDict = Q.queryDict (Proxy :: Proxy Typeable) q
         showDict     = Q.queryDict (Proxy :: Proxy Show)     q
 
-instance fum ~ I  => MonadFUM (Integrations pm fum gh fd pe) where
+instance fum ~ I  => MonadFUM (Integrations pm fum fum6 gh fd pe) where
     fumAction = Integr . lift . FUM.Haxl.request
 
-instance fd ~ I => MonadFlowdock (Integrations pm fum gh fd pe) where
+instance fd ~ I => MonadFlowdock (Integrations pm fum fum6 gh fd pe) where
     flowdockOrganisationReq = Integr . lift . FD.Haxl.organisation
+
+-------------------------------------------------------------------------------
+-- MonadFUM6
+-------------------------------------------------------------------------------
+
+instance fum6 ~ I => FUM6.MonadFUM6 (Integrations pm fum fum6 gh fd pe) where
+    fum6 = Integr . lift . FUM6.fumHaxlRequest
 
 -------------------------------------------------------------------------------
 -- MonadGitHub
 -------------------------------------------------------------------------------
 
-instance gh ~ I => MonadGitHub (Integrations pm fum gh fd pe) where
-    type MonadGitHubC (Integrations pm fum gh fd pe) = FlipIn GH.GHTypes
+instance gh ~ I => MonadGitHub (Integrations pm fum fum6 gh fd pe) where
+    type MonadGitHubC (Integrations pm fum fum6 gh fd pe) = FlipIn GH.GHTypes
     githubReq req = case (showDict, typeableDict) of
         (Dict, Dict) -> Integr (lift $ H.dataFetch $ GH.GHR tag req)
       where
@@ -238,7 +253,7 @@ instance gh ~ I => MonadGitHub (Integrations pm fum gh fd pe) where
 -- MonadPersonio
 -------------------------------------------------------------------------------
 
-instance pe ~ I => MonadPersonio (Integrations pm fum gh fd pe) where
+instance pe ~ I => MonadPersonio (Integrations pm fum fum6 gh fd pe) where
     personio r = case (showDict, typeableDict) of
         (Dict, Dict) -> Integr . lift . Personio.Haxl.request $ r
       where
@@ -249,7 +264,7 @@ instance pe ~ I => MonadPersonio (Integrations pm fum gh fd pe) where
 -- Has* instances
 -------------------------------------------------------------------------------
 
-instance MonadReader (Env fum gh fd) (Integrations pm fum gh fd pe) where
+instance MonadReader (Env fum gh fd) (Integrations pm fum fum6 gh fd pe) where
     ask = Integr ask
     local f = Integr . local f . unIntegr
 
