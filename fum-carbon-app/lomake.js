@@ -19,6 +19,9 @@ lomake = (function () {
     // The url where we will submit the form.
     var formSubmitUrl = formElement.dataset.lomakeFormSubmit;
 
+    // The "good" class for submit button
+    var submitButtonClass = formElement.dataset.lomakeSubmitButtonClass || "success";
+
     // Elements
     var inputElements = $$("*[data-lomake-id]", formElement);
     var resetBtn = $("button[data-lomake-action=reset]", formElement);
@@ -217,10 +220,10 @@ lomake = (function () {
       trace("toggling submitBtn class", formName, submitBtn);
       if (submittable) {
         submitBtn.classList.remove("alert");
-        submitBtn.classList.add("success");
+        submitBtn.classList.add(submitButtonClass);
       } else {
         submitBtn.classList.add("alert");
-        submitBtn.classList.remove("success");
+        submitBtn.classList.remove(submitButtonClass);
       }
     });
 

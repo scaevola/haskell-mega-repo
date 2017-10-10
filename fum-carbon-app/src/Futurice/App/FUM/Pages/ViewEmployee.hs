@@ -59,7 +59,7 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
             tbody_ $ for_ groups $ \g -> tr_ $ do
                 td_ $ a_ [ viewGroupHref_ $ g ^. groupName] $ toHtml $ g ^. groupName
                 td_ $ toHtml $ g ^. groupType
-                td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveEmployeeFromGroup) "Remove" "alert" $
+                td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveEmployeeFromGroup) "Remove" "warning" $
                     vHidden (g ^. groupName) :*
                     vHidden login :*
                     Nil
@@ -81,7 +81,7 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
         fullRow_ $ table_ $ tbody_ $
             for_ (e ^.. employeeEmailAliases . folded) $ \email -> tr_ $ do
                 td_ $ toHtml email
-                td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveEmailFromEmployee) "Remove" "alert" $
+                td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveEmailFromEmployee) "Remove" "warning" $
                     vHidden login :*
                     vHidden email :*
                     Nil

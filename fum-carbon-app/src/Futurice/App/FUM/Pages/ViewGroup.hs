@@ -26,7 +26,7 @@ viewGroupPage auth world g = fumPage_ "Group" auth $ do
         vertRow_ "Name" $ toHtml $ g ^. groupName
         vertRow_ "Type" $ toHtml $ g ^. groupType
         unless (null (g ^. groupEditor)) $
-            vertRow_ "Editor groups" "todo"
+            vertRow_ "Editor groups" $ forWith_ ", " (g ^. groupEditor) toHtml
 
     when (canEditGroup (authLogin auth) (g ^. groupName) world) $ do
         block_ "Add member" $ commandHtml' (Proxy :: Proxy AddEmployeeToGroup) $
@@ -48,7 +48,7 @@ viewGroupPage auth world g = fumPage_ "Group" auth $ do
 
                 tbody_ $ for_ (g ^. groupEditor) $ \editorName -> do
                     td_ $ toHtml editorName
-                    td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveEditorGroup) "Remove" "alert" $
+                    td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveEditorGroup) "Remove" "warning" $
                         vHidden (g ^. groupName) :*
                         vHidden editorName :*
                         Nil
@@ -66,7 +66,7 @@ viewGroupPage auth world g = fumPage_ "Group" auth $ do
                     td_ $ loginToHtml $ e ^. employeeLogin
                     td_ $ toHtml $ e ^. employeeName
                     td_ $ toHtml $ e ^. employeeStatus
-                    td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveEmployeeFromGroup) "Remove" "alert" $
+                    td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveEmployeeFromGroup) "Remove" "warning" $
                         vHidden (g ^. groupName) :*
                         vHidden login :*
                         Nil

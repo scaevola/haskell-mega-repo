@@ -210,6 +210,7 @@ lomakeHtml formOpts fields names values =
     formAttributes =
         [ data_ "lomake-form" $ foName formOpts
         , data_ "lomake-form-submit" $ "/" <> toUrlPiece (foUrl formOpts)
+        , data_ "lomake-submit-button-class" submitClass
         ]
 
     go :: NP Field ys -> NP (K Text) ys -> NP V ys -> HtmlT (Writer Any) ()
@@ -255,6 +256,7 @@ lomakeHtml formOpts fields names values =
             }
 
     render (EnumField opts) n value = do
+        tell (Any True)
         let p = efoEncode opts
         let mValue = vMaybe Nothing Just value
         row_ $ large_ 12 $ label_ $ do
