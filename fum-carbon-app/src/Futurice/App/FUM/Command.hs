@@ -17,9 +17,10 @@ module Futurice.App.FUM.Command (
     module Futurice.App.FUM.Command.AddEmailToEmployee,
     module Futurice.App.FUM.Command.AddEmployeeToGroup,
     module Futurice.App.FUM.Command.Bootstrap,
-    module Futurice.App.FUM.Command.Definition,
     module Futurice.App.FUM.Command.CreateEmployee,
     module Futurice.App.FUM.Command.CreateGroup,
+    module Futurice.App.FUM.Command.Definition,
+    module Futurice.App.FUM.Command.RemoveEditorGroup,
     module Futurice.App.FUM.Command.RemoveEmailFromEmployee,
     module Futurice.App.FUM.Command.RemoveEmployeeFromGroup,
     ) where
@@ -41,6 +42,7 @@ import Futurice.App.FUM.Command.Bootstrap
 import Futurice.App.FUM.Command.CreateEmployee
 import Futurice.App.FUM.Command.CreateGroup
 import Futurice.App.FUM.Command.Definition
+import Futurice.App.FUM.Command.RemoveEditorGroup
 import Futurice.App.FUM.Command.RemoveEmailFromEmployee
 import Futurice.App.FUM.Command.RemoveEmployeeFromGroup
 
@@ -53,6 +55,7 @@ type Commands = '[ Bootstrap
     , AddEmployeeToGroup
     , CreateEmployee
     , CreateGroup
+    , RemoveEditorGroup
     , RemoveEmailFromEmployee
     , RemoveEmployeeFromGroup
     ]

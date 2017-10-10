@@ -102,6 +102,7 @@ library
       Futurice.App.FUM.Command.CreateEmployee
       Futurice.App.FUM.Command.CreateGroup
       Futurice.App.FUM.Command.Definition
+      Futurice.App.FUM.Command.RemoveEditorGroup
       Futurice.App.FUM.Command.RemoveEmailFromEmployee
       Futurice.App.FUM.Command.RemoveEmployeeFromGroup
       Futurice.App.FUM.Command.Server

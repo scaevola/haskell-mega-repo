@@ -48,7 +48,10 @@ viewGroupPage auth world g = fumPage_ "Group" auth $ do
 
                 tbody_ $ for_ (g ^. groupEditor) $ \editorName -> do
                     td_ $ toHtml editorName
-                    td_ "todo: remove"
+                    td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveEditorGroup) "Remove" "alert" $
+                        vHidden (g ^. groupName) :*
+                        vHidden editorName :*
+                        Nil
 
     block_ "Members" $ do
         fullRow_ $ table_ $ do
