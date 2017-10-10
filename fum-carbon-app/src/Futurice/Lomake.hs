@@ -5,11 +5,7 @@
 {-# LANGUAGE ScopedTypeVariables     #-}
 {-# LANGUAGE TypeFamilies            #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
-
-{-# LANGUAGE FlexibleInstances       #-}
-{-# LANGUAGE MultiParamTypeClasses   #-}
 {-# LANGUAGE UndecidableInstances    #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 -- | Simple but awesome form library.
 --
 -- /TODO:/ mode to @futurice-prelude@ after stabilised.
@@ -22,7 +18,7 @@ module Futurice.Lomake (
 import Control.Monad.Fail        (MonadFail)
 import Control.Monad.Writer.CPS  (Writer, runWriter)
 import Data.Maybe                (isNothing)
-import Data.Monoid               (Any (..))
+import Data.Monoid               (Sum (..))
 import Data.Swagger              (NamedSchema (..))
 import Futurice.Generics
 import Futurice.List             (UnSingleton)
@@ -191,19 +187,22 @@ lomakeHtml
 lomakeHtml formOpts fields names values =
     row_ formAttributes $ large_ 12 $ do
         -- inputs
-        let (elementHtml, Any anyNonHidden) =
+        let (elementHtml, Sum nonHiddenCount) =
                 runWriter $ commuteHtmlT $ go fields names values
-        elementHtml
 
-        -- buttons
-        row_ $ large_ 12 $ div_ [ class_ "button-group" ] $
-            if anyNonHidden
-            then do
-                button_ [ classes_ [ "button", submitClass ], data_ "lomake-action" "submit", disabled_ "disabled" ] (toHtml submitValue)
-                button_ [ class_ "button", data_ "lomake-action" "reset", disabled_ "disabled" ] "Reset"
-            else
-                button_ [ classes_ [ "button", submitClass ], data_ "lomake-action" "submit" ] (toHtml submitValue)
+        elementHtml
+        row_ $ large_ 12 [ class_ "button-group" ] $
+            -- if there are only hidden elements, we don't output reset button.
+            if nonHiddenCount >= 1
+            then buttons_
+            else submitButton_
+
   where
+    submitButton_ = button_ [ classes_ [ "button", submitClass ], data_ "lomake-action" "submit" ] (toHtml submitValue)
+    buttons_ = do
+        submitButton_
+        button_ [ class_ "button", data_ "lomake-action" "reset", disabled_ "disabled" ] "Reset"
+
     submitValue = fst $ foSubmitStyle formOpts
     submitClass = snd $ foSubmitStyle formOpts
 
@@ -213,12 +212,12 @@ lomakeHtml formOpts fields names values =
         , data_ "lomake-submit-button-class" submitClass
         ]
 
-    go :: NP Field ys -> NP (K Text) ys -> NP V ys -> HtmlT (Writer Any) ()
+    go :: NP Field ys -> NP (K Text) ys -> NP V ys -> HtmlT (Writer (Sum Int)) ()
     go (f :* fs) (K n :* ns) (x :* xs) = render f n x >> go fs ns xs
     go Nil Nil Nil                     = pure ()
 
     -- State tells whether we have non-hidden elements
-    render :: forall a. Field a -> Text -> V a -> HtmlT (Writer Any) ()
+    render :: forall a. Field a -> Text -> V a -> HtmlT (Writer (Sum Int)) ()
     render UnitField _ _value = pure ()
 
     render (HiddenField opts) n value = do
@@ -232,7 +231,7 @@ lomakeHtml formOpts fields names values =
     render (TextField opts) n v@VHidden {} =
         render (HiddenField opts) n v
     render (TextField opts) n value = do
-        tell (Any True)
+        tell 1
         row_ $ large_ 12 $ label_ $ do
             toHtml (opts ^. fieldName) -- TODO: use label?
             input_ $
@@ -256,7 +255,7 @@ lomakeHtml formOpts fields names values =
             }
 
     render (EnumField opts) n value = do
-        tell (Any True)
+        tell 1
         let p = efoEncode opts
         let mValue = vMaybe Nothing Just value
         row_ $ large_ 12 $ label_ $ do

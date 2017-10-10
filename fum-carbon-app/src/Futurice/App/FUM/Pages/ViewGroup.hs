@@ -28,15 +28,17 @@ viewGroupPage auth world g = fumPage_ "Group" auth $ do
         unless (null (g ^. groupEditor)) $
             vertRow_ "Editor groups" $ forWith_ ", " (g ^. groupEditor) toHtml
 
+    todos_ ["edit group type, remove group, special (e.g. office) groups"]
+
     when (canEditGroup (authLogin auth) (g ^. groupName) world) $ do
-        block_ "Add member" $ commandHtml' (Proxy :: Proxy AddEmployeeToGroup) $
+        block_ "Add member" $ commandHtmlSubmit (Proxy :: Proxy AddEmployeeToGroup) "Add member" "success" $
             vHidden (g ^. groupName) :*
             vEmployees (\e -> notElem e $ g ^.. groupEmployees . folded) world :*
             Nil
 
     when (authRights auth == RightsIT) $ do
         block_ "Editor groups" $ fullRow_ $ do
-            commandHtml' (Proxy :: Proxy AddEditorGroup) $
+            commandHtmlSubmit (Proxy :: Proxy AddEditorGroup) "Add editor group" "success" $
                 vHidden (g ^. groupName) :*
                 vGroups (\x -> not (g ^. groupEditor . contains x)) world :*
                 Nil
@@ -70,5 +72,3 @@ viewGroupPage auth world g = fumPage_ "Group" auth $ do
                         vHidden (g ^. groupName) :*
                         vHidden login :*
                         Nil
-
-        todos_ ["edit group type, remove group, special (e.g. office) groups"]

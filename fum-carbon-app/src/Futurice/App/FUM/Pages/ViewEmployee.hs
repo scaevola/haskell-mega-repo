@@ -65,7 +65,7 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
                     Nil
 
         subheader_ "Add to group"
-        commandHtml' (Proxy :: Proxy AddEmployeeToGroup) $
+        commandHtmlSubmit (Proxy :: Proxy AddEmployeeToGroup) "Add to group" "success" $
             -- TODO: filter not editable groups
             vGroups (const True) world :*
             vHidden login :*
@@ -87,7 +87,7 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
                     Nil
 
         subheader_ "Add email address"
-        commandHtml' (Proxy :: Proxy AddEmailToEmployee) $
+        commandHtmlSubmit (Proxy :: Proxy AddEmailToEmployee) "Add email address" "success" $
             vHidden login :*
             vNothing :*
             Nil
