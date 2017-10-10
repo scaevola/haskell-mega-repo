@@ -8,13 +8,13 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.HoursApi (defaultMain) where
 
-import Control.Concurrent.STM (newTVarIO, readTVarIO)
+import Control.Concurrent.STM     (atomically, newTVarIO, readTVarIO, writeTVar)
 import Futurice.Integrations
 import Futurice.Metrics.RateMeter (mark)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
-import Network.HTTP.Client    (managerConnCount)
+import Network.HTTP.Client        (managerConnCount)
 import Prelude ()
 import Servant
 
@@ -26,8 +26,9 @@ import Futurice.App.HoursApi.Logic
        projectEndpoint, userEndpoint)
 import Futurice.App.HoursApi.Monad  (Hours, runHours)
 
+import qualified Data.HashMap.Strict as HM
 import qualified FUM
-import qualified PlanMill.Worker as PM
+import qualified PlanMill.Worker     as PM
 
 server :: Ctx -> Server FutuhoursAPI
 server ctx = pure "This is futuhours api"
@@ -77,10 +78,18 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
         let getFumPlanmillMap = do
                 now <- currentTime
                 runIntegrations mgr lgr now integrConfig fumPlanmillMap
-        let job = mkJob "Update Planmill <- FUM map"  getFumPlanmillMap $ every 600
 
         fpm <- getFumPlanmillMap
         fpmTVar <- newTVarIO fpm
+
+        let job = mkJob "Update Planmill <- FUM map" action $ every 600
+              where
+                action :: IO ()
+                action = do
+                    m <- getFumPlanmillMap
+                    runLogT "update-job" lgr $ logAttention "FUM users" $
+                        sort $ HM.keys m
+                    atomically $ writeTVar fpmTVar m
 
         let pmCfg = cfgPlanmillCfg config
         ws <- PM.workers lgr mgr pmCfg ["worker1", "worker2", "worker3"]
