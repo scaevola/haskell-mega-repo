@@ -5,7 +5,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
-module Futurice.App.FUM.Command.AddEmployeeToGroup (AddEmployeeToGroup (..)) where
+module Futurice.App.FUM.Command.AddEmployeeToGroup (AddEmployeeToGroup) where
 
 import Control.Lens      (contains, (.=))
 import Futurice.Generics

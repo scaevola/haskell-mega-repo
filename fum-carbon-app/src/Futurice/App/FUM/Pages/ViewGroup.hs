@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.FUM.Pages.ViewGroup (viewGroupPage) where
 
+import Control.Lens     (contains)
 import Futurice.Prelude
 import Prelude ()
 
@@ -24,12 +25,30 @@ viewGroupPage auth world g = fumPage_ "Group" auth $ do
     fullRow_ $ table_ $ tbody_ $ do
         vertRow_ "Name" $ toHtml $ g ^. groupName
         vertRow_ "Type" $ toHtml $ g ^. groupType
+        unless (null (g ^. groupEditor)) $
+            vertRow_ "Editor groups" "todo"
 
     when (canEditGroup (authLogin auth) (g ^. groupName) world) $ do
         block_ "Add member" $ commandHtml' (Proxy :: Proxy AddEmployeeToGroup) $
             vHidden (g ^. groupName) :*
             vEmployees (\e -> notElem e $ g ^.. groupEmployees . folded) world :*
             Nil
+
+    when (authRights auth == RightsIT) $ do
+        block_ "Editor groups" $ fullRow_ $ do
+            commandHtml' (Proxy :: Proxy AddEditorGroup) $
+                vHidden (g ^. groupName) :*
+                vGroups (\x -> not (g ^. groupEditor . contains x)) world :*
+                Nil
+
+            unless (null $ g ^. groupEditor) $ table_ $ do
+                thead_ $ do
+                    th_ "Name"
+                    th_ mempty
+
+                tbody_ $ for_ (g ^. groupEditor) $ \editorName -> do
+                    td_ $ toHtml editorName
+                    td_ "todo: remove"
 
     block_ "Members" $ do
         fullRow_ $ table_ $ do

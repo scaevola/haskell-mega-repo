@@ -39,7 +39,7 @@ data Rights = RightsOther | RightsNormal | RightsIT
 
 -- | Authorised user.
 data AuthUser = AuthUser
-    { authLogin :: !Login
+    { authLogin  :: !Login
     , authRights :: !Rights
     }
   deriving (Eq, Ord, Show)

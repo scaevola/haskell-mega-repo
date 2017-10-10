@@ -23,7 +23,7 @@ data Group = Group
     , _groupDescription  :: !Text
     , _groupEmailAliases :: ![Email]
     -- Graph wiring:
-    , _groupEditor       :: !(Set (Identifier Group))  -- ^ if 'null', editors are members of the group
+    , _groupEditor       :: !(Set GroupName)  -- ^ if 'null', editors are members of the group
     , _groupEmployees    :: !(Set Login)
     , _groupCustomers    :: !(Set Login)
     }

@@ -1,5 +1,7 @@
-{-# LANGUAGE DataKinds     #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds      #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE TypeFamilies   #-}
+{-# LANGUAGE TypeOperators  #-}
 module Futurice.App.FUM.API (
     module Futurice.App.FUM.API,
     module Futurice.App.FUM.API.Pages,
@@ -26,13 +28,11 @@ type FumCarbonApi = FumCarbonPagesApi
     -- machine api
     :<|> "api" :> FumCarbonMachineApi
 
-type FumCarbonCommandApi = CommandEndpoint Bootstrap
-    :<|> CommandEndpoint AddEmailToEmployee
-    :<|> CommandEndpoint AddEmployeeToGroup
-    :<|> CommandEndpoint CreateEmployee
-    :<|> CommandEndpoint CreateGroup
-    :<|> CommandEndpoint RemoveEmailFromEmployee
-    :<|> CommandEndpoint RemoveEmployeeFromGroup
+type family FoldCommandAPI (cmds :: [Phase -> *]) :: * where
+    FoldCommandAPI '[]           = EmptyAPI
+    FoldCommandAPI (cmd ': cmds) = CommandEndpoint cmd :<|> FoldCommandAPI cmds
+
+type FumCarbonCommandApi = FoldCommandAPI Commands
 
 type FumCarbonMachineApi = FUMMachineAPI
     :<|> "personio-request" :> ReqBody '[JSON] Personio.SomePersonioReq :> Post '[JSON] Personio.SomePersonioRes

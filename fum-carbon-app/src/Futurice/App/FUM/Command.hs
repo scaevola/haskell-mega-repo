@@ -13,6 +13,7 @@ module Futurice.App.FUM.Command (
     ICT,
     withCT,
     decodeSomeCommand,
+    module Futurice.App.FUM.Command.AddEditorGroup,
     module Futurice.App.FUM.Command.AddEmailToEmployee,
     module Futurice.App.FUM.Command.AddEmployeeToGroup,
     module Futurice.App.FUM.Command.Bootstrap,
@@ -33,6 +34,7 @@ import Futurice.TypeTag
 import Generics.SOP       (hcmap, hcollapse)
 import Prelude ()
 
+import Futurice.App.FUM.Command.AddEditorGroup
 import Futurice.App.FUM.Command.AddEmailToEmployee
 import Futurice.App.FUM.Command.AddEmployeeToGroup
 import Futurice.App.FUM.Command.Bootstrap
@@ -46,6 +48,7 @@ import qualified Data.Map as Map
 
 -- | List of commands
 type Commands = '[ Bootstrap
+    , AddEditorGroup
     , AddEmailToEmployee
     , AddEmployeeToGroup
     , CreateEmployee
