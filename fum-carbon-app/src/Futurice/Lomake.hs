@@ -191,11 +191,10 @@ lomakeHtml formOpts fields names values =
                 runWriter $ commuteHtmlT $ go fields names values
 
         elementHtml
-        row_ $ large_ 12 [ class_ "button-group" ] $
-            -- if there are only hidden elements, we don't output reset button.
-            if nonHiddenCount >= 1
-            then buttons_
-            else submitButton_
+        -- if there are only hidden elements, we don't output reset button.
+        if nonHiddenCount >= 1
+        then row_ $ large_ 12 [ class_ "button-group" ] buttons_
+        else submitButton_
 
   where
     submitButton_ = button_ [ classes_ [ "button", submitClass ], data_ "lomake-action" "submit" ] (toHtml submitValue)
