@@ -5,8 +5,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 module Futurice.App.FUM (defaultMain) where
 
-import Control.Concurrent.STM         (atomically, writeTVar)
-import Futurice.Lomake
+import Control.Concurrent.STM (atomically, writeTVar)
 import Futurice.Periocron
 import Futurice.Prelude
 import Futurice.Servant
@@ -14,16 +13,13 @@ import Prelude ()
 import Servant
 
 import Futurice.App.FUM.API
-import Futurice.App.FUM.Auth
-import Futurice.App.FUM.Command
+import Futurice.App.FUM.Command.Server    (commandServer)
 import Futurice.App.FUM.Config
 import Futurice.App.FUM.Ctx
 import Futurice.App.FUM.Machine
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Pages.Server
 import Futurice.App.FUM.Report.Validation
-import Futurice.App.FUM.Transactor
-import Futurice.App.FUM.Types
 
 import qualified Futurice.IdMap as IdMap
 import qualified Personio
@@ -31,31 +27,6 @@ import qualified Personio
 -------------------------------------------------------------------------------
 -- Server
 -------------------------------------------------------------------------------
-
-cmdServer
-    :: forall cmd. (Command cmd, ICT cmd)
-    => Ctx -> Server (CommandEndpoint cmd)
-cmdServer ctx mlogin (LomakeRequest cmdInput) = runLogT "command" (ctxLogger ctx) $
-    withAuthUser' (error "lomake error") ctx mlogin $ \(AuthUser login rights) world _ -> do
-        now <- currentTime
-        cmdInternal' <- hoist liftIO $ runExceptT $
-            runReaderT (internalizeCommand now login rights cmdInput) world
-        case cmdInternal' of
-            Left err -> pure (LomakeResponseError err)
-            Right cmdInternal -> do
-                res <- hoist liftIO $ transact ctx now login (someCommand cmdInternal)
-                case res of
-                    Right res' -> pure res'
-                    Left err   -> pure (LomakeResponseError err)
-
-commandServer :: Ctx -> Server FumCarbonCommandApi
-commandServer ctx = cmdServer ctx
-    :<|> cmdServer ctx
-    :<|> cmdServer ctx
-    :<|> cmdServer ctx
-    :<|> cmdServer ctx
-    :<|> cmdServer ctx
-    :<|> cmdServer ctx
 
 server :: Ctx -> Server FumCarbonApi
 server ctx = pagesServer ctx

@@ -20,13 +20,13 @@
 
 # Groups
 
-- 1:2:4 Views
+- ~1:2:4 Views~
 - 1:1:3 Special groups
 - ~1:1:2 CreateGroup command~
 - 1:1:2 EditGroup command
 - ~1:1:2 AddEmployeeToGroup~
 - ~1:1:1 RemoveEmployeeFromGroup~
-- 1:2:3 group editing acl
+- ~1:2:3 group editing acl~
 
 # Customer
 
@@ -39,6 +39,10 @@
 - 1:1:2 EditMailbox command
 - 1:1:2 AddEmployeeToMailbox command
 - 2:3:4 mailbox editing acl?
+
+# Audit
+- 1:1:1 Employee and group pages
+- 1:1:1 Undo!
 
 # Technicals
 
@@ -62,6 +66,10 @@
 ## Suprises
 
 - ~1:1:1 UID&GID~
+
+# FUM -> Checklist
+
+- ~1:1:1 Checklist uses FUM as ACL provider~
 
 # Personio -> PlanMill
 

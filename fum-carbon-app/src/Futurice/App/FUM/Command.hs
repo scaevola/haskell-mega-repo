@@ -13,12 +13,14 @@ module Futurice.App.FUM.Command (
     ICT,
     withCT,
     decodeSomeCommand,
+    module Futurice.App.FUM.Command.AddEditorGroup,
     module Futurice.App.FUM.Command.AddEmailToEmployee,
     module Futurice.App.FUM.Command.AddEmployeeToGroup,
     module Futurice.App.FUM.Command.Bootstrap,
-    module Futurice.App.FUM.Command.Definition,
     module Futurice.App.FUM.Command.CreateEmployee,
     module Futurice.App.FUM.Command.CreateGroup,
+    module Futurice.App.FUM.Command.Definition,
+    module Futurice.App.FUM.Command.RemoveEditorGroup,
     module Futurice.App.FUM.Command.RemoveEmailFromEmployee,
     module Futurice.App.FUM.Command.RemoveEmployeeFromGroup,
     ) where
@@ -33,12 +35,14 @@ import Futurice.TypeTag
 import Generics.SOP       (hcmap, hcollapse)
 import Prelude ()
 
+import Futurice.App.FUM.Command.AddEditorGroup
 import Futurice.App.FUM.Command.AddEmailToEmployee
 import Futurice.App.FUM.Command.AddEmployeeToGroup
 import Futurice.App.FUM.Command.Bootstrap
 import Futurice.App.FUM.Command.CreateEmployee
 import Futurice.App.FUM.Command.CreateGroup
 import Futurice.App.FUM.Command.Definition
+import Futurice.App.FUM.Command.RemoveEditorGroup
 import Futurice.App.FUM.Command.RemoveEmailFromEmployee
 import Futurice.App.FUM.Command.RemoveEmployeeFromGroup
 
@@ -46,10 +50,12 @@ import qualified Data.Map as Map
 
 -- | List of commands
 type Commands = '[ Bootstrap
+    , AddEditorGroup
     , AddEmailToEmployee
     , AddEmployeeToGroup
     , CreateEmployee
     , CreateGroup
+    , RemoveEditorGroup
     , RemoveEmailFromEmployee
     , RemoveEmployeeFromGroup
     ]

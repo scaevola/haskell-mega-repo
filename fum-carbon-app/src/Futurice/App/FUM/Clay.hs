@@ -43,3 +43,6 @@ css = do
             borderColor orange
         ".select2-container--default .select2-selection--single" ? do
             borderColor orange
+
+    "td button.button" ? do
+        sym margin (em 0)

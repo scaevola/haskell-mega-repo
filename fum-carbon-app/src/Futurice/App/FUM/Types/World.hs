@@ -24,11 +24,17 @@ module Futurice.App.FUM.Types.World (
 import Control.Lens         (contains, toListOf)
 import Control.Monad.Reader (asks)
 import Data.Set.Lens        (setOf)
+import FUM.Types.GroupName  (GroupName)
+import FUM.Types.Login      (Login)
+import Futurice.Email       (Email)
 import Futurice.IdMap       (IdMap)
 import Futurice.Prelude
 import Prelude ()
 
-import Futurice.App.FUM.Types.Basic
+import Futurice.App.FUM.Types.Customer
+import Futurice.App.FUM.Types.Employee
+import Futurice.App.FUM.Types.Group
+import Futurice.App.FUM.Types.Mailbox
 import Futurice.App.FUM.Types.UnixID
 
 import qualified Data.Set       as Set
