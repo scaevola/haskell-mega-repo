@@ -52,3 +52,9 @@ css = do
 
     Clay.span # ".warning" ? do
         color "#ffae00"
+
+    "div.futu-block" ? do
+        marginBottom (em 1)
+
+        h2 ? do
+            borderBottom solid (px 2) "#ccc"
