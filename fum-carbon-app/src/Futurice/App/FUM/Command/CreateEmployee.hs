@@ -56,7 +56,7 @@ instance Command CreateEmployee where
         uid <- view worldNextUID
         pure cmd { ceUID = uid }
 
-    applyCommand now _login cmd = do
+    applyCommand _now _login cmd = do
         validate cmd
 
         let login = ceLogin cmd
@@ -70,7 +70,7 @@ instance Command CreateEmployee where
             , _employeeEmailAliases = mempty
             , _employeeSshKeys      = []
             , _employeePicture      = Nothing
-            , _employeePasswordExp  = now  -- TODO
+            , _employeePassword     = Nothing
             }
 
         -- make next UID one greater that any existing or current "next" UID.

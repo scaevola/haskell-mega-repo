@@ -18,9 +18,10 @@ viewEmployeePage
     :: AuthUser
     -> World     -- ^ the world
     -> IdMap Personio.Employee
+    -> UTCTime   -- ^ now
     -> Employee  -- ^ employees
     -> HtmlPage "view-employee"
-viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
+viewEmployeePage auth world personio now e = fumPage_ "Employee" auth $ do
     let login = e ^. employeeLogin
     -- Title
     fumHeader_ "Employee" [Just $ loginToText login]
@@ -96,10 +97,14 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
         todos_ [ "show", "management" ]
 
     block_ "Password" $ do
-        fullRow_ $ do
-            "Expires at "
-            toHtml $ formatHumanHelsinkiTime $ e ^. employeePasswordExp
+        fullRow_ $ case e ^. employeePassword of
+            Nothing -> span_ [ class_ "warning" ] "No password"
+            Just p  -> passwordToHtml now p
 
-            "Change TODO"
+        todos_ [ "Change of own password" ]
 
-        todos_ [ "management" ]
+    when (authRights auth == RightsIT) $ block_ "Admin" $ do
+        fullRow_ $ div_ [ class_ "button-group" ] $ do
+            button_ [ class_ "button alert" ] "Reset password"
+            button_ [ class_ "button alert" ] "Remove password"
+

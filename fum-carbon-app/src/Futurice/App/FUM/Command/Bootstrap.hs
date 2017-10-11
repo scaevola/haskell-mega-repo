@@ -61,7 +61,7 @@ instance Command Bootstrap where
             , bootGID = gid
             }
 
-    applyCommand now _login cmd = do
+    applyCommand _now _login cmd = do
         validate
 
         let login = bootLogin cmd
@@ -78,7 +78,7 @@ instance Command Bootstrap where
             , _employeeEmailAliases = mempty
             , _employeeSshKeys      = []
             , _employeePicture      = Nothing
-            , _employeePasswordExp  = now  -- TODO
+            , _employeePassword     = Nothing
             }
 
         -- make the group sudo

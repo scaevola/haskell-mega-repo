@@ -38,6 +38,7 @@ library
     , clay
     , constraints
     , containers
+    , crypt-sha512
     , crypto-api
     , deepseq
     , distributive
@@ -132,6 +133,7 @@ library
       Futurice.App.FUM.Types.GroupType
       Futurice.App.FUM.Types.Identifier
       Futurice.App.FUM.Types.Mailbox
+      Futurice.App.FUM.Types.Password
       Futurice.App.FUM.Types.Status
       Futurice.App.FUM.Types.UnixID
       Futurice.App.FUM.Types.World
@@ -156,6 +158,7 @@ executable fum-carbon-server
     , clay
     , constraints
     , containers
+    , crypt-sha512
     , crypto-api
     , deepseq
     , distributive
@@ -226,6 +229,7 @@ test-suite unit-tests
     , clay
     , constraints
     , containers
+    , crypt-sha512
     , crypto-api
     , deepseq
     , distributive

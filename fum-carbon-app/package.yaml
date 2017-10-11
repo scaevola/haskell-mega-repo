@@ -23,6 +23,7 @@ dependencies:
   - clay
   - constraints
   - containers
+  - crypt-sha512
   - crypto-api
   - deepseq
   - distributive
