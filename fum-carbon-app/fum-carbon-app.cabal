@@ -106,6 +106,7 @@ library
       Futurice.App.FUM.Command.RemoveEditorGroup
       Futurice.App.FUM.Command.RemoveEmailFromEmployee
       Futurice.App.FUM.Command.RemoveEmployeeFromGroup
+      Futurice.App.FUM.Command.ResetPassword
       Futurice.App.FUM.Command.Server
       Futurice.App.FUM.Config
       Futurice.App.FUM.Ctx
