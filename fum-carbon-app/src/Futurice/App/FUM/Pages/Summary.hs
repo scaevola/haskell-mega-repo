@@ -7,19 +7,22 @@
 module Futurice.App.FUM.Pages.Summary (summaryPage) where
 
 import Futurice.Prelude
+import Futurice.IdMap   (IdMap)
 import Prelude ()
 
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Types
 
 import qualified Personio
+import qualified Data.Set as Set
 import qualified Text.PrettyPrint.Compact as PP
 
 summaryPage
     :: AuthUser
     -> World     -- ^ the world
+    -> IdMap Personio.Employee
     -> HtmlPage "summary"
-summaryPage auth world = fumPage_ "Summary" auth $ do
+summaryPage auth world personio = fumPage_ "Summary" auth $ do
     -- Title
     fumHeader_ "Summary" []
 
@@ -35,7 +38,13 @@ summaryPage auth world = fumPage_ "Summary" auth $ do
     employeesX :: [EmployeeX]
     employeesX = map mk $ sortOn (view employeeLogin) $ world ^.. worldEmployees . folded
       where
-        mk e = EX e $ world ^.. worldEmployeeGroups . ix (e ^. employeeLogin) . folded . groupName
+        mk e = EX e $
+            let groups  = world ^.. worldEmployeeGroups . ix (e ^. employeeLogin) . folded . groupName
+                sgroups = mcase (personio ^? ix (e ^. employeePersonioId)) mempty $ \p ->
+                    world ^.. worldSpecialGroups
+                        . ix (p ^. Personio.employeeEmploymentType, p ^. Personio.employeeOffice, p ^. Personio.employeeTribe)
+                        . folded . groupName
+            in Set.fromList (groups <> sgroups)
 
 -------------------------------------------------------------------------------
 -- Pretty
@@ -72,7 +81,7 @@ name <~ x = PP.annotate (H i_) (PP.string name) PP.<+> PP.char '=' PP.<+> pp x
 -- Helpers
 -------------------------------------------------------------------------------
 
-data EmployeeX = EX Employee [GroupName]
+data EmployeeX = EX Employee (Set GroupName)
 
 -------------------------------------------------------------------------------
 -- Pretty
@@ -128,6 +137,7 @@ instance Pretty EmployeeX where
         , "groups"   <~ gs
         ]
 
+-- TODO: direct members
 instance Pretty Group where
     pp e = ppBlock' (pp $ e ^. groupName)
         [ "type"     <~ e ^. groupType

@@ -128,8 +128,8 @@ summaryPageImpl
     :: Ctx
     -> Maybe Login
     -> Handler (HtmlPage "summary")
-summaryPageImpl ctx fu = withAuthUser ctx fu $ \auth world _personio ->
-    pure $ summaryPage auth world
+summaryPageImpl ctx fu = withAuthUser ctx fu $ \auth world personio ->
+    pure $ summaryPage auth world personio
 
 -------------------------------------------------------------------------------
 -- Auth
