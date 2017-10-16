@@ -16,6 +16,7 @@ module Futurice.App.FUM.Command (
     module Futurice.App.FUM.Command.AddEditorGroup,
     module Futurice.App.FUM.Command.AddEmailToEmployee,
     module Futurice.App.FUM.Command.AddEmployeeToGroup,
+    module Futurice.App.FUM.Command.AddSSHKeyToEmployee,
     module Futurice.App.FUM.Command.Bootstrap,
     module Futurice.App.FUM.Command.ChangeGroupMatch,
     module Futurice.App.FUM.Command.CreateEmployee,
@@ -40,6 +41,7 @@ import Prelude ()
 import Futurice.App.FUM.Command.AddEditorGroup
 import Futurice.App.FUM.Command.AddEmailToEmployee
 import Futurice.App.FUM.Command.AddEmployeeToGroup
+import Futurice.App.FUM.Command.AddSSHKeyToEmployee
 import Futurice.App.FUM.Command.Bootstrap
 import Futurice.App.FUM.Command.ChangeGroupMatch
 import Futurice.App.FUM.Command.CreateEmployee
@@ -57,6 +59,7 @@ type Commands = '[ Bootstrap
     , AddEditorGroup
     , AddEmailToEmployee
     , AddEmployeeToGroup
+    , AddSSHKeyToEmployee
     , ChangeGroupMatch
     , CreateEmployee
     , CreateGroup

@@ -68,7 +68,7 @@ instance Command CreateEmployee where
             , _employeeName         = ceName cmd
             , _employeeEmail        = ceEmail cmd
             , _employeeEmailAliases = mempty
-            , _employeeSshKeys      = []
+            , _employeeSshKeys      = mempty
             , _employeePicture      = Nothing
             , _employeePassword     = Nothing
             }

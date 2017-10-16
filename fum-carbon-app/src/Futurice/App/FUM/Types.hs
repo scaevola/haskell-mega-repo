@@ -10,6 +10,7 @@ module Futurice.App.FUM.Types (
     module Futurice.App.FUM.Types.Identifier,
     module Futurice.App.FUM.Types.Mailbox,
     module Futurice.App.FUM.Types.Password,
+    module Futurice.App.FUM.Types.SSHKey,
     module Futurice.App.FUM.Types.Status,
     module Futurice.App.FUM.Types.UnixID,
     module Futurice.App.FUM.Types.World,
@@ -35,6 +36,7 @@ import Futurice.App.FUM.Types.Identifier
 import Futurice.App.FUM.Types.Mailbox
 import Futurice.App.FUM.Types.Password
 import Futurice.App.FUM.Types.Status
+import Futurice.App.FUM.Types.SSHKey
 import Futurice.App.FUM.Types.UnixID
 import Futurice.App.FUM.Types.World
 
