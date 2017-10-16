@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Futurice.App.FUM.Pages.ViewEmployee (viewEmployeePage) where
 
+import Control.Lens     (contains)
 import Futurice.IdMap   (IdMap)
 import Futurice.Prelude
 import Prelude ()
@@ -23,6 +24,7 @@ viewEmployeePage
     -> HtmlPage "view-employee"
 viewEmployeePage auth world personio now e = fumPage_ "Employee" auth $ do
     let login = e ^. employeeLogin
+    let mp = personio ^? ix (e ^. employeePersonioId)
 
     todos_ [ "picture", "its editing" ]
 
@@ -35,7 +37,6 @@ viewEmployeePage auth world personio now e = fumPage_ "Employee" auth $ do
         vertRow_ "Personio ID" $ toHtml $ e ^. employeePersonioId
         vertRow_ "Status" $ toHtml $ e ^. employeeStatus
 
-        let mp = personio ^? ix (e ^. employeePersonioId)
         mcase mp (vertRow_ "Personio" $ em_ "cannot find id") $ \p -> do
             vertRow_ "Office"  $ toHtml $ p ^. Personio.employeeOffice
             vertRow_ "Tribe"   $ toHtml $ p ^. Personio.employeeTribe
@@ -47,7 +48,14 @@ viewEmployeePage auth world personio now e = fumPage_ "Employee" auth $ do
     todos_ [ "show flowdock", "show contract span" ]
 
     block_ "Groups" $ do
-        let groups = world ^.. worldEmployeeGroups . ix login . folded
+        let sgroups = mcase mp mempty $ \p ->
+                world ^.. worldSpecialGroups
+                    . ix (p ^. Personio.employeeEmploymentType, p ^. Personio.employeeOffice, p ^. Personio.employeeTribe)
+                    . folded
+
+        let groups = sortOn (view groupName) $ sgroups
+                <> world ^.. worldEmployeeGroups . ix login . folded
+
         when (null groups) $
             row_ $ large_ 12 [ class_ "callout warning" ] $
                 em_ "No groups"
@@ -61,10 +69,12 @@ viewEmployeePage auth world personio now e = fumPage_ "Employee" auth $ do
             tbody_ $ for_ groups $ \g -> tr_ $ do
                 td_ $ a_ [ viewGroupHref_ $ g ^. groupName] $ toHtml $ g ^. groupName
                 td_ $ toHtml $ g ^. groupType
-                td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveEmployeeFromGroup) "Remove" "warning" $
-                    vHidden (g ^. groupName) :*
-                    vHidden login :*
-                    Nil
+                td_ $ case g ^. groupEmployees . contains login of
+                    True -> commandHtmlSubmit (Proxy :: Proxy RemoveEmployeeFromGroup) "Remove" "warning" $
+                        vHidden (g ^. groupName) :*
+                        vHidden login :*
+                        Nil
+                    False -> "Automatic membership"
 
         subheader_ "Add to group"
         commandHtmlSubmit (Proxy :: Proxy AddEmployeeToGroup) "Add to group" "success" $
