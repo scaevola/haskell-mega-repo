@@ -18,11 +18,13 @@ dependencies:
   - ansi-pretty
   - ansi-wl-pprint
   - async
+  - bytestring
   - cassava
   - Chart
   - clay
   - constraints
   - containers
+  - crypt-sha512
   - crypto-api
   - deepseq
   - distributive
@@ -43,6 +45,7 @@ dependencies:
   - lattices
   - lens
   - lifted-base
+  - linear
   - lucid
   - mtl
   - periocron
@@ -70,6 +73,7 @@ dependencies:
   - unordered-containers
   - uuid
   - uuid-types
+  - vector
   - writer-cps-mtl
 
 library:

@@ -7,6 +7,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Futurice.App.FUM.Command.Bootstrap (Bootstrap (..)) where
 
+import Algebra.Lattice   (bottom)
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
@@ -61,7 +62,7 @@ instance Command Bootstrap where
             , bootGID = gid
             }
 
-    applyCommand now _login cmd = do
+    applyCommand _now _login cmd = do
         validate
 
         let login = bootLogin cmd
@@ -78,7 +79,7 @@ instance Command Bootstrap where
             , _employeeEmailAliases = mempty
             , _employeeSshKeys      = []
             , _employeePicture      = Nothing
-            , _employeePasswordExp  = now  -- TODO
+            , _employeePassword     = Nothing
             }
 
         -- make the group sudo
@@ -91,6 +92,7 @@ instance Command Bootstrap where
             , _groupType         = GroupTypeAccess
             , _groupDescription  = "Super Users"
             , _groupEmailAliases = []
+            , _groupMatch        = bottom
             , _groupEditor       = mempty
             , _groupEmployees    = Set.singleton login
             , _groupCustomers    = mempty

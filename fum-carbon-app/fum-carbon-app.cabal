@@ -33,11 +33,13 @@ library
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , bytestring
     , cassava
     , Chart
     , clay
     , constraints
     , containers
+    , crypt-sha512
     , crypto-api
     , deepseq
     , distributive
@@ -58,6 +60,7 @@ library
     , lattices
     , lens
     , lifted-base
+    , linear
     , lucid
     , mtl
     , periocron
@@ -85,6 +88,7 @@ library
     , unordered-containers
     , uuid
     , uuid-types
+    , vector
     , writer-cps-mtl
   exposed-modules:
       Futurice.App.FUM
@@ -99,12 +103,14 @@ library
       Futurice.App.FUM.Command.AddEmailToEmployee
       Futurice.App.FUM.Command.AddEmployeeToGroup
       Futurice.App.FUM.Command.Bootstrap
+      Futurice.App.FUM.Command.ChangeGroupMatch
       Futurice.App.FUM.Command.CreateEmployee
       Futurice.App.FUM.Command.CreateGroup
       Futurice.App.FUM.Command.Definition
       Futurice.App.FUM.Command.RemoveEditorGroup
       Futurice.App.FUM.Command.RemoveEmailFromEmployee
       Futurice.App.FUM.Command.RemoveEmployeeFromGroup
+      Futurice.App.FUM.Command.ResetPassword
       Futurice.App.FUM.Command.Server
       Futurice.App.FUM.Config
       Futurice.App.FUM.Ctx
@@ -129,9 +135,11 @@ library
       Futurice.App.FUM.Types.Customer
       Futurice.App.FUM.Types.Employee
       Futurice.App.FUM.Types.Group
+      Futurice.App.FUM.Types.GroupMatch
       Futurice.App.FUM.Types.GroupType
       Futurice.App.FUM.Types.Identifier
       Futurice.App.FUM.Types.Mailbox
+      Futurice.App.FUM.Types.Password
       Futurice.App.FUM.Types.Status
       Futurice.App.FUM.Types.UnixID
       Futurice.App.FUM.Types.World
@@ -151,11 +159,13 @@ executable fum-carbon-server
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , bytestring
     , cassava
     , Chart
     , clay
     , constraints
     , containers
+    , crypt-sha512
     , crypto-api
     , deepseq
     , distributive
@@ -176,6 +186,7 @@ executable fum-carbon-server
     , lattices
     , lens
     , lifted-base
+    , linear
     , lucid
     , mtl
     , periocron
@@ -203,6 +214,7 @@ executable fum-carbon-server
     , unordered-containers
     , uuid
     , uuid-types
+    , vector
     , writer-cps-mtl
     , fum-carbon-app
   default-language: Haskell2010
@@ -221,11 +233,13 @@ test-suite unit-tests
     , ansi-pretty
     , ansi-wl-pprint
     , async
+    , bytestring
     , cassava
     , Chart
     , clay
     , constraints
     , containers
+    , crypt-sha512
     , crypto-api
     , deepseq
     , distributive
@@ -246,6 +260,7 @@ test-suite unit-tests
     , lattices
     , lens
     , lifted-base
+    , linear
     , lucid
     , mtl
     , periocron
@@ -273,6 +288,7 @@ test-suite unit-tests
     , unordered-containers
     , uuid
     , uuid-types
+    , vector
     , writer-cps-mtl
     , tasty
     , tasty-quickcheck

@@ -7,7 +7,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 module Futurice.App.FUM.Command.CreateGroup (CreateGroup (..)) where
 
-import Data.Maybe           (isJust)
+import Algebra.Lattice   (bottom)
+import Data.Maybe        (isJust)
 import Futurice.Generics
 import Futurice.Prelude
 import Prelude ()
@@ -61,6 +62,7 @@ instance Command CreateGroup where
             , _groupType         = cgType cmd
             , _groupDescription  = "" -- TODO
             , _groupEmailAliases = []
+            , _groupMatch        = bottom
             , _groupEditor       = mempty
             , _groupEmployees    = Set.singleton login  -- creator is in the group
             , _groupCustomers    = mempty

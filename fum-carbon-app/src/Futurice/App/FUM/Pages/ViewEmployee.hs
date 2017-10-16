@@ -18,14 +18,16 @@ viewEmployeePage
     :: AuthUser
     -> World     -- ^ the world
     -> IdMap Personio.Employee
+    -> UTCTime   -- ^ now
     -> Employee  -- ^ employees
     -> HtmlPage "view-employee"
-viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
+viewEmployeePage auth world personio now e = fumPage_ "Employee" auth $ do
     let login = e ^. employeeLogin
-    -- Title
-    fumHeader_ "Employee" [Just $ loginToText login]
 
     todos_ [ "picture", "its editing" ]
+
+    -- Title
+    fumHeader_ "Employee" [Just $ loginToText login]
 
     fullRow_ $ table_ $ tbody_ $ do
         vertRow_ "Name" $ toHtml $ e ^. employeeName
@@ -73,10 +75,10 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
 
         todos_ ["snow only editable groups?"]
 
-    block_ "Email addresses" $ do
+    block_ "Email aliases" $ do
         when (null $ e ^. employeeEmailAliases) $
             row_ $ large_ 12 [ class_ "callout warning" ] $
-                em_ "No email addresses"
+                em_ "No email aliases"
 
         fullRow_ $ table_ $ tbody_ $
             for_ (e ^.. employeeEmailAliases . folded) $ \email -> tr_ $ do
@@ -86,7 +88,7 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
                     vHidden email :*
                     Nil
 
-        subheader_ "Add email address"
+        subheader_ "Add email alias"
         commandHtmlSubmit (Proxy :: Proxy AddEmailToEmployee) "Add email address" "success" $
             vHidden login :*
             vNothing :*
@@ -95,11 +97,20 @@ viewEmployeePage auth world personio e = fumPage_ "Employee" auth $ do
     block_ "SSH Keys" $ do
         todos_ [ "show", "management" ]
 
-    block_ "Password" $ do
-        fullRow_ $ do
-            "Expires at "
-            toHtml $ formatHumanHelsinkiTime $ e ^. employeePasswordExp
+    when (authRights auth == RightsIT || authLogin auth == e ^. employeeLogin) $ do
+        block_ "Password" $ do
+            fullRow_ $ case e ^. employeePassword of
+                Nothing -> span_ [ class_ "warning" ] "No password"
+                Just p  -> passwordToHtml now p
 
-            "Change TODO"
+            todos_ [ "Change of own password" ]
 
-        todos_ [ "management" ]
+    when (authRights auth == RightsIT) $ block_ "Admin" $ do
+        fullRow_ $ div_ [ class_ "button-group" ] $ do
+            commandHtmlSubmit (Proxy :: Proxy ResetPassword) "Reset password" "warning" $
+                vHidden login :*
+                vNothing :*
+                Nil
+
+            -- button_ [ class_ "button alert" ] "Remove password"
+

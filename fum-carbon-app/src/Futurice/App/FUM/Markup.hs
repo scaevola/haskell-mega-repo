@@ -77,12 +77,12 @@ subheader_
     :: Monad m
     => Text
     -> HtmlT m ()
-subheader_ title = fullRow_ $ h2_ $ toHtml title
+subheader_ title = fullRow_ $ h3_ $ toHtml title
 
 block_ :: Monad m => Text -> HtmlT m () -> HtmlT m ()
 block_ title contents = do
-    div_ [ style_ "margin-bottom: 1em" ] $  do
-        subheader_ title
+    div_ [ class_ "futu-block" ] $  do
+        fullRow_ $ h2_ $ toHtml title
         contents
 
 todos_ :: Monad m => [HtmlT m ()] -> HtmlT m ()

@@ -11,6 +11,7 @@ import Futurice.Prelude
 import Prelude ()
 
 import Futurice.App.FUM.Types.Identifier
+import Futurice.App.FUM.Types.Password
 import Futurice.App.FUM.Types.Status
 import Futurice.App.FUM.Types.UnixID
 
@@ -37,8 +38,7 @@ data Employee = Employee
     , _employeeEmailAliases   :: !(Set Email)
     , _employeeSshKeys        :: ![SshKey]
     , _employeePicture        :: !(Maybe Picture)
-    , _employeePasswordExp    :: !UTCTime          -- ^ password expiration date, does LDAP expires?
---    , _employeePassword :: FORMAT?       -- ^ will make LDAP server easy, SHA-512
+    , _employeePassword       :: !(Maybe Password)
     }
   deriving (Eq, Ord, Show, Typeable, Generic)
 

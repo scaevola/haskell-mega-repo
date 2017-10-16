@@ -17,12 +17,14 @@ module Futurice.App.FUM.Command (
     module Futurice.App.FUM.Command.AddEmailToEmployee,
     module Futurice.App.FUM.Command.AddEmployeeToGroup,
     module Futurice.App.FUM.Command.Bootstrap,
+    module Futurice.App.FUM.Command.ChangeGroupMatch,
     module Futurice.App.FUM.Command.CreateEmployee,
     module Futurice.App.FUM.Command.CreateGroup,
     module Futurice.App.FUM.Command.Definition,
     module Futurice.App.FUM.Command.RemoveEditorGroup,
     module Futurice.App.FUM.Command.RemoveEmailFromEmployee,
     module Futurice.App.FUM.Command.RemoveEmployeeFromGroup,
+    module Futurice.App.FUM.Command.ResetPassword,
     ) where
 
 import Control.Lens       (review)
@@ -39,12 +41,14 @@ import Futurice.App.FUM.Command.AddEditorGroup
 import Futurice.App.FUM.Command.AddEmailToEmployee
 import Futurice.App.FUM.Command.AddEmployeeToGroup
 import Futurice.App.FUM.Command.Bootstrap
+import Futurice.App.FUM.Command.ChangeGroupMatch
 import Futurice.App.FUM.Command.CreateEmployee
 import Futurice.App.FUM.Command.CreateGroup
 import Futurice.App.FUM.Command.Definition
 import Futurice.App.FUM.Command.RemoveEditorGroup
 import Futurice.App.FUM.Command.RemoveEmailFromEmployee
 import Futurice.App.FUM.Command.RemoveEmployeeFromGroup
+import Futurice.App.FUM.Command.ResetPassword
 
 import qualified Data.Map as Map
 
@@ -53,11 +57,13 @@ type Commands = '[ Bootstrap
     , AddEditorGroup
     , AddEmailToEmployee
     , AddEmployeeToGroup
+    , ChangeGroupMatch
     , CreateEmployee
     , CreateGroup
     , RemoveEditorGroup
     , RemoveEmailFromEmployee
     , RemoveEmployeeFromGroup
+    , ResetPassword
     ]
 
 -- | Existential command, union of all commands.

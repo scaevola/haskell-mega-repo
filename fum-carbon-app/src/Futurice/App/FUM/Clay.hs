@@ -46,3 +46,15 @@ css = do
 
     "td button.button" ? do
         sym margin (em 0)
+
+    Clay.span # ".alert" ? do
+        color "#cc4b37"
+
+    Clay.span # ".warning" ? do
+        color "#ffae00"
+
+    "div.futu-block" ? do
+        marginBottom (em 1)
+
+        h2 ? do
+            borderBottom solid (px 2) "#ccc"
