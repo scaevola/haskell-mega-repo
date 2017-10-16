@@ -4,14 +4,20 @@
 {-# LANGUAGE TypeFamilies      #-}
 module Futurice.App.FUM.Types.Password where
 
+import Control.Monad             (replicateM)
+import Data.Char                 (ord)
 import Data.Time                 (addDays)
+import Futurice.CryptoRandom
 import Futurice.Generics
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
+import Linear                    (V4 (..))
 import Prelude ()
 import System.POSIX.Crypt.SHA512 (cryptSHA512')
 
-import qualified Data.Text as T
+import qualified Data.ByteString as BS
+import qualified Data.Text       as T
+import qualified Data.Vector     as V
 
 -------------------------------------------------------------------------------
 -- Data
@@ -60,13 +66,31 @@ passwordToHtml now (Password h expires) = do
 -- Policy
 -------------------------------------------------------------------------------
 
-makePassword :: UTCTime -> IO Password
-makePassword now = do
-    let salt :: ByteString
-        salt = "abcdefghijkl"
+-- | All-in-one password generation.
+--
+-- From FUM5:
+-- An LDAP password is a combination of lowercase, uppercase, digits,
+-- and special characters with characters from atleast three groups present.
+makePassword
+    :: (Text -> IO ())  -- ^ callback to call with cleartext password. E.g. to send SMS to the user.
+    -> UTCTime          -- ^ Current time (we don't ask IO!)
+    -> IO Password
+makePassword callback now = do
+    g <- mkCryptoGen
 
-    let password :: ByteString
-        password = "Secret-password"
+    (salt, idx) <- evalCRandTThrow' g $ do
+        -- salt is simply 12 random bytes.
+        s <- BS.pack <$> replicateM 12 getCRandom
+        idx <- replicateM 12 getCRandom
+
+        return (s, idx)
+
+    -- Note: we can generate password which doesn't satisfy the policy
+    -- (which is quite likely), but here we generate "good" passwords.
+    let password = BS.pack $
+            map (\i -> passwordChars' V.! (i `mod` passwordCharsLen)) idx
+
+    callback (decodeUtf8Lenient password)
 
     let h = decodeUtf8Lenient $ cryptSHA512' (Just 10000) password salt
 
@@ -74,3 +98,17 @@ makePassword now = do
   where
     addYear :: UTCTime -> UTCTime
     addYear (UTCTime d n) = UTCTime (addDays 365 d) n
+
+-- | We don't include @0Oo@ or @1Ili@ characters in generated passwords.
+passwordChars :: V4 (Vector Word8)
+passwordChars = (fmap . fmap) (fromIntegral . ord) $ V4
+    (V.fromList $ filter (`notElem` ("IO" :: String)) ['A'..'Z' ])
+    (V.fromList $ filter (`notElem` ("ilo" :: String)) ['a'..'z'])
+    (V.fromList "23456789")
+    (V.fromList "#./+-_&\"%")
+
+passwordChars' :: Vector Word8
+passwordChars' = fold passwordChars
+
+passwordCharsLen :: Int
+passwordCharsLen = length passwordChars'

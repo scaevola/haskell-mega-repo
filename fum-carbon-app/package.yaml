@@ -18,6 +18,7 @@ dependencies:
   - ansi-pretty
   - ansi-wl-pprint
   - async
+  - bytestring
   - cassava
   - Chart
   - clay
@@ -44,6 +45,7 @@ dependencies:
   - lattices
   - lens
   - lifted-base
+  - linear
   - lucid
   - mtl
   - periocron
@@ -71,6 +73,7 @@ dependencies:
   - unordered-containers
   - uuid
   - uuid-types
+  - vector
   - writer-cps-mtl
 
 library:

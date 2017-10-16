@@ -44,7 +44,7 @@ instance Command ResetPassword where
 
     internalizeCommand now _login rights cmd = do
         requireRights RightsIT rights
-        p <- liftIO $ makePassword now
+        p <- liftIO $ makePassword sendSms now
         pure $ cmd
             { rpPassword = p
             }
@@ -65,3 +65,7 @@ validate _login cmd = do
 
     unlessExists (worldEmployees . ix login) $
         throwError $ "Employee doesn't exist " ++ show (loginToText login)
+
+-- | TODO: send sms of a clear text password
+sendSms :: Text -> IO ()
+sendSms _ = pure ()
