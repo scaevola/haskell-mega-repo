@@ -14,6 +14,7 @@ import Prelude ()
 import Futurice.App.FUM.Types.GroupType
 import Futurice.App.FUM.Types.Identifier
 import Futurice.App.FUM.Types.UnixID
+import Futurice.App.FUM.Types.GroupMatch
 
 -- | Group: email list or access group.
 data Group = Group
@@ -22,6 +23,7 @@ data Group = Group
     , _groupType         :: !GroupType
     , _groupDescription  :: !Text
     , _groupEmailAliases :: ![Email]
+    , _groupMatch        :: !GroupMatch
     -- Graph wiring:
     , _groupEditor       :: !(Set GroupName)  -- ^ if 'null', editors are members of the group
     , _groupEmployees    :: !(Set Login)

@@ -103,6 +103,7 @@ library
       Futurice.App.FUM.Command.AddEmailToEmployee
       Futurice.App.FUM.Command.AddEmployeeToGroup
       Futurice.App.FUM.Command.Bootstrap
+      Futurice.App.FUM.Command.ChangeGroupMatch
       Futurice.App.FUM.Command.CreateEmployee
       Futurice.App.FUM.Command.CreateGroup
       Futurice.App.FUM.Command.Definition
@@ -134,6 +135,7 @@ library
       Futurice.App.FUM.Types.Customer
       Futurice.App.FUM.Types.Employee
       Futurice.App.FUM.Types.Group
+      Futurice.App.FUM.Types.GroupMatch
       Futurice.App.FUM.Types.GroupType
       Futurice.App.FUM.Types.Identifier
       Futurice.App.FUM.Types.Mailbox

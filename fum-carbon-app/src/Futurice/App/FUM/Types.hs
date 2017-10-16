@@ -5,6 +5,7 @@ module Futurice.App.FUM.Types (
     module Futurice.App.FUM.Types.Customer,
     module Futurice.App.FUM.Types.Employee,
     module Futurice.App.FUM.Types.Group,
+    module Futurice.App.FUM.Types.GroupMatch,
     module Futurice.App.FUM.Types.GroupType,
     module Futurice.App.FUM.Types.Identifier,
     module Futurice.App.FUM.Types.Mailbox,
@@ -28,6 +29,7 @@ import FUM.Types.GroupName
 import Futurice.App.FUM.Types.Customer
 import Futurice.App.FUM.Types.Employee
 import Futurice.App.FUM.Types.Group
+import Futurice.App.FUM.Types.GroupMatch
 import Futurice.App.FUM.Types.GroupType
 import Futurice.App.FUM.Types.Identifier
 import Futurice.App.FUM.Types.Mailbox
