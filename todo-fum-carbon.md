@@ -21,7 +21,7 @@
 # Groups
 
 - ~1:2:4 Views~
-- 1:1:3 Special groups
+- ~1:1:3 Special groups~
 - ~1:1:2 CreateGroup command~
 - 1:1:2 EditGroup command
 - ~1:1:2 AddEmployeeToGroup~
