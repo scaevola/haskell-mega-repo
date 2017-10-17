@@ -5,7 +5,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
-module Futurice.App.FUM.Command.RemoveEmployeeFromGroup (RemoveEmployeeFromGroup (..)) where
+module Futurice.App.FUM.Command.RemoveEmployeeFromGroup (RemoveEmployeeFromGroup) where
 
 import Control.Lens      (contains, (.=))
 import Futurice.Generics

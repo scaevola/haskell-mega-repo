@@ -58,6 +58,7 @@ dependencies:
   - recursion-schemes >= 5.0.1
   - reflection
   - regex-applicative
+  - regex-applicative-text
   - resource-pool
   - semigroupoids
   - servant

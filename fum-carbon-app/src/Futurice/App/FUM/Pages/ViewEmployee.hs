@@ -108,7 +108,10 @@ viewEmployeePage auth world personio now e = fumPage_ "Employee" auth $ do
         unless (null $ e ^. employeeSshKeys) $ fullRow_ $ table_ $ tbody_ $ 
             for_ (e ^. employeeSshKeys) $ \sshKey -> tr_ $ do
                 td_ $ toHtml sshKey
-                td_ $ "TODO: remove"
+                td_ $ commandHtmlSubmit (Proxy :: Proxy RemoveSSHKeyFromEmployee) "Remove" "warning" $
+                    vHidden login :*
+                    vHidden (sshKey ^. sshKeyFingerprint) :*
+                    Nil
 
         subheader_ "Add SSH Key"
         commandHtmlSubmit (Proxy :: Proxy AddSSHKeyToEmployee) "Add SSH Key" "success" $

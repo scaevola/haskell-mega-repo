@@ -16,7 +16,7 @@
 - ~1:2:2 Adding mail aliases~
 - ~1:2:2 Password change~
 - ~1:2:2 SSH keys processing~
-- 1:1:1 view tweak: github, flowdock, internal/external, contractEndDate
+- ~1:1:1 view tweak: github, flowdock, internal/external, contractEndDate~
 
 # Groups
 

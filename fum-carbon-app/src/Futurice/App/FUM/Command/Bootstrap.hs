@@ -5,7 +5,7 @@
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Futurice.App.FUM.Command.Bootstrap (Bootstrap (..)) where
+module Futurice.App.FUM.Command.Bootstrap (Bootstrap) where
 
 import Algebra.Lattice   (bottom)
 import Futurice.Generics
