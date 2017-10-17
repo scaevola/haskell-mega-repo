@@ -13,12 +13,10 @@ import Prelude ()
 import Futurice.App.FUM.Types.Identifier
 import Futurice.App.FUM.Types.Password
 import Futurice.App.FUM.Types.Status
+import Futurice.App.FUM.Types.SSHKey
 import Futurice.App.FUM.Types.UnixID
 
 import qualified Personio as P
-
--- | TODO:
-type SshKey = Text
 
 -- | We always have /some/ picture of the employee.
 type Picture = Text
@@ -36,11 +34,11 @@ data Employee = Employee
     , _employeeName           :: !Text             -- ^ name, periodically sync'd from personio
     , _employeeEmail          :: !Email
     , _employeeEmailAliases   :: !(Set Email)
-    , _employeeSshKeys        :: ![SshKey]
+    , _employeeSshKeys        :: !(Set SSHKey)
     , _employeePicture        :: !(Maybe Picture)
     , _employeePassword       :: !(Maybe Password)
     }
-  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Show, Typeable, Generic)
 
 makeLenses ''Employee
 deriveGeneric ''Employee

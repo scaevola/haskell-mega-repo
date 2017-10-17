@@ -1,4 +1,4 @@
-docker-base-image: futurice/base-images:haskell-ghc-8.0.2-1
+docker-base-image: futurice/base-images:haskell-ghc-8.0.2-2
 apps:
   # key is the name of the app (in the hostname)
   # docker: the name of docker image created

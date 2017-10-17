@@ -18,6 +18,7 @@ module Futurice.App.FUM.Types.World (
     worldNextGID,
     -- * Getters
     worldEmployeeGroups,
+    worldSpecialGroups,
     worldEmails,
     ) where
 
@@ -28,19 +29,23 @@ import FUM.Types.GroupName  (GroupName)
 import FUM.Types.Login      (Login)
 import Futurice.Email       (Email)
 import Futurice.IdMap       (IdMap)
+import Futurice.Office      (Office)
 import Futurice.Prelude
+import Futurice.Tribe       (Tribe)
 import Prelude ()
 
 import Futurice.App.FUM.Types.Customer
 import Futurice.App.FUM.Types.Employee
 import Futurice.App.FUM.Types.Group
+import Futurice.App.FUM.Types.GroupMatch
 import Futurice.App.FUM.Types.Mailbox
 import Futurice.App.FUM.Types.UnixID
 
+import qualified Data.Map       as Map
 import qualified Data.Set       as Set
 import qualified Futurice.IdMap as IdMap
 
--- import qualified Personio as P
+import qualified Personio as P
 
 -- | World desribes the state of the db.
 data World = World
@@ -53,6 +58,7 @@ data World = World
     , _worldNextGID    :: !GID
     -- lazy fields
     , _worldEmployeeGroups :: Map Login (IdMap Group)
+    , _worldSpecialGroups  :: Map (Maybe P.EmploymentType, Office, Tribe) (IdMap Group)
     }
 
 worldEmployees :: Lens' World (IdMap Employee)
@@ -101,6 +107,10 @@ worldEmployeeGroups :: Getter World (Map Login (IdMap Group))
 worldEmployeeGroups = getter _worldEmployeeGroups
 {-# INLINE worldEmployeeGroups #-}
 
+worldSpecialGroups :: Getter World (Map (Maybe P.EmploymentType, Office, Tribe) (IdMap Group))
+worldSpecialGroups = getter _worldSpecialGroups
+{-# INLINE worldSpecialGroups #-}
+
 -- | TODO: change to Map Email Owner?
 worldEmails :: Getter World (Set Email)
 worldEmails = getter $ \w -> mconcat
@@ -122,6 +132,7 @@ emptyWorld = World
     , _worldNextUID        = firstUnixID
     , _worldNextGID        = firstUnixID
     , _worldEmployeeGroups = mempty
+    , _worldSpecialGroups  = mempty
     }
 
 makeWorld :: World -> World
@@ -142,14 +153,22 @@ makeWorld World
     , _worldNextUID        = uid
     , _worldNextGID        = gid
     , _worldEmployeeGroups = employeeGroups
+    , _worldSpecialGroups  = specialGroups
     }
   where
     employeeGroups = toMapOf (IdMap.ifolded . getter mk) es where
         mk e = IdMap.filter (\g -> g ^. groupEmployees . contains l) gs where
             l = e ^. employeeLogin
 
+    specialGroups = Map.fromList
+        [ ((e, o, t), IdMap.filter (\g -> groupMatchToPredicate (g ^. groupMatch) e o t) gs)
+        | e <- Nothing : map Just [ minBound .. maxBound ]
+        , o <- [ minBound .. maxBound ]
+        , t <- [ minBound .. maxBound ]
+        ]
+
 nullWorld :: World -> Bool
-nullWorld (World es cs ms gs sg uid gid _) =
+nullWorld (World es cs ms gs sg uid gid _ _) =
     null es && null cs && null ms && null gs && null sg
     && uid == firstUnixID
     && gid == firstUnixID

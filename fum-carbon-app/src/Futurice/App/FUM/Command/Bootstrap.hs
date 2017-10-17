@@ -77,7 +77,7 @@ instance Command Bootstrap where
             , _employeeName         = bootName cmd
             , _employeeEmail        = bootEmail cmd
             , _employeeEmailAliases = mempty
-            , _employeeSshKeys      = []
+            , _employeeSshKeys      = mempty
             , _employeePicture      = Nothing
             , _employeePassword     = Nothing
             }

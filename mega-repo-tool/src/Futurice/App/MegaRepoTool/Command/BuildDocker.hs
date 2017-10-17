@@ -134,7 +134,7 @@ buildDocker appnames = do
 
 dockerfile :: Text -> Text
 dockerfile exe = T.unlines $
-    [ "FROM ubuntu:trusty"
+    [ "FROM ubuntu:xenial"
     , "MAINTAINER Oleg Grenrus <oleg.grenrus@iki.fi>"
     , "RUN apt-get -yq update && apt-get -yq --no-install-suggests --no-install-recommends --force-yes install " <> T.intercalate " " debs <> " && rm -rf /var/lib/apt/lists/*"
     , "RUN useradd -m -s /bin/bash -d /app app"
@@ -150,10 +150,12 @@ dockerfile exe = T.unlines $
   where
     debs =
         [ "ca-certificates"
+        , "curl"
         , "libfftw3-bin"
         , "libgmp10"
         , "libpq5"
-        , "curl"
+        , "netbase"
+        , "openssh-client"
         ]
 
 onIOError :: Monad m => a -> IOError -> m a

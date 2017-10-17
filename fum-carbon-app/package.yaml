@@ -52,6 +52,7 @@ dependencies:
   - personio-client
   - postgresql-simple
   - pretty-compact
+  - process
   - QuickCheck
   - range-set-list
   - recursion-schemes >= 5.0.1

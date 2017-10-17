@@ -29,7 +29,7 @@ data Group = Group
     , _groupEmployees    :: !(Set Login)
     , _groupCustomers    :: !(Set Login)
     }
-  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Show, Typeable, Generic)
 
 makeLenses ''Group
 deriveGeneric ''Group
