@@ -46,6 +46,7 @@ library
     , DRBG
     , env-config
     , fail
+    , flowdock-rest
     , fum-api
     , fum-types
     , futurice-foundation
@@ -177,6 +178,7 @@ executable fum-carbon-server
     , DRBG
     , env-config
     , fail
+    , flowdock-rest
     , fum-api
     , fum-types
     , futurice-foundation
@@ -253,6 +255,7 @@ test-suite unit-tests
     , DRBG
     , env-config
     , fail
+    , flowdock-rest
     , fum-api
     , fum-types
     , futurice-foundation

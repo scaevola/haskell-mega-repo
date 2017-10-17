@@ -8,12 +8,14 @@ import Futurice.IdMap   (IdMap)
 import Futurice.Prelude
 import Prelude ()
 
+import Futurice.App.FUM.ACL
 import Futurice.App.FUM.Command
 import Futurice.App.FUM.Lomake
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Types
 
 import qualified Personio
+import qualified Chat.Flowdock.REST as FD
 
 viewEmployeePage
     :: AuthUser
@@ -38,14 +40,18 @@ viewEmployeePage auth world personio now e = fumPage_ "Employee" auth $ do
         vertRow_ "Status" $ toHtml $ e ^. employeeStatus
 
         mcase mp (vertRow_ "Personio" $ em_ "cannot find id") $ \p -> do
-            vertRow_ "Office"  $ toHtml $ p ^. Personio.employeeOffice
-            vertRow_ "Tribe"   $ toHtml $ p ^. Personio.employeeTribe
-            vertRow_ "Phone"   $ traverse_ toHtml $ p ^. Personio.employeeWorkPhone
-            vertRow_ "Email"   $ traverse_ toHtml $ p ^. Personio.employeeEmail
-            vertRow_ "Int/Ext" $ traverse_ toHtml $ p ^. Personio.employeeEmploymentType
-            vertRow_ "GitHub"  $ traverse_ toHtml $ p ^. Personio.employeeGithub
+            vertRow_ "Office"   $ toHtml $ p ^. Personio.employeeOffice
+            vertRow_ "Tribe"    $ toHtml $ p ^. Personio.employeeTribe
+            vertRow_ "Phone"    $ traverse_ phoneToHtml $ p ^. Personio.employeeWorkPhone
+            vertRow_ "Email"    $ traverse_ toHtml $ p ^. Personio.employeeEmail
+            vertRow_ "Int/Ext"  $ traverse_ toHtml $ p ^. Personio.employeeEmploymentType
+            vertRow_ "GitHub"   $ traverse_ toHtml $ p ^. Personio.employeeGithub
+            vertRow_ "Flowdock" $ traverse_ fdToHtml $ p ^. Personio.employeeFlowdock
             --
-    todos_ [ "show flowdock", "show contract span" ]
+            when (authRights auth == RightsIT || authLogin auth == login) $ do
+                vertRow_ "Contract span" $ toHtml $ formatDateSpan
+                    (p ^. Personio.employeeHireDate)
+                    (p ^. Personio.employeeEndDate)
 
     block_ "Groups" $ do
         let sgroups = mcase mp mempty $ \p ->
@@ -78,12 +84,9 @@ viewEmployeePage auth world personio now e = fumPage_ "Employee" auth $ do
 
         subheader_ "Add to group"
         commandHtmlSubmit (Proxy :: Proxy AddEmployeeToGroup) "Add to group" "success" $
-            -- TODO: filter not editable groups
-            vGroups (const True) world :*
+            vGroups (\gn -> canEditGroup login gn world) world :*
             vHidden login :*
             Nil
-
-        todos_ ["snow only editable groups?"]
 
     block_ "Email aliases" $ do
         when (null $ e ^. employeeEmailAliases) $
@@ -136,3 +139,24 @@ viewEmployeePage auth world personio now e = fumPage_ "Employee" auth $ do
 
             -- button_ [ class_ "button alert" ] "Remove password"
 
+-------------------------------------------------------------------------------
+-- Helpers
+-------------------------------------------------------------------------------
+
+-- same as planmill-sync
+formatDateSpan :: Maybe Day -> Maybe Day -> String
+formatDateSpan s e =
+    let s' = maybe "?" show s
+        e' = maybe arrow (\x -> ndash ++ show x) e
+    in s' ++ e'
+  where
+    ndash = "–"
+    arrow = " →" -- space is intentional
+
+phoneToHtml :: Monad m => Text -> HtmlT m ()
+phoneToHtml t = a_ [ href_ $ "tel://" <> t ] $ toHtml t
+
+fdToHtml :: Monad m => FD.Identifier Word64 res -> HtmlT m ()
+fdToHtml i = a_ [ href_ $ "https://www.flowdock.com/app/private/" <> t ] $ toHtml t
+  where
+    t = textShow (FD.getIdentifier i)
