@@ -23,6 +23,7 @@ import Web.HttpApiData             (FromHttpApiData (..), ToHttpApiData (..))
 
 import qualified Data.Csv     as Csv
 import qualified Data.Swagger as S
+import qualified Data.Text as T
 
 -- | Futurice email. i.e. @someone@@futurice.com@.
 newtype Email = Email Text
@@ -109,7 +110,7 @@ instance Csv.FromField Email where
 -------------------------------------------------------------------------------
 
 emailKleene :: Kleene Char Email
-emailKleene = Email . view packed
+emailKleene = Email . T.toLower . view packed
     <$> kleeneEverything1
     <* (suffix :: Kleene Char String)
 
