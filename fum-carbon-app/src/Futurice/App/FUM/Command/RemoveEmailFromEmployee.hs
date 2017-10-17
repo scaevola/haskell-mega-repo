@@ -5,7 +5,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
-module Futurice.App.FUM.Command.RemoveEmailFromEmployee (RemoveEmailFromEmployee (..)) where
+module Futurice.App.FUM.Command.RemoveEmailFromEmployee (RemoveEmailFromEmployee) where
 
 import Control.Lens      (contains, (.=))
 import Futurice.Generics

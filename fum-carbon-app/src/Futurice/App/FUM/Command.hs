@@ -25,6 +25,7 @@ module Futurice.App.FUM.Command (
     module Futurice.App.FUM.Command.RemoveEditorGroup,
     module Futurice.App.FUM.Command.RemoveEmailFromEmployee,
     module Futurice.App.FUM.Command.RemoveEmployeeFromGroup,
+    module Futurice.App.FUM.Command.RemoveSSHKeyFromEmployee,
     module Futurice.App.FUM.Command.ResetPassword,
     ) where
 
@@ -50,6 +51,7 @@ import Futurice.App.FUM.Command.Definition
 import Futurice.App.FUM.Command.RemoveEditorGroup
 import Futurice.App.FUM.Command.RemoveEmailFromEmployee
 import Futurice.App.FUM.Command.RemoveEmployeeFromGroup
+import Futurice.App.FUM.Command.RemoveSSHKeyFromEmployee
 import Futurice.App.FUM.Command.ResetPassword
 
 import qualified Data.Map as Map
@@ -66,6 +68,7 @@ type Commands = '[ Bootstrap
     , RemoveEditorGroup
     , RemoveEmailFromEmployee
     , RemoveEmployeeFromGroup
+    , RemoveSSHKeyFromEmployee
     , ResetPassword
     ]
 

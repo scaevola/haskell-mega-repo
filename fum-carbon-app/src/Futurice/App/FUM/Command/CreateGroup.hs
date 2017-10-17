@@ -5,7 +5,7 @@
 {-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Futurice.App.FUM.Command.CreateGroup (CreateGroup (..)) where
+module Futurice.App.FUM.Command.CreateGroup (CreateGroup(..)) where
 
 import Algebra.Lattice   (bottom)
 import Data.Maybe        (isJust)

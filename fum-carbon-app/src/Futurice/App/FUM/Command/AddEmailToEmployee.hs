@@ -5,7 +5,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
-module Futurice.App.FUM.Command.AddEmailToEmployee (AddEmailToEmployee (..)) where
+module Futurice.App.FUM.Command.AddEmailToEmployee (AddEmailToEmployee) where
 
 import Control.Lens      (contains, (.=))
 import Futurice.Generics

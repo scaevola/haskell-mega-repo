@@ -31,6 +31,7 @@ dependencies:
   - DRBG
   - env-config
   - fail
+  - flowdock-rest
   - fum-api
   - fum-types
   - futurice-foundation
@@ -58,6 +59,7 @@ dependencies:
   - recursion-schemes >= 5.0.1
   - reflection
   - regex-applicative
+  - regex-applicative-text
   - resource-pool
   - semigroupoids
   - servant

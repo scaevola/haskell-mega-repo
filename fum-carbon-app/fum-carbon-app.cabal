@@ -46,6 +46,7 @@ library
     , DRBG
     , env-config
     , fail
+    , flowdock-rest
     , fum-api
     , fum-types
     , futurice-foundation
@@ -73,6 +74,7 @@ library
     , recursion-schemes >= 5.0.1
     , reflection
     , regex-applicative
+    , regex-applicative-text
     , resource-pool
     , semigroupoids
     , servant
@@ -112,6 +114,7 @@ library
       Futurice.App.FUM.Command.RemoveEditorGroup
       Futurice.App.FUM.Command.RemoveEmailFromEmployee
       Futurice.App.FUM.Command.RemoveEmployeeFromGroup
+      Futurice.App.FUM.Command.RemoveSSHKeyFromEmployee
       Futurice.App.FUM.Command.ResetPassword
       Futurice.App.FUM.Command.Server
       Futurice.App.FUM.Config
@@ -175,6 +178,7 @@ executable fum-carbon-server
     , DRBG
     , env-config
     , fail
+    , flowdock-rest
     , fum-api
     , fum-types
     , futurice-foundation
@@ -202,6 +206,7 @@ executable fum-carbon-server
     , recursion-schemes >= 5.0.1
     , reflection
     , regex-applicative
+    , regex-applicative-text
     , resource-pool
     , semigroupoids
     , servant
@@ -250,6 +255,7 @@ test-suite unit-tests
     , DRBG
     , env-config
     , fail
+    , flowdock-rest
     , fum-api
     , fum-types
     , futurice-foundation
@@ -277,6 +283,7 @@ test-suite unit-tests
     , recursion-schemes >= 5.0.1
     , reflection
     , regex-applicative
+    , regex-applicative-text
     , resource-pool
     , semigroupoids
     , servant
