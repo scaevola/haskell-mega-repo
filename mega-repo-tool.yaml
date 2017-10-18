@@ -54,3 +54,25 @@ apps:
   smileys-api:
     docker: smileys-app
     executable: smileys-app-server
+dockerfile-template: |
+  FROM ubuntu:xenial
+  MAINTAINER Oleg Grenrus <oleg.grenrus@iki.fi>
+  RUN apt-get -yq update && apt-get -yq --no-install-suggests --no-install-recommends --force-yes install {{debs}} && rm -rf /var/lib/apt/lists/*
+  RUN useradd -m -s /bin/bash -d /app app
+  EXPOSE 8000
+  WORKDIR /app
+  RUN chown -R app:app /app
+  USER app
+  ADD {{exe}} /app
+  CMD ["/app/{{exe}}", "+RTS", "-N4", "-A32m", "-T", "-qg", "-I0"]
+# "-i100", "-hd" -- profiling
+# -qg disables parallel GC
+# -I0 disables idle GC
+debs:
+- ca-certificates
+- curl
+- libfftw3-bin
+- libgmp10
+- libpq5
+- netbase
+- openssh-client

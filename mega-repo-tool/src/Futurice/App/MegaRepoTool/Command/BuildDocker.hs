@@ -5,24 +5,34 @@ module Futurice.App.MegaRepoTool.Command.BuildDocker (
     AppName,
     ) where
 
-import Prelude ()
-import Futurice.Prelude
-import Data.Aeson       (FromJSON (..), withObject, (.:))
+import Data.Aeson       (FromJSON (..), withObject, (.:), (.=), withText, object)
 import Data.Yaml        (decodeFileEither)
+import Futurice.Prelude
+import Prelude ()
 import System.Exit      (exitFailure)
 import System.IO        (hClose, hFlush)
 import System.IO.Temp   (withTempFile)
 import System.Process   (callProcess, readProcess)
 
-import qualified Data.Map     as Map
-import qualified Data.Text    as T
-import qualified Data.Text.IO as T
+import qualified Data.Map         as Map
+import qualified Data.Text        as T
+import qualified Data.Text.IO     as T
+import qualified Text.Microstache as M
 
 -------------------------------------------------------------------------------
 -- Types
 -------------------------------------------------------------------------------
 
 type AppName = Text
+type DebName = Text
+
+newtype MustacheT = MustacheT M.Template
+  deriving (Show)
+
+instance FromJSON MustacheT where
+    parseJSON = withText "Mustache template"
+        $ either (fail . show) (pure . MustacheT)
+        . M.compileMustacheText "<input>" . view lazy
 
 data ImageDefinition = ImageDefinition
     { _idDockerImage :: !Text
@@ -37,7 +47,9 @@ instance FromJSON ImageDefinition where
 
 data MRTConfig = MRTConfig
     { mrtDockerBaseImage :: !Text
-    , _mrtApps            :: !(Map AppName ImageDefinition)
+    , _mrtApps           :: !(Map AppName ImageDefinition)
+    , mtrDebs           :: [DebName]
+    , mrtDockerfileTmpl :: MustacheT
     }
   deriving (Show)
 
@@ -47,6 +59,8 @@ instance FromJSON MRTConfig where
     parseJSON = withObject "MRTConfig" $ \obj -> MRTConfig
         <$> obj .: "docker-base-image"
         <*> obj .: "apps"
+        <*> obj .: "debs"
+        <*> obj .: "dockerfile-template"
 
 -------------------------------------------------------------------------------
 -- Constants
@@ -107,10 +121,10 @@ buildDocker appnames = do
     -- Build docker images
     images <- ifor apps $ \appname (ImageDefinition image exe) -> do
         -- Write Dockerfile
-        let dockerfile' = dockerfile exe
+        dockerfile <- makeDockerfile exe cfg
         let directory = "build/" <> exe ^. unpacked
         withTempFile directory "Dockerfile." $ \fp handle -> do
-            T.hPutStrLn handle dockerfile'
+            T.hPutStrLn handle dockerfile
             hFlush handle
             hClose handle
 
@@ -132,31 +146,18 @@ buildDocker appnames = do
             <> " --image " <> image
             <> " --tag " <> githash
 
-dockerfile :: Text -> Text
-dockerfile exe = T.unlines $
-    [ "FROM ubuntu:xenial"
-    , "MAINTAINER Oleg Grenrus <oleg.grenrus@iki.fi>"
-    , "RUN apt-get -yq update && apt-get -yq --no-install-suggests --no-install-recommends --force-yes install " <> T.intercalate " " debs <> " && rm -rf /var/lib/apt/lists/*"
-    , "RUN useradd -m -s /bin/bash -d /app app"
-    , "EXPOSE 8000"
-    , "WORKDIR /app"
-    , "ADD " <> exe <> " /app"
-    , "RUN chown -R app:app /app"
-    , "USER app"
-    , "CMD [\"/app/" <> exe <> "\", \"+RTS\", \"-N4\", \"-A32m\", \"-T\", \"-qg\", \"-I0\"]"
-    -- -qg disables parallel GC
-    -- -I0 disables idle GC
-    ]
+makeDockerfile :: Text -> MRTConfig -> IO Text
+makeDockerfile exe cfg = do
+    traverse_ (putStrLn . M.displayMustacheWarning) warns
+    return (rendered ^. strict)
   where
-    debs =
-        [ "ca-certificates"
-        , "curl"
-        , "libfftw3-bin"
-        , "libgmp10"
-        , "libpq5"
-        , "netbase"
-        , "openssh-client"
+    MustacheT tmpl = mrtDockerfileTmpl cfg
+    debs =  T.intercalate " " (mtrDebs cfg)
+    (warns, rendered) = M.renderMustacheW tmpl $ object
+        [ "debs" .= debs
+        , "exe" .= exe
         ]
+    
 
 onIOError :: Monad m => a -> IOError -> m a
 onIOError v _ = return v
