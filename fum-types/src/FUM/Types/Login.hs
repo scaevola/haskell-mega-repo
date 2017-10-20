@@ -6,6 +6,7 @@ module FUM.Types.Login (
     mkLogin,
     parseLogin,
     parseLogin',
+    loginKleene,
     loginRegexp,
     InvalidLoginFormat (..),
     ) where
@@ -18,10 +19,12 @@ import Futurice.Constants          (fumPublicUrl)
 import Futurice.EnvConfig          (FromEnvVar (..))
 import Futurice.Generics
 import Futurice.Prelude
+import Kleene
+       (Kleene, kleeneCharRange, kleeneToRe)
 import Language.Haskell.TH         (ExpQ)
 import Lucid                       (ToHtml (..), a_, class_, href_)
 import Prelude ()
-import Text.Regex.Applicative.Text (RE', psym)
+import Text.Regex.Applicative.Text (RE')
 
 import qualified Data.Aeson.Compat                    as Aeson
 import qualified Data.Csv                             as Csv
@@ -78,16 +81,8 @@ parseLogin' t
     len = T.length t
     isInvalidChar = (`notElem` ['a'..'z'])
 
--- | Regexp for login identifier
---
--- /Notes:/
---
--- * use `parseLogin` if possible, as it provides better errors.
---
--- * this is strict @[a-z]{4,5}@ regexp.
---
-loginRegexp :: RE' Login
-loginRegexp = Login . T.pack <$> range 4 5 (psym (`elem` ['a'..'z']))
+loginKleene :: Kleene Char Login
+loginKleene = Login . T.pack <$> range 4 5 (kleeneCharRange 'a' 'z')
   where
     range
         :: Alternative f
@@ -103,6 +98,19 @@ loginRegexp = Login . T.pack <$> range 4 5 (psym (`elem` ['a'..'z']))
             | otherwise = inRange <$> optional f <*> go 0 (end - 1)
 
         inRange current next = maybe [] (:next) current
+
+-- | Regexp for login identifier
+--
+-- /Notes:/
+--
+-- * use `parseLogin` if possible, as it provides better errors.
+--
+-- * this is strict @[a-z]{4,5}@ regexp.
+--
+loginRegexp :: RE' Login
+loginRegexp = kleeneToRe loginKleene
+
+
 
 -------------------------------------------------------------------------------
 -- Instances

@@ -34,7 +34,7 @@ instance phase ~ 'Input => HasLomake (CreateEmployee phase) where
     lomake _ =
         hiddenField "personioId" :*
         unitField :*
-        textField "login" :*
+        textFieldWithRegexp "login" loginKleene :*
         enumField "status" statusToText :*
         hiddenField "name" :*
         textFieldWithRegexp "email" emailKleene :*
