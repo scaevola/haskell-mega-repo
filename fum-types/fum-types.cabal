@@ -38,6 +38,7 @@ library
     , env-config
     , futurice-constants
     , futurice-prelude
+    , kleene
     , lucid
     , postgresql-simple
     , QuickCheck

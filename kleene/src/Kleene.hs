@@ -7,11 +7,12 @@ import Prelude.Compat
 
 import Control.Applicative (Alternative (..), liftA2)
 import Data.RangeSet.List  (RSet)
+import Data.Semigroup      (Semigroup (..))
 import Data.String         (IsString (..))
 import Data.Text           (Text)
-import Data.Semigroup (Semigroup (..))
 
 import qualified Data.RangeSet.List     as RSet
+import qualified Data.Text              as T
 import qualified Text.Regex.Applicative as R
 
 data Greediness = Greedy | NonGreedy
@@ -79,6 +80,11 @@ instance Alternative (Kleene c) where
 --
 -------------------------------------------------------------------------------
 
+isKleeneEps :: Kleene c a -> Bool
+isKleeneEps (KleenePure _)   = True
+isKleeneEps (KleeneString s) = null s
+isKleeneEps _                = False
+
 -- | >>> T.putStrLn $ kleeneToJS kleeneAnyChar
 -- ^[^]$
 kleeneAnyChar :: (Ord c, Enum c, Bounded c) => Kleene c c
@@ -107,6 +113,9 @@ isKleeneEverything k = case k of
     KleeneMap _ (KleeneStar _ (KleeneChar cs)) -> cs == RSet.full
     KleeneStar _ (KleeneChar cs)               -> cs == RSet.full
     _                                          -> False
+
+kleeneCharRange :: (Enum c, Ord c) => c -> c -> Kleene c c
+kleeneCharRange a b = KleeneChar (RSet.singletonRange (a, b))
 
 -------------------------------------------------------------------------------
 -- regex-applicative
@@ -145,7 +154,10 @@ kleeneToJS kl = "^" <> go False kl <> "$"
   where
     go :: Bool -> Kleene Char b -> Text
     go p (KleeneMap _ k)          = go p k
-    go _ (KleeneUnion a b)        = "(?:" <> go True a <> "|"  <> go True b <> ")"
+    go p (KleeneUnion a b)
+        | isKleeneEps a           = parens p $ go True b <> "?"
+        | isKleeneEps b           = parens p $ go True a <> "?"
+        | otherwise               = "(?:" <> go True a <> "|"  <> go True b <> ")"
     go p (KleeneAppend _ a b)     = parens p $ go False a <> go False b
     go p (KleeneStar Greedy k)    = parens p $ go True k <> "*"
     go p (KleeneStar NonGreedy k) = parens p $ go True k <> "*?"
@@ -158,7 +170,11 @@ kleeneToJS kl = "^" <> go False kl <> "$"
         | cs == dotRSet   = "."
         -- this is dangerous...
         -- todo: also use range-size!
-        | otherwise     = "[" <> fromString (RSet.toList cs) <> "]"
+        | otherwise     = "[" <> foldMap f (RSet.toRangeList cs) <> "]"
+      where
+        f (a, b)
+            | a == b    = T.singleton a
+            | otherwise = T.singleton a <> "-" <> T.singleton b
 
     parens True t  = "(?:" <> t <> ")"
     parens False t = t
