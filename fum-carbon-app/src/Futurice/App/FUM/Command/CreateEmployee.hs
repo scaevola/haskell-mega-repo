@@ -34,10 +34,10 @@ instance phase ~ 'Input => HasLomake (CreateEmployee phase) where
     lomake _ =
         hiddenField "personioId" :*
         unitField :*
-        hiddenField "login" :*
+        textField "login" :*
         enumField "status" statusToText :*
         hiddenField "name" :*
-        hiddenField "email" :*
+        textFieldWithRegexp "email" emailKleene :*
         Nil
 
 instance phase ~ 'Internal => ToJSON (CreateEmployee phase) where
@@ -85,3 +85,5 @@ validate  cmd = do
 
    whenM (fmap isJust $ preview $ worldEmployees . ix login) $
        throwError $ "Employee with login " ++ show (loginToText login) ++ " already exists"
+
+    -- TODO: email!

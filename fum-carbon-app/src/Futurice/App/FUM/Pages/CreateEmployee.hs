@@ -11,38 +11,65 @@ import Futurice.App.FUM.Command
 import Futurice.App.FUM.Markup
 import Futurice.App.FUM.Types
 
-import qualified Personio
+import qualified Personio  as P
+import qualified Data.Text as T
 
 createEmployeePage
     :: AuthUser
     -> World                    -- ^ the world
-    -> IdMap Personio.Employee  -- ^ employees
-    -> Personio.Employee
+    -> IdMap P.Employee  -- ^ employees
+    -> P.Employee
     -> HtmlPage "create-employee"
-createEmployeePage auth _world _es e = fumPage_ "Create employee" auth $ do
+createEmployeePage auth world _es e = fumPage_ "Create employee" auth $ do
     -- Title
     fumHeader_ "Create employee" [] -- TODO: name
 
-    row_ $ large_ 12 $ table_ $ tbody_ $ do
+    fullRow_ $ table_ $ tbody_ $ do
         vertRow_ "Name" $
-            toHtml $ e ^. Personio.employeeFirst <> " " <> e ^. Personio.employeeLast
+            toHtml $ e ^. P.employeeFirst <> " " <> e ^. P.employeeLast
         vertRow_ "Personio id" $
-            toHtml $ e ^. Personio.employeeId
-        vertRow_ "Login" $
-            traverse_ toHtml $ e ^. Personio.employeeLogin
-        vertRow_ "Email" $
-            traverse_ toHtml $ e ^. Personio.employeeEmail
+            toHtml $ e ^. P.employeeId
         vertRow_ "Hiring date" $
-            maybe "-" (toHtml . show) $ e ^. Personio.employeeHireDate
+            maybe "-" (toHtml . show) $ e ^. P.employeeHireDate
         vertRow_ "Contract end date" $
-            maybe "-" (toHtml . show) $ e ^. Personio.employeeEndDate
+            maybe "-" (toHtml . show) $ e ^. P.employeeEndDate
 
     -- Form
-    commandHtml' (Proxy :: Proxy CreateEmployee) $ 
-        vJust (e ^. Personio.employeeId) :*
+    commandHtmlSubmit (Proxy :: Proxy CreateEmployee) "Create" "success" $
+        vJust (e ^. P.employeeId) :*
         vNothing :*
-        V (e ^. Personio.employeeLogin) [] :*
+        maybe vNothing vJust (listToMaybe unused) :*
         vNothing :*
-        V (e ^? Personio.employeeFullname) [] :*
-        V (e ^. Personio.employeeEmail) [] :*
+        V (e ^? P.employeeFullname) [] :*
+        V (e ^. P.employeeEmail) [] :*
         Nil
+
+    unless (null used) $ do
+        hr_ []
+        fullRow_ $ do
+            em_ "Used logins: "
+            forWith_ ";" used $ \ue -> do
+                toHtml $ ue ^. employeeName
+                " ("
+                toHtml $ ue ^. employeeLogin
+                ")"
+  where
+    generateLogins :: Text -> Text -> [Login]
+    generateLogins a b
+        | T.null a || T.null b = []
+        | otherwise = mapMaybe (parseLogin . T.take 4 . (`T.append` b'))
+            $ tail $ T.inits a'
+      where
+        a' = T.toLower a
+        b' = T.toLower b
+
+    (used, unused') = spanMaybe (\l -> world ^? worldEmployees . ix l) $
+        generateLogins (e ^. P.employeeFirst) (e ^. P.employeeLast)
+
+    unused = nub $ maybeToList (e ^. P.employeeLogin) ++ unused'
+
+spanMaybe :: (a -> Maybe b) -> [a] -> ([b],[a])
+spanMaybe _ xs@[] =  ([], xs)
+spanMaybe p xs@(x:xs') = case p x of
+    Just y  -> let (ys, zs) = spanMaybe p xs' in (y : ys, zs)
+    Nothing -> ([], xs)
