@@ -6,7 +6,8 @@ module Futurice.App.Reports.MissingHoursDashdo (missingHoursDashdo) where
 import Control.Lens              (contains, (<&>), _4)
 import Dashdo.Elements
 import Dashdo.Rdash              (charts, rdash)
-import Dashdo.Serve
+import Servant (Server)
+import Dashdo.Servant
 import Dashdo.Types
 import Data.Aeson                (toJSON)
 import Data.Ord                  (Down (..))
@@ -21,7 +22,6 @@ import Graphics.Plotly.Lucid     (plotlyCDN)
 import Lucid                     hiding (for_)
 import Lucid.Bootstrap
 import Lucid.Bootstrap3
-import Network.Wai               (Application)
 import Numeric.Interval.NonEmpty ((...))
 import Prelude ()
 
@@ -113,7 +113,6 @@ tribePie :: [Val] -> SHtml IO Params ()
 tribePie vs = plotlySelectMultiple plotly' pTribes
   where
     plotly' = Plotly.plotly "tribes" [trace]
-        & Plotly.layout %~ Plotly.title ?~ "Missing hours by tribe"
 
     trace :: Plotly.Trace
     trace = Plotly.pie
@@ -146,7 +145,6 @@ contractPie :: [Val] -> SHtml IO Params ()
 contractPie vs = plotlySelectMultiple plotly' pContracts
   where
     plotly' = Plotly.plotly "contract" [trace]
-        & Plotly.layout %~ Plotly.title ?~ "Missing hours by contract"
 
     trace :: Plotly.Trace
     trace = Plotly.pie
@@ -257,10 +255,10 @@ missingHours ctx = do
     row_ $ mkCol [(MD,12)] $ do
         valueTable filteredValuesBoth
 
-missingHoursDashdo :: Ctx -> IO Application
+missingHoursDashdo :: Ctx -> IO (Server DashdoAPI)
 missingHoursDashdo ctx = do
     let html = rdash dashdos plotlyCDN
-    applicationRDashdo id html dashdos
+    dashdoServer id html dashdos
   where
     dashdos =
         [ RDashdo "mh" "Missing Hours" $ Dashdo params0 $ missingHours ctx

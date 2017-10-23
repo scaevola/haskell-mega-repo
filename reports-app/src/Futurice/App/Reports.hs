@@ -14,6 +14,7 @@
 module Futurice.App.Reports (defaultMain) where
 
 import Control.Lens               (_5)
+import Dashdo.Servant             (DashdoAPI)
 import Futurice.Integrations
        (Integrations, beginningOfPrev2Month, beginningOfPrevMonth,
        runIntegrations)
@@ -67,7 +68,7 @@ import Futurice.App.Reports.TimereportsByTask
 import Futurice.App.Reports.UtzChart           (utzChartData, utzChartRender)
 
 -- /TODO/ Make proper type
-type Ctx = (Cache, Manager, Logger, Config, Application)
+type Ctx = (Cache, Manager, Logger, Config, Server DashdoAPI)
 
 newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
 
@@ -197,11 +198,11 @@ missingHoursChartData' ctx =
 
 makeServer
     :: All RClass reports
-    => Ctx -> NP ReportEndpoint reports -> Application -> Server (FoldReportsAPI reports)
-makeServer _   Nil       app = Tagged app
-makeServer ctx (r :* rs) app =
+    => Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)
+makeServer _   Nil       = pure indexPage
+makeServer ctx (r :* rs) =
     let s = handler r
-    in s :<|> s :<|> s :<|> makeServer ctx rs app
+    in s :<|> s :<|> s :<|> makeServer ctx rs
   where
     handler :: forall r. RClass r => ReportEndpoint r -> Handler (RReport r)
     handler re@(ReportEndpoint re') = liftIO $ do
@@ -213,13 +214,13 @@ makeServer ctx (r :* rs) app =
 
 -- | API server
 server :: Ctx -> Server ReportsAPI
-server ctx = makeServer ctx reports (view _5 ctx)
+server ctx = makeServer ctx reports
     :<|> liftIO (serveChart utzChartData utzChartRender ctx)
     :<|> liftIO (serveChart (missingHoursChartData' ctx) missingHoursChartRender ctx)
     :<|> liftIO (servePowerUsersReport ctx)
     :<|> liftIO (servePowerProjectsReport ctx)
     :<|> liftIO . servePowerAbsencesReport ctx
---    :<|> Tagged (view _5 ctx)
+    :<|> view _5 ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig

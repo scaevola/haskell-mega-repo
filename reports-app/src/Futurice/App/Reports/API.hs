@@ -8,6 +8,7 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Reports.API where
 
+import Dashdo.Servant            (DashdoAPI)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Report.Columns   (Report)
@@ -66,7 +67,7 @@ instance (KnownSymbol path, KnownSymbol name, NFData params, NFData a)
     => RClass (R path (Report name params a))
 
 type family FoldReportsAPI rs :: * where
-    FoldReportsAPI '[]       = Raw
+    FoldReportsAPI '[]       = Get '[HTML] (HtmlPage "index")
     FoldReportsAPI (r ': rs) =
         RPath r :> Get ReportTypes (RReport r) :<|>
         RPath r :> "json" :> Get '[JSON] (RReport r) :<|>
@@ -81,7 +82,7 @@ type ReportsAPI = FoldReportsAPI Reports
     :<|> "power" :> "users" :> Get '[JSON] PowerUserReport
     :<|> "power" :> "projects" :> Get '[JSON] PowerProjectsReport
     :<|> "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport
---    :<|> "dashdo" :> "missing-hours" :> Raw
+    :<|> "dashdo" :> DashdoAPI
 
 reportsApi :: Proxy ReportsAPI
 reportsApi = Proxy
