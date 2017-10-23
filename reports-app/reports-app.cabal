@@ -41,6 +41,7 @@ library
     , Chart
     , constraints
     , containers
+    , dashdo
     , deepseq
     , directory
     , either
@@ -67,12 +68,14 @@ library
     , intervals
     , lens
     , lucid
+    , lucid-extras
     , markdown
     , mtl
     , optparse-applicative
     , periocron
     , personio-client
     , planmill-client
+    , plotlyhs
     , postgresql-simple
     , postgresql-simple-url
     , regex-applicative
@@ -98,6 +101,7 @@ library
     , transformers-compat
     , unordered-containers
     , vector
+    , wai
   exposed-modules:
       Futurice.App.Reports
       Futurice.App.Reports.API
@@ -112,6 +116,7 @@ library
       Futurice.App.Reports.Markup
       Futurice.App.Reports.MissingHours
       Futurice.App.Reports.MissingHoursChart
+      Futurice.App.Reports.MissingHoursDashdo
       Futurice.App.Reports.PlanmillEmployees
       Futurice.App.Reports.PowerAbsences
       Futurice.App.Reports.PowerProjects
@@ -141,6 +146,7 @@ executable reports-app-server
     , Chart
     , constraints
     , containers
+    , dashdo
     , deepseq
     , directory
     , either
@@ -167,12 +173,14 @@ executable reports-app-server
     , intervals
     , lens
     , lucid
+    , lucid-extras
     , markdown
     , mtl
     , optparse-applicative
     , periocron
     , personio-client
     , planmill-client
+    , plotlyhs
     , postgresql-simple
     , postgresql-simple-url
     , regex-applicative
@@ -198,5 +206,6 @@ executable reports-app-server
     , transformers-compat
     , unordered-containers
     , vector
+    , wai
     , reports-app
   default-language: Haskell2010

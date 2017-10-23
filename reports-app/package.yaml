@@ -26,6 +26,7 @@ dependencies:
   - Chart
   - constraints
   - containers
+  - dashdo
   - deepseq
   - directory
   - either
@@ -52,12 +53,14 @@ dependencies:
   - intervals
   - lens
   - lucid
+  - lucid-extras
   - markdown
   - mtl
   - optparse-applicative
   - periocron
   - personio-client
   - planmill-client
+  - plotlyhs
   - postgresql-simple
   - postgresql-simple-url
   - regex-applicative
@@ -83,6 +86,7 @@ dependencies:
   - transformers-compat
   - unordered-containers
   - vector
+  - wai
 
 library:
   source-dirs: src

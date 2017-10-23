@@ -53,6 +53,12 @@ packages:
 
   vendor/chart/chart
 
+  vendor/diffusionkinetics-open/dashdo
+  vendor/diffusionkinetics-open/plotlyhs
+  vendor/diffusionkinetics-open/lucid-extras
+  -- plotlyhs
+
+
 package theme-app
   ghc-options: +RTS -M2G -RTS
 
