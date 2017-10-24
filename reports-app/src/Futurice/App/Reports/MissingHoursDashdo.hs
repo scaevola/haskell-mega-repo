@@ -1,13 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
-module Futurice.App.Reports.MissingHoursDashdo (missingHoursDashdo) where
+module Futurice.App.Reports.MissingHoursDashdo (missingHoursRDashdo) where
 
 import Control.Lens              (contains, (<&>), _4)
 import Dashdo.Elements
-import Dashdo.Rdash              (charts, rdash)
-import Servant (Server)
-import Dashdo.Servant
+import Dashdo.Rdash              (charts)
 import Dashdo.Types
 import Data.Aeson                (toJSON)
 import Data.Ord                  (Down (..))
@@ -18,7 +16,6 @@ import Futurice.Prelude
 import Futurice.Servant          (Cache, cachedIO)
 import Futurice.Time             (unNDT)
 import Futurice.Tribe
-import Graphics.Plotly.Lucid     (plotlyCDN)
 import Lucid                     hiding (for_)
 import Lucid.Bootstrap
 import Lucid.Bootstrap3
@@ -28,7 +25,6 @@ import Prelude ()
 import qualified Data.Map        as Map
 import qualified Graphics.Plotly as Plotly
 import qualified PlanMill        as PM
-
 
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.MissingHours
@@ -255,11 +251,6 @@ missingHours ctx = do
     row_ $ mkCol [(MD,12)] $ do
         valueTable filteredValuesBoth
 
-missingHoursDashdo :: Ctx -> IO (Server DashdoAPI)
-missingHoursDashdo ctx = do
-    let html = rdash dashdos plotlyCDN
-    dashdoServer id html dashdos
-  where
-    dashdos =
-        [ RDashdo "mh" "Missing Hours" $ Dashdo params0 $ missingHours ctx
-        ]
+missingHoursRDashdo :: Ctx -> RDashdo IO
+missingHoursRDashdo  ctx =
+    RDashdo "mh" "Missing Hours" $ Dashdo params0 $ missingHours ctx

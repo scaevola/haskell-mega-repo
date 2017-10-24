@@ -54,7 +54,7 @@ import Futurice.App.Reports.MissingHours
        (MissingHoursReport, missingHoursReport)
 import Futurice.App.Reports.MissingHoursChart
        (MissingHoursChartData, missingHoursChartData, missingHoursChartRender)
-import Futurice.App.Reports.MissingHoursDashdo (missingHoursDashdo)
+import Futurice.App.Reports.Dashdo (makeDashdoServer)
 import Futurice.App.Reports.PlanmillEmployees
        (PlanmillEmployeesReport, planmillEmployeesReport)
 import Futurice.App.Reports.PowerAbsences
@@ -234,7 +234,7 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     makeCtx cfg lgr cache = do
         manager <- newManager tlsManagerSettings
         let ctx' = (cache, manager, lgr, cfg)
-        dashDoApp <- missingHoursDashdo ctx'
+        dashDoApp <- makeDashdoServer ctx'
         let ctx = (cache, manager, lgr, cfg, dashDoApp)
 
         let jobs = hcollapse $
