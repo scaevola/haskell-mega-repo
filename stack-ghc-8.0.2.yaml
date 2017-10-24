@@ -47,6 +47,7 @@ packages:
 - proxy-mgmt-app/
 - reports-app/
 - servant-Chart/
+- servant-dashdo/
 - servant-binary-tagged/
 - smileys-app/
 - sms-proxy/
@@ -57,6 +58,12 @@ packages:
 - theme-app/
 
 - location: vendor/chart/chart
+  extra-dep: true
+- location: vendor/diffusionkinetics-open/dashdo
+  extra-dep: true
+- location: vendor/diffusionkinetics-open/plotlyhs
+  extra-dep: true
+- location: vendor/diffusionkinetics-open/lucid-extras
   extra-dep: true
 extra-deps:
 - aeson-1.2.1.0
