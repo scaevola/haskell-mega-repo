@@ -13,6 +13,8 @@
 #endif
 module Futurice.App.Reports (defaultMain) where
 
+import Control.Lens               (_5)
+import Dashdo.Servant             (DashdoAPI)
 import Futurice.Integrations
        (Integrations, beginningOfPrev2Month, beginningOfPrevMonth,
        runIntegrations)
@@ -33,11 +35,12 @@ import qualified Data.Text            as T
 import qualified GitHub               as GH
 
 import Futurice.App.Reports.API
-import Futurice.App.Reports.Balances          (BalanceReport, balanceReport)
+import Futurice.App.Reports.Balances           (BalanceReport, balanceReport)
 import Futurice.App.Reports.Config
 import Futurice.App.Reports.FumFlowdock
        (FumFlowdockReport, fumFlowdockReport)
-import Futurice.App.Reports.FumGithub         (FumGitHubReport, fumGithubReport)
+import Futurice.App.Reports.FumGithub
+       (FumGitHubReport, fumGithubReport)
 import Futurice.App.Reports.FumPersonio
        (FumPersonioReport, fumPersonioReport)
 import Futurice.App.Reports.FumPlanmill
@@ -51,31 +54,33 @@ import Futurice.App.Reports.MissingHours
        (MissingHoursReport, missingHoursReport)
 import Futurice.App.Reports.MissingHoursChart
        (MissingHoursChartData, missingHoursChartData, missingHoursChartRender)
+import Futurice.App.Reports.Dashdo (makeDashdoServer)
 import Futurice.App.Reports.PlanmillEmployees
        (PlanmillEmployeesReport, planmillEmployeesReport)
 import Futurice.App.Reports.PowerAbsences
        (PowerAbsenceReport, powerAbsenceReport)
 import Futurice.App.Reports.PowerProjects
        (PowerProjectsReport, powerProjectsReport)
-import Futurice.App.Reports.PowerUser         (PowerUserReport, powerUserReport)
+import Futurice.App.Reports.PowerUser
+       (PowerUserReport, powerUserReport)
 import Futurice.App.Reports.TimereportsByTask
        (TimereportsByTaskReport, timereportsByTaskReport)
-import Futurice.App.Reports.UtzChart          (utzChartData, utzChartRender)
+import Futurice.App.Reports.UtzChart           (utzChartData, utzChartRender)
 
 -- /TODO/ Make proper type
-type Ctx = (Cache, Manager, Logger, Config)
+type Ctx = (Cache, Manager, Logger, Config, Server DashdoAPI)
 
 newtype ReportEndpoint r = ReportEndpoint (Ctx -> IO (RReport r))
 
 ctxConfig :: Ctx -> Config
-ctxConfig (_, _, _, cfg) = cfg
+ctxConfig (_, _, _, cfg, _) = cfg
 
 -------------------------------------------------------------------------------
 -- Integrations
 -------------------------------------------------------------------------------
 
 runIntegrations' :: Ctx -> Integrations I I Proxy I I I a -> IO a
-runIntegrations' (_, mgr, lgr, cfg) m = do
+runIntegrations' (_, mgr, lgr, cfg, _) m = do
     now <- currentTime
     runIntegrations mgr lgr now (cfgIntegrationsCfg cfg) m
 
@@ -88,7 +93,7 @@ runIntegrations' (_, mgr, lgr, cfg) m = do
 
 
 serveIssues :: Ctx -> IO IssueReport
-serveIssues ctx@(_, mgr, _, cfg) = cachedIO' ctx () $ do
+serveIssues ctx@(_, mgr, _, cfg, _) = cachedIO' ctx () $ do
     repos' <- repos mgr (cfgReposUrl cfg)
     runIntegrations' ctx
         (issueReport repos')
@@ -155,7 +160,7 @@ servePlanmillEmployeesReport ctx = cachedIO' ctx () $
     runIntegrations' ctx planmillEmployeesReport
 
 cachedIO' :: (Eq k, Hashable k, Typeable k, NFData v, Typeable v) => Ctx -> k -> IO v -> IO v
-cachedIO' (cache, _, logger, _) = cachedIO logger cache 600
+cachedIO' (cache, _, logger, _, _) = cachedIO logger cache 600
 
 -- All report endpoints
 -- this is used for api 'server' and pericron
@@ -194,7 +199,7 @@ missingHoursChartData' ctx =
 makeServer
     :: All RClass reports
     => Ctx -> NP ReportEndpoint reports -> Server (FoldReportsAPI reports)
-makeServer _   Nil = pure indexPage
+makeServer _   Nil       = pure indexPage
 makeServer ctx (r :* rs) =
     let s = handler r
     in s :<|> s :<|> s :<|> makeServer ctx rs
@@ -215,6 +220,7 @@ server ctx = makeServer ctx reports
     :<|> liftIO (servePowerUsersReport ctx)
     :<|> liftIO (servePowerProjectsReport ctx)
     :<|> liftIO . servePowerAbsencesReport ctx
+    :<|> view _5 ctx
 
 defaultMain :: IO ()
 defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
@@ -227,7 +233,9 @@ defaultMain = futuriceServerMain makeCtx $ emptyServerConfig
     makeCtx :: Config -> Logger -> Cache -> IO (Ctx, [Job])
     makeCtx cfg lgr cache = do
         manager <- newManager tlsManagerSettings
-        let ctx = (cache, manager, lgr, cfg)
+        let ctx' = (cache, manager, lgr, cfg)
+        dashDoApp <- makeDashdoServer ctx'
+        let ctx = (cache, manager, lgr, cfg, dashDoApp)
 
         let jobs = hcollapse $
                 hcmap (Proxy :: Proxy RClass) (K . mkReportPeriocron ctx) reports

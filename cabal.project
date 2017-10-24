@@ -44,6 +44,7 @@ packages:
   proxy-app/
   proxy-mgmt-app/
   reports-app/
+  servant-dashdo/
   servant-Chart/
   servant-binary-tagged/
   smileys-app/
@@ -52,6 +53,12 @@ packages:
   theme-app/
 
   vendor/chart/chart
+
+  vendor/diffusionkinetics-open/dashdo
+  vendor/diffusionkinetics-open/plotlyhs
+  vendor/diffusionkinetics-open/lucid-extras
+  -- plotlyhs
+
 
 package theme-app
   ghc-options: +RTS -M2G -RTS

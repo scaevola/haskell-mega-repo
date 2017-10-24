@@ -26,6 +26,7 @@ dependencies:
   - Chart
   - constraints
   - containers
+  - dashdo
   - deepseq
   - directory
   - either
@@ -36,6 +37,7 @@ dependencies:
   - folds
   - friendly-time >=0.4 && <0.5
   - fum-client
+  - fum-types
   - futurice-foundation
   - futurice-integrations
   - futurice-metrics
@@ -52,12 +54,14 @@ dependencies:
   - intervals
   - lens
   - lucid
+  - lucid-extras
   - markdown
   - mtl
   - optparse-applicative
   - periocron
   - personio-client
   - planmill-client
+  - plotlyhs
   - postgresql-simple
   - postgresql-simple-url
   - regex-applicative
@@ -66,6 +70,7 @@ dependencies:
   - resource-pool
   - semigroups
   - servant
+  - servant-dashdo
   - servant-cassava ==0.9.*
   - servant-Chart
   - servant-lucid
@@ -83,6 +88,7 @@ dependencies:
   - transformers-compat
   - unordered-containers
   - vector
+  - wai
 
 library:
   source-dirs: src

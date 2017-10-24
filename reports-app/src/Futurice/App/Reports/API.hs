@@ -8,6 +8,7 @@
 {-# LANGUAGE TypeOperators         #-}
 module Futurice.App.Reports.API where
 
+import Dashdo.Servant            (DashdoAPI)
 import Futurice.Lucid.Foundation
 import Futurice.Prelude
 import Futurice.Report.Columns   (Report)
@@ -81,6 +82,7 @@ type ReportsAPI = FoldReportsAPI Reports
     :<|> "power" :> "users" :> Get '[JSON] PowerUserReport
     :<|> "power" :> "projects" :> Get '[JSON] PowerProjectsReport
     :<|> "power" :> "absences" :> QueryParam "month" Month :> Get '[JSON] PowerAbsenceReport
+    :<|> "dashdo" :> DashdoAPI
 
 reportsApi :: Proxy ReportsAPI
 reportsApi = Proxy
