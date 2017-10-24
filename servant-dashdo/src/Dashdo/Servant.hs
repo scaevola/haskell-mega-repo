@@ -81,7 +81,6 @@ dashdoServer r iniHtml ds = do
 
                         errorHtml = TL.pack es <> iniHtml
                     pure (errorHtml, [], [])
-                print ps
                 pure $ toHtmlRaw thisHtml
 
 dashdoApplication :: Monad m => RunInIO m -> Text -> [RDashdo m] -> IO Application

@@ -92,7 +92,7 @@ cachedIO' (cache, _, logger, _) = cachedIO logger cache 600
 data Params = Params
     { _pTribes    :: ![Text]
     , _pContracts :: ![Contract]
-    , _pDays     :: ![Text]
+    , _pDays      :: ![Text]
     }
   deriving Show
 
@@ -238,7 +238,7 @@ missingHours ctx = do
 
     row_ $ mkCol [(MD,12)] $ h2_ $ toHtml $ "from interval: " ++ show interval
 
-    -- Pies
+    -- charts
     charts
         [ ("Missing hours per tribe", tribePie filteredValues1)
         , ("Missing hours per contract type", contractPie filteredValues1)
@@ -248,6 +248,7 @@ missingHours ctx = do
         [ ("Missing hours per day", dayBarPlot filteredValues2)
         ]
 
+    -- table
     row_ $ mkCol [(MD,12)] $ do
         valueTable filteredValuesBoth
 
