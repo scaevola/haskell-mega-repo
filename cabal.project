@@ -44,6 +44,7 @@ packages:
   proxy-app/
   proxy-mgmt-app/
   reports-app/
+  servant-dashdo/
   servant-Chart/
   servant-binary-tagged/
   smileys-app/
