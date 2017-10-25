@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs             #-}
+{-# LANGUAGE FlexibleContexts             #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE TupleSections     #-}
@@ -28,14 +29,18 @@ import Futurice.Prelude
 import Prelude ()
 import System.Timeout              (timeout)
 import Text.Printf                 (printf)
-
-import Control.Concurrent.Async.Lifted.Safe (async)
+import Control.Concurrent.Async (Async, async)
 
 import qualified System.Clock                as Clock
 
 -------------------------------------------------------------------------------
 -- Internals
 -------------------------------------------------------------------------------
+
+liftedAsync :: (MonadBaseControl IO m, StM m a ~ a, NFData a) => m a -> m (Async (NF a))
+liftedAsync action = liftBaseWith $ \runInIO -> async $ do
+    x <- runInIO action
+    evaluate (makeNF x)
 
 getMonotonicClock :: MonadIO m => m TimeSpec
 getMonotonicClock = liftIO $ Clock.getTime Clock.Monotonic
@@ -159,10 +164,10 @@ workerLoop options tsem js = do
 
     executeJob :: Integer -> WorkerJob -> LogT IO ()
     executeJob jobId (WorkerJob tsem' label action) =
-        void $ async $ do
+        void $ liftedAsync $ do
             logLocalDomain ("job-" <> textShow jobId) $
                 bracket enter exit $ \_ -> do
-                    x <- liftIO action
+                    x <- liftIO $ action >>= evaluate
                     case x of
                         Right (Just ()) -> pure ()
                         Right Nothing -> do

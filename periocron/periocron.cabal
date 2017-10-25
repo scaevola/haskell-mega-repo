@@ -31,15 +31,17 @@ library
   ghc-options: -Wall
   build-depends:
       base                  >=4.7   && <4.11
+    , async
     , base-compat
     , clock
-    , futurice-prelude
     , futurice-metrics
+    , futurice-prelude
     , lens
     , lifted-async
     , lifted-base
     , monad-logger
     , mtl
+    , nf
     , stm
     , text
     , time
