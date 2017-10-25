@@ -1,4 +1,7 @@
-index-state: 2017-10-05T23:59:09Z
+index-state: 2017-10-25T11:41:58Z
+
+constraints:
+  servant-swagger-ui >= 0.2.4.3.4.0
 
 packages:
   ansi-pretty/
