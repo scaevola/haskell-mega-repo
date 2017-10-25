@@ -34,5 +34,6 @@ textVal p = symbolVal p ^. packed
 indexPage :: HtmlPage "index"
 indexPage = page_ "Reports" $ do
     row_ $ large_ 12 $ h1_ "Reports"
-    row_ $ large_ 12 $ div_ [class_ "callout primary"] $ ul_ $ void $ hsequenceK $
-        hcmap (Proxy :: Proxy RClass) makeLink links
+    row_ $ large_ 12 $ div_ [class_ "callout primary"] $ ul_ $ do
+        void $ hsequenceK $ hcmap (Proxy :: Proxy RClass) makeLink links
+        li_ $ a_ [ href_ "/dashdo/" ] "[WIP] Dashdo dashboards"
