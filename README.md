@@ -10,21 +10,39 @@
     - If you didn't clone recursively, fetch the submodules with `git submodule update --init`
 2. Install native dependencies:
     - macOS:
-        - Install [haskell stack](https://docs.haskellstack.org/en/stable/install_and_upgrade/)
         - `brew install fftw pkg-config`
+    - Ubuntu: `apt-get install libfftw3-dev libpq-dev`
+3. Install [haskell stack](https://docs.haskellstack.org/en/stable/install_and_upgrade/)
+    - macOS:
         - `stack setup`
         - `stack install alex happy`
         - https://postgresapp.com/ and `source env-postgres-osx.sh`
-    - Ubuntu: `apt-get install libfftw3-dev libpq-dev`
-3. Build and run *theme-app*
+4. Build and run *theme-app*
     - theme-app is a small app without external integrations.
     - `stack build --fast theme-app`
-    - `LOGENTRIES_TOKEN=00000000-0000-0000-0000-000000000000 stack exec -- theme-app-server`
+    - `stack exec -- theme-app-server`
+
+## Alternative cabal new-build process
+
+1. As above
+2. As above
+3. Install cabal and ghc
+    - Ubuntu: See https://launchpad.net/~hvr/+archive/ubuntu/ghc
+        - `apt-get install ghc-8.2.1 cabal-install-head`
+    - macOS:
+        - get `cabal` from https://haskell.futurice.com/
+        - GHC: download from https://www.haskell.org/ghc/download_ghc_8_2_1.html#binaries
+        - `sudo mkdir -p /usr/local/ghc/8.2.1 && sudo chown -R $(logname):admin /usr/local/ghc/`
+        - `./configure --prefix=/usr/local/ghc/8.2.1/ && make install`
+        - Add `echo /usr/local/ghc/8.2.1/bin > sudo tee /etc/paths.d/ghc`
+4. `cabal new-run theme-app-server`
 
 ## Building docker images
 
-`haskell-mega-repo-tool build-docker <app-name>`, for example
-`haskel-mega-repo-tool build-docker checklist`.
+Install `mega-repo-tool` from the repo.
+
+`mega-repo-tool build-docker <app-name>`, for example
+`mega-repo-tool build-docker checklist`.
 If the tool instructs you to run some docker commands, then do it and re-run the build-docker command.
 
 ## Maintaining
@@ -41,19 +59,19 @@ git submodule foreach git pull
 ### Package dependencies
 
 ```
-stack exec mega-repo-tool packdeps
+mega-repo-tool packdeps
 ```
 
 ### Rough stats
 
 ```
-stack exec mega-repo-tool stats
+mega-repo-tool stats
 ```
 
 ### Update deps graph
 
 ```
-stack exec mega-repo-tool dot
+ega-repo-tool dot
 ```
 
 ### LTS version bumps
@@ -85,7 +103,7 @@ We use [stylish-haskell](https://github.com/jaspervdj/stylish-haskell).
 [Example `stylish-haskell.yaml`](https://github.com/futurice/haskell-servant-status/blob/master/.stylish-haskell.yaml).
 
 Packages have to be buildable with `-Wall -Werror` with some of the supported
-GHCs (currently usually *7.10.2*).
+GHCs (currently usually *8.0.2*).
 
 ### GHC Extensions
 
@@ -124,17 +142,7 @@ warnings with *other* GHCs are ok.
 > Everything should be compilable with the last three releases of GHC.
 
 We don't apply the three release policy for the applications. It's enough that
-we can compile applications with some recent GHC version (currently *7.8.4*).
+we can compile applications with some recent GHC version (currently *8.0.2*).
 
-For libraries we aim to support the last three GHC versions (currently:
-*7.6.3*, *7.8.4* and *7.10.2*), as well the last three Stackage LTS snapshots
-(currently only two: [*lts-2.22*](https://www.stackage.org/lts-2.22) and
-*lts-3*).
-
-Stackage support is not strict. For example the API of
-[`servant`](http://hackage.haskell.org/package/servant) changes with every
-major release, so supporting multiple releases is not worth the trouble.
-
-GHC 7.6.3 support is not strict. As we haven't used it in production, we support
-it, if it doesn't require additional work. When GHC 8.0 will be released, the
-GHC part of thre three release policy will be strict(er).
+For libraries we aim to support the last three GHC versions, but this
+doesn't apply to this repository, only for submodules.
