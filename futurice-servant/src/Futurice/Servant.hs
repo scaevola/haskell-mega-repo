@@ -247,10 +247,13 @@ futuriceServerMain' makeDict makeCtx (SC t d server middleware (I envpfx)) =
             Nothing -> main' logger
             Just env -> do
                 createCloudWatchLogStream env awsGroup service
-                withCloudWatchLogger env awsGroup service $ \leLogger -> main' (logger <> leLogger)
+                withCloudWatchLogger env awsGroup service $ \leLogger -> main' $
+                    if fromMaybe True (_cfgStderrLogger cfg)
+                    then (logger <> leLogger)
+                    else leLogger
 
   where
-    main (Cfg cfg p _ekgP mgroup _) menv service cache logger = do
+    main (Cfg cfg p _ekgP mgroup _ _) menv service cache logger = do
         (ctx, jobs)    <- makeCtx cfg logger cache
         -- brings 'HasServer' instance into a scope
         Dict           <- pure $ makeDict ctx
@@ -489,6 +492,7 @@ data Cfg cfg = Cfg
     , _cfgEkgPort         :: !Int
     , _cfgCloudWatchGroup :: !(Maybe Text)
     , _cfgCloudWatchCreds :: !(Maybe AWS.Credentials)
+    , _cfgStderrLogger    :: !(Maybe Bool)
     }
   deriving Show
 
@@ -502,6 +506,7 @@ getConfigWithPorts n = getConfig' n $ Cfg
     <*> envVarWithDefault "EKGPORT" defaultEkgPort
     <*> optionalAlt (envVar "CLOUDWATCH_GROUP")
     <*> optionalAlt (envAwsCredentials "CLOUDWATCH_")
+    <*> optionalAlt (envVar "USE_STDERR_LOGGER")
 
 -------------------------------------------------------------------------------
 -- Defaults
