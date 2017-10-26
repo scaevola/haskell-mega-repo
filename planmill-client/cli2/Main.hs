@@ -49,6 +49,7 @@ data Cmd
     | CmdTimereports PM.UserId (PM.Interval Day)
     | CmdTimereport PM.TimereportId
     | CmdReportableAssignments PM.UserId
+    | CmdBalance PM.UserId
     | CmdTask PM.TaskId
     | CmdMeta Text
     | CmdEnumeration Text
@@ -159,6 +160,9 @@ execute opts cmd ctx = flip runPureT ctx { _ctxOpts = opts } $ runM $ case cmd o
             else x ^.. taking 10 traverse
     CmdAccount aid -> do
         x <- PM.planmillAction $ PM.account aid
+        putPretty x
+    CmdBalance uid -> do
+        x <- PM.planmillAction $ PM.userTimeBalance uid
         putPretty x
     CmdTimereports uid interval -> do
         x <- PM.planmillAction $ PM.timereportsFromIntervalFor

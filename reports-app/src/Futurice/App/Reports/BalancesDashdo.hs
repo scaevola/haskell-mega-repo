@@ -4,26 +4,25 @@
 {-# LANGUAGE TemplateHaskell   #-}
 module Futurice.App.Reports.BalancesDashdo (balancesRDashdo) where
 
-import Control.Lens                (contains, (<&>), _4)
+import Control.Lens              (contains, (<&>), _4)
 import Dashdo.Elements
-import Dashdo.Rdash                (charts)
+import Dashdo.Rdash              (charts)
 import Dashdo.Types
-import Data.Aeson                  (toJSON)
-import Data.Ord                    (Down (..))
-import FUM.Types.Login             (loginRegexp)
+import Data.Aeson                (toJSON)
+import Data.Ord                  (Down (..))
+import Data.Time                 (addDays)
 import Futurice.Integrations
-       (Employee (..), Integrations, beginningOfPrev2Month, fumPlanmillMap,
-       planmillEmployee, runIntegrations)
+       (Employee (..), Integrations, beginningOfPrev2Month,
+       personioPlanmillMap, planmillEmployee, runIntegrations)
 import Futurice.Prelude
-import Futurice.Servant            (Cache, cachedIO)
+import Futurice.Servant          (Cache, cachedIO)
 import Futurice.Time
 import Futurice.Tribe
-import Lucid                       hiding (for_)
+import Lucid                     hiding (for_)
 import Lucid.Bootstrap
 import Lucid.Bootstrap3
-import Numeric.Interval.NonEmpty   ((...))
+import Numeric.Interval.NonEmpty ((...))
 import Prelude ()
-import Text.Regex.Applicative.Text (match)
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set        as Set
@@ -79,6 +78,7 @@ data Val = Val
     { vName       :: !Text
     , vTribe      :: !Tribe
     , vContract   :: !Contract
+    , vStatus     :: !P.Status
     , vSupervisor :: !Text
     , vFlex       :: !Double
     , vMissing    :: !Double
@@ -92,12 +92,10 @@ fetchValues :: Ctx -> PM.Interval Day -> IO [Val]
 fetchValues ctx interval = cachedIO' ctx interval $
     runIntegrations' ctx action
   where
-    contractTypes = 
+    contractTypes =
         --Set.take 2 $
         Set.fromDistinctAscList . take 2 . Set.toAscList $
         cfgMissingHoursContracts (view _4 ctx)
-
-    loginRe = "https://login.futurice.com/openid/" *> loginRegexp
 
     mkSupervisorMap es = Map.fromList $ flip mapMaybe es $ \e -> do
         sid   <- e ^. P.employeeSupervisorId
@@ -110,12 +108,16 @@ fetchValues ctx interval = cachedIO' ctx interval $
 
     action = do
         -- people: do not include only some contracts
-        us <- toList . fmap snd <$> fumPlanmillMap -- _ [PM.User]
-
+        us <- personioPlanmillMap
         supervisorMap <- mkSupervisorMap <$> P.personio P.PersonioEmployees
+        today <- currentDay
+
+        let inLastTwoMonths Nothing  = False
+            inLastTwoMonths (Just d) =
+                addDays (-60) today <= d && d <= today
 
         -- build
-        for us $ \u -> do
+        valsMap <- ifor us $ \login (p, u) -> do
             let haveBalance = contractTypes ^. contains (PM.uContractType u)
 
             (Balance flex mh, e) <- (,)
@@ -124,14 +126,16 @@ fetchValues ctx interval = cachedIO' ctx interval $
                       else pure $ Balance 0 0)
                   <*> planmillEmployee (u ^. PM.identifier)
 
-            let supervisor = fromMaybe "No supervisor" $ do
-                    login <- match loginRe (PM.uUserName u)
-                    Map.lookup login supervisorMap
+            let supervisor = fromMaybe "No supervisor" $ supervisorMap ^? ix login
 
-            pure Val
+            -- Show only active, or people with contract ended in last two months
+            if p ^. P.employeeStatus /= P.Active && not (inLastTwoMonths (p ^. P.employeeEndDate))
+            then pure Nothing
+            else pure $ Just Val
                 { vName       = employeeName e
                 , vTribe      = employeeTribe e
                 , vContract   = employeeContract e
+                , vStatus     = p ^. P.employeeStatus
                 , vSupervisor = supervisor
                 , vFlex       = realToFrac $ unNDT flex
                 , vMissing    = realToFrac $ unNDT mh
@@ -139,6 +143,9 @@ fetchValues ctx interval = cachedIO' ctx interval $
                                 then balanceKind (flex + mh)
                                 else NonBalance
                 }
+
+        -- strip Nothing:s
+        pure (valsMap ^.. folded . _Just)
 
 runIntegrations' :: Ctx -> Integrations I I Proxy I I I a -> IO a
 runIntegrations' (_, mgr, lgr, cfg) m = do
@@ -240,6 +247,7 @@ valueTable vs = table_ [ class_ "table table-striped" ] $ do
         th_ "Name"
         th_ "Tribe"
         th_ "Contract"
+        th_ "Status"
         th_ "Supervisor"
         th_ "Flex"
         th_ "Missing hours"
@@ -249,6 +257,7 @@ valueTable vs = table_ [ class_ "table table-striped" ] $ do
         td_ $ toHtml vName
         td_ $ toHtml vTribe
         td_ $ toHtml vContract
+        td_ $ toHtml vStatus
         td_ $ toHtml vSupervisor
         td_ $ toHtml $ show vFlex
         td_ $ toHtml $ show vMissing
@@ -330,6 +339,7 @@ balances ctx = do
         li_ "People with no flex are also included for completeness"
         li_ "Balance is flex + missing hours, as when hours are marked flex goes up"
         li_ "Externals should belong to some tribe, but data is not yet up to date"
+        li_ "Shows people Active in Personio, and ones with contractEndDate in last two months"
 
     -- charts
     charts

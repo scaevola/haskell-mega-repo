@@ -14,6 +14,7 @@ module Futurice.Integrations.Common (
     githubOrganisationMembers,
     -- * PlanMill
     fumPlanmillMap,
+    personioPlanmillMap,
     planmillEmployee,
     -- * Classy lenses
     HasFUMEmployeeListName(..),
@@ -105,9 +106,37 @@ githubOrganisationMembers = do
     orgName <- view githubOrganisationName
     githubReq $ GH.membersOfR orgName GH.FetchAll
 
+personioPlanmillMap
+    :: (MonadPersonio m, MonadPlanMillQuery m)
+    => m (HashMap FUM.Login (P.Employee, PM.User))
+personioPlanmillMap = do
+    combine <$> P.personio P.PersonioEmployees <*> users
+  where
+    -- detailed planmill users
+    users = do
+        us <- PMQ.users
+        traverse (\u -> updatePmUser u <$> PMQ.user (view PM.identifier u)) (toList us)
+
+    -- workaround for https://github.com/planmill/api/issues/11
+    -- some data is present in users output but not in per-user
+    updatePmUser :: PM.User -> PM.User -> PM.User
+    updatePmUser u' u = u
+        { PM.uCompetence = PM.uCompetence u <|> PM.uCompetence u'
+        }
+
+    combine :: [P.Employee] -> [PM.User] -> HashMap FUM.Login (P.Employee, PM.User)
+    combine ps pms = HM.intersectionWith (,) ps' pms'
+      where
+        ps' = HM.fromList $ flip mapMaybe ps $ \e -> (,e) <$> e ^. P.employeeLogin
+        pms' = HM.fromList $ flip mapMaybe pms $ \u -> (,u) <$> match loginRe (PM.uUserName u)
+
+        loginRe = "https://login.futurice.com/openid/" *> FUM.loginRegexp
+
 -- | Get a mapping fum username to planmill user
 --
 -- Silently drops FUM users, which we cannot find planmill user for.
+--
+-- TODO: deprecate, use personioPlanmillMap
 fumPlanmillMap
     :: ( MonadFUM m, MonadPlanMillQuery m
        , MonadReader env m, HasFUMEmployeeListName env
