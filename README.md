@@ -34,8 +34,12 @@
         - GHC: download from https://www.haskell.org/ghc/download_ghc_8_2_1.html#binaries
         - `sudo mkdir -p /usr/local/ghc/8.2.1 && sudo chown -R $(logname):admin /usr/local/ghc/`
         - `./configure --prefix=/usr/local/ghc/8.2.1/ && make install`
-        - Add `echo /usr/local/ghc/8.2.1/bin > sudo tee /etc/paths.d/ghc`
-4. `cabal new-run theme-app-server`
+        - Add `echo /usr/local/ghc/8.2.1/bin | sudo tee /etc/paths.d/ghc`
+4. `cabal-head new-run theme-app-server`
+
+We use `new-` commands, e.g.
+- `cabal-head new-repl theme-app` to run GHCi repl in the `theme-app` library.
+- `cabal-head new-test dynmap-cache` to run tests of `dynmap-cache`.
 
 ## Building docker images
 
