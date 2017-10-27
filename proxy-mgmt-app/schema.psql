@@ -25,7 +25,7 @@ ALTER TABLE proxyapp.credentials
 
 CREATE FUNCTION proxyapp.pass_crypt() RETURNS trigger AS $pass_crypt$
   BEGIN
-    NEW.passtext = crypt(NEW.passtext, gen_salt('bf'));
+    NEW.passtext = crypt(NEW.passtext, public.gen_salt('bf'));
 
     RETURN NEW;
   END;

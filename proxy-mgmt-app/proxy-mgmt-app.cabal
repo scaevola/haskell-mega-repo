@@ -33,18 +33,25 @@ library
     , aeson
     , aeson-compat
     , base-compat
+    , containers
+    , dashdo
     , env-config
+    , fum-api
+    , fum-types
     , futurice-foundation
+    , futurice-integrations
+    , futurice-postgres
     , futurice-prelude
-    , futurice-reports
     , futurice-servant
     , generics-sop
+    , lens
     , lucid
-    , planmill-client
+    , lucid-extras
+    , plotlyhs
     , postgresql-simple
     , resource-pool
     , servant
-    , servant-lucid
+    , servant-dashdo
     , servant-server
     , swagger2
     , time
@@ -53,8 +60,8 @@ library
       Futurice.App.ProxyMgmt
       Futurice.App.ProxyMgmt.API
       Futurice.App.ProxyMgmt.Config
-      Futurice.App.ProxyMgmt.Logic
-      Futurice.App.ProxyMgmt.Types
+      Futurice.App.ProxyMgmt.Ctx
+      Futurice.App.ProxyMgmt.Dashdo
   default-language: Haskell2010
 
 executable proxy-mgmt-app-server
