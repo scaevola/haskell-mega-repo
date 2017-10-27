@@ -1,22 +1,14 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE TypeOperators #-}
 module Futurice.App.ProxyMgmt.API where
 
 import Futurice.Prelude
 import Prelude ()
 
-import Futurice.App.ProxyMgmt.Types
+import Dashdo.Servant
+import Futurice.Servant
 import Servant
-import Servant.HTML.Lucid
 
-type ProxyMgmtAPI =
-    Get '[HTML, JSON] AccessReport
-    :<|> "users" :> Get '[HTML, JSON] UsersReport
+type ProxyMgmtAPI = SSOUser :> DashdoAPI
 
 proxyMgmtApi :: Proxy ProxyMgmtAPI
 proxyMgmtApi = Proxy
