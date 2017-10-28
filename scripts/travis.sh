@@ -23,11 +23,11 @@ timed () {
 case $STEP in
 prepare)
     echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
+    mkdir -p ~/.local/bin
 
     case $BUILD in
     stack)
         # Download and unpack the stack executable
-        mkdir -p ~/.local/bin
 
         # if [ ! -e ~/.local/bin/stack ]; then
         #    travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack';
@@ -65,6 +65,10 @@ install)
         ;;
 
     cabal)
+		# Install doctest
+		scripts/cabal-new-install.py doctest doctest ~/.local/bin
+
+        # Install some stuff already in install phase
         timed cabal new-build --enable-tests -j2 futurice-prelude
         timed cabal new-build --enable-tests -j2 servant-Chart
         ;;
@@ -86,6 +90,9 @@ build)
     cabal)
         timed cabal new-build --enable-tests  -j2 all
         timed cabal new-test --enable-tests all
+
+        # Run doctest on selected packages
+        doctest --fast kleene/src
         ;;
 
     esac
