@@ -67,6 +67,7 @@ install)
     cabal)
 		# Install doctest
 		scripts/cabal-new-install.py doctest doctest ~/.local/bin
+        doctest --version
 
         # Install some stuff already in install phase
         timed cabal new-build --enable-tests -j2 futurice-prelude
