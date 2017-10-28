@@ -93,7 +93,7 @@ build)
         timed cabal new-test --enable-tests all
 
         # Run doctest on selected packages
-        doctest --fast kleene/src
+        doctest --fast fum-types/src
         ;;
 
     esac
