@@ -24,6 +24,8 @@ import Futurice.Office             (Office (..))
 import Futurice.Prelude
 import Futurice.Time
 import Prelude ()
+import Servant                     (toUrlPiece)
+import Servant.Utils.Links         (Link, safeLink)
 import Text.Regex.Applicative.Text (RE', anySym, match, psym)
 
 import qualified Data.Text                     as T
@@ -32,7 +34,9 @@ import qualified Personio                      as P
 import qualified PlanMill                      as PM
 import qualified Text.Regex.Applicative.Common as RE
 
-import Futurice.App.PlanMillSync.Types (PMUser (..))
+import Futurice.App.PlanMillSync.Actions
+import Futurice.App.PlanMillSync.API
+import Futurice.App.PlanMillSync.Types   (PMUser (..))
 
 itoListWithOf :: IndexedGetting i (Endo [x]) s a -> (i -> a -> x) ->  s -> [x]
 itoListWithOf l f s = appEndo (ifoldMapOf l (\i a -> Endo (f i a :)) s) []
@@ -332,7 +336,10 @@ indexPage now planmills fums personios = page_ "PlanMill sync" $ do
                 traverse_ toHtml pmCompetence
 
         -- Actions
-        cell_ mempty
+        cell_ $ do
+            for_ (canUpdateDepartDate p pmu) $ \_ ->
+                form_ [ method_ "POST", action_ $ linkToText $ safeLink planmillSyncApi addDepartDateEndpoint login ] $
+                    button_ [ class_ "button"] "Update depart date"
 
     planmillMap :: Map FUM.Login PMUser
     planmillMap = toMapOf (folded . getter f . _Just . ifolded) planmills
@@ -498,3 +505,6 @@ cell_ html = case runWriter (commuteHtmlT html) of
 
 errorsTitle_ :: NonEmpty Text -> Attribute
 errorsTitle_ xs = title_ $ T.intercalate "; " $ toList xs
+
+linkToText :: Link -> Text
+linkToText l = "/" <> toUrlPiece l

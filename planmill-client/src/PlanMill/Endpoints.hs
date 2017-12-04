@@ -42,6 +42,7 @@ module PlanMill.Endpoints (
     timereportsFor,
     timereportsFromInterval,
     timereportsFromIntervalFor,
+    -- ** Editing
     addTimereport,
     editTimereport,
     deleteTimereport,
@@ -50,6 +51,8 @@ module PlanMill.Endpoints (
     users,
     userTimeBalance,
     userVacations,
+    -- ** Editing
+    editUser,
     ) where
 
 import PlanMill.Internal.Prelude
@@ -133,6 +136,12 @@ users = planMillPagedGet $ t "users"
 -- See <https://online.planmill.com/pmtrial/schemas/v1_5/index.html#users__id__get>
 user :: UserId -> PlanMill User
 user i = planMillGet $ t "users" // i
+
+-- | Update an existing resource user to PlanMill.
+--
+-- See <https://developers.planmill.com/api/#users__user_id__post>.
+editUser :: User -> PlanMill ()
+editUser u = planMillPostNoResponse u $ t "users" // u ^. identifier
 
 -- | A single timebalance in PlanMill. This is a read-only item
 --

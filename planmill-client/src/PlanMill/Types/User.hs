@@ -31,6 +31,7 @@ import PlanMill.Types.CapacityCalendar (CapacityCalendarId)
 import PlanMill.Types.Enumeration      (EnumValue)
 import PlanMill.Types.Identifier
        (HasIdentifier (..), Identifier (..), IdentifierToHtml (..))
+import PlanMill.Types.UOffset          (UOffset (..))
 
 instance IdentifierToHtml User where
     identifierToHtml (Ident i) = a_ attrs (toHtml t)
@@ -86,6 +87,18 @@ instance AnsiPretty User
 instance Binary User
 instance HasStructuralInfo User where structuralInfo = sopStructuralInfo
 instance HasSemanticVersion User
+
+-- | This instance is very small, serialising only the fields we want ever to update.
+--
+-- /TODO:/ make EditUser type?
+instance ToJSON User where
+    toJSON u = object $
+        [ "id"        .= (u ^. identifier)
+        , "firstName" .= uFirstName u
+        , "lastName"  .= uLastName u
+        , "passive"   .= uPassive u -- status
+        ]
+        ++ [ "departDate" .= UOffset (UTCTime x 0) | Just x <- [uDepartDate u] ]
 
 instance FromJSON User where
     parseJSON = withObject "User" $ \obj -> User <$> obj .: "id"

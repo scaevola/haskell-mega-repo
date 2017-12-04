@@ -60,6 +60,7 @@ library
     , writer-cps-mtl
   exposed-modules:
       Futurice.App.PlanMillSync
+      Futurice.App.PlanMillSync.Actions
       Futurice.App.PlanMillSync.API
       Futurice.App.PlanMillSync.Config
       Futurice.App.PlanMillSync.Ctx
