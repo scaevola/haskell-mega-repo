@@ -19,6 +19,10 @@
 	- From [haskell.futurice.com](https://haskell.futurice.com/): `curl -sL https://haskell.futurice.com/haskell-on-macos.py | python3 - --make-dirs --paths.d --ghc-alias=8.2.2 --cabal-alias=head install ghc-8.0.2 ghc-8.2.2 cabal-install-head`
 4. `cabal new-run theme-app-server`
 
+## Getting up to speed
+
+TBD
+
 We use `new-` commands, e.g.
 - `cabal new-repl theme-app` to run GHCi repl in the `theme-app` library.
 - `cabal new-test dynmap-cache` to run tests of `dynmap-cache`.
@@ -30,6 +34,14 @@ If you use *oh my zsh*, then you have most things set-up already, you only need 
 
 ```zsh
 mega-repo-tool --zsh-completion-script $(which mega-repo-tool) > $HOME/.oh-my-zsh/completions/_mega-repo-tool
+tajna --zsh-completion-script $(which tajna) > $HOME/.oh-my-zsh/completions/_tajna
+```
+
+Bash users can:
+
+```bash
+eval "$(mega-repo-tool --bash-completion-script $(which mega-repo-tool))"
+eval "$(tajna --bash-completion-script $(which tajna))"
 ```
 
 ## Building docker images
